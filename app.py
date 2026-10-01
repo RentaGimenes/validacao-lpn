@@ -4,26 +4,9 @@ import re
 from google.oauth2.service_account import Credentials
 import gspread
 import pandas as pd
-from pyngrok import ngrok
 import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
-
-# --- CONFIGURAÇÃO DO NGROK (ACESSO EXTERNO) ---
-try:
-  # Insira o seu token de autenticação do Ngrok entre as aspas abaixo
-  ngrok.set_auth_token("3K2qS4x9zgqzQAxgntCx19OT59J_2kSuCxwhMfxkksene1T1f")
-
-  # Fecha conexões anteriores do ngrok para evitar conflitos de porta
-  ngrok.kill()
-
-  # Abre o túnel público na porta padrão do Streamlit (8501)
-  public_url = ngrok.connect(8501)
-  print("\n" + "=" * 50)
-  print(f"👉 LINK PÚBLICO DO NGROK: {public_url}")
-  print("=" * 50 + "\n")
-except Exception as e:
-  print(f"Aviso ao iniciar o Ngrok: {e}")
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
