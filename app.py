@@ -80,7 +80,6 @@ def converter_para_data_obj(data_str):
     return None
   data_str = str(data_str).strip()
 
-  # Se for o formato AAMMDD puro (6 dígitos sem barras, ex: 260908)
   digitos = re.sub(r"\D", "", data_str)
   if len(data_str) == 6 and "/" not in data_str and "-" not in data_str:
     try:
@@ -91,14 +90,12 @@ def converter_para_data_obj(data_str):
     except Exception:
       pass
 
-  # Tentar formatos comuns com barras ou traços
   for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d", "%Y/%m/%d", "%d%m%Y"):
     try:
       return datetime.strptime(data_str, fmt).date()
     except Exception:
       continue
 
-  # Tentar extrair 8 dígitos (DDMMAAAA)
   if len(digitos) == 8:
     try:
       return datetime(
@@ -410,7 +407,6 @@ with aba_painel:
       elif lpn_lida in lpns_ja_lidas:
         st.error("❌ Esta LPN já foi validada neste pedido!")
       else:
-        # Extração e normalização dos dados da planilha
         mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
         lote_planilha = limpar_texto(
             r_escolhido[10] if len(r_escolhido) > 10 else ""
@@ -419,20 +415,17 @@ with aba_painel:
 
         erros_divergencia = []
 
-        # 1. Comparar Material
         if not mat_lido or mat_lido != mat_planilha:
           erros_divergencia.append(
               f"Material divergente (Lido: {mat_lido} | Planilha:"
               f" {mat_planilha})"
           )
 
-        # 2. Comparar Lote (se existir na planilha)
         if lote_planilha and lote_lido and lote_lido != lote_planilha:
           erros_divergencia.append(
               f"Lote divergente (Lido: {lote_lido} | Planilha: {lote_planilha})"
           )
 
-        # 3. Comparar Data / Validade de forma inteligente (independente de barras ou ordem AAMMDD)
         if data_planilha_raw and venc_lido:
           data_obj_planilha = converter_para_data_obj(data_planilha_raw)
           data_obj_lida = converter_para_data_obj(venc_lido)
@@ -523,3 +516,15 @@ with aba_concluidos:
       st.info("Nenhum pedido concluído nas últimas 24 horas.")
   else:
     st.info("Nenhum dado encontrado.")
+
+# --- RODAPÉ COM O SONIC BEM PEQUENININHO ---
+st.markdown("---")
+st.markdown(
+    """
+    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 10px;">
+        <span style="font-size: 11px; color: #777777;">Validação de LPN a todo vapor</span>
+        <img src="https://i.pinimg.com/originals/84/90/f0/8490f0cab98f44a6e905a72cb61b72aa.gif" width="24" style="border-radius: 2px;">
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
