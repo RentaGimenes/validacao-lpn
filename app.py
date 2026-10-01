@@ -27,7 +27,6 @@ def init_connection():
   ]
   creds_dict = dict(st.secrets["gcp_service_account"])
 
-  # Blindagem contra erros de quebra de linha na chave privada do JWT
   if "private_key" in creds_dict:
     creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
 
@@ -73,6 +72,42 @@ def formatar_data_aammdd(data_str):
     return f"{dia}/{mes}/{ano}"
   except Exception:
     return data_str
+
+
+def converter_para_data_obj(data_str):
+  """Converte qualquer formato de data (AAMMDD, DD/MM/AAAA, etc) num objeto date para comparação exata."""
+  if not data_str:
+    return None
+  data_str = str(data_str).strip()
+
+  # Se for o formato AAMMDD puro (6 dígitos sem barras, ex: 260908)
+  digitos = re.sub(r"\D", "", data_str)
+  if len(data_str) == 6 and "/" not in data_str and "-" not in data_str:
+    try:
+      ano = int("20" + data_str[0:2])
+      mes = int(data_str[2:4])
+      dia = int(data_str[4:6])
+      return datetime(ano, mes, dia).date()
+    except Exception:
+      pass
+
+  # Tentar formatos comuns com barras ou traços
+  for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d", "%Y/%m/%d", "%d%m%Y"):
+    try:
+      return datetime.strptime(data_str, fmt).date()
+    except Exception:
+      continue
+
+  # Tentar extrair 8 dígitos (DDMMAAAA)
+  if len(digitos) == 8:
+    try:
+      return datetime(
+          int(digitos[4:8]), int(digitos[2:4]), int(digitos[0:2])
+      ).date()
+    except Exception:
+      pass
+
+  return None
 
 
 def processar_codigo_1(barcode):
@@ -375,17 +410,44 @@ with aba_painel:
       elif lpn_lida in lpns_ja_lidas:
         st.error("❌ Esta LPN já foi validada neste pedido!")
       else:
+        # Extração e normalização dos dados da planilha
         mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
         lote_planilha = limpar_texto(
             r_escolhido[10] if len(r_escolhido) > 10 else ""
         )
+        data_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
 
         erros_divergencia = []
+
+        # 1. Comparar Material
         if not mat_lido or mat_lido != mat_planilha:
-          erros_divergencia.append("Material divergente.")
+          erros_divergencia.append(
+              f"Material divergente (Lido: {mat_lido} | Planilha:"
+              f" {mat_planilha})"
+          )
+
+        # 2. Comparar Lote (se existir na planilha)
+        if lote_planilha and lote_lido and lote_lido != lote_planilha:
+          erros_divergencia.append(
+              f"Lote divergente (Lido: {lote_lido} | Planilha: {lote_planilha})"
+          )
+
+        # 3. Comparar Data / Validade de forma inteligente (independente de barras ou ordem AAMMDD)
+        if data_planilha_raw and venc_lido:
+          data_obj_planilha = converter_para_data_obj(data_planilha_raw)
+          data_obj_lida = converter_para_data_obj(venc_lido)
+
+          if data_obj_planilha and data_obj_lida:
+            if data_obj_lida != data_obj_planilha:
+              erros_divergencia.append(
+                  f"Data/Validade divergente (Lida: {venc_lido} | Planilha:"
+                  f" {data_planilha_raw})"
+              )
 
         if erros_divergencia:
-          st.error("❌ Erro de divergência encontrado!")
+          st.error("❌ Erro de divergência encontrado:")
+          for erro in erros_divergencia:
+            st.warning(f"• {erro}")
         else:
           st.session_state.dados_conferencia = {
               "linha": linha_encontrada,
