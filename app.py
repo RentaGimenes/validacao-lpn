@@ -16,7 +16,7 @@ st.set_page_config(
 # --- AUTO-REFRESH A CADA 3 MINUTOS ---
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# --- CONEXÃO COM O GOOGLE SHEETS VIA ARQUIVO LOCAL ---
+# --- CONEXÃO COM O GOOGLE SHEETS VIA STREAMLIT SECRETS ---
 
 
 @st.cache_resource
@@ -25,8 +25,9 @@ def init_connection():
       "https://www.googleapis.com/auth/spreadsheets",
       "https://www.googleapis.com/auth/drive",
   ]
-  # Carrega as credenciais diretamente do arquivo credentials.json na mesma pasta
-  creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
+  # Carrega as credenciais diretamente dos segredos configurados no Streamlit Cloud
+  creds_dict = dict(st.secrets["gcp_service_account"])
+  creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
   client = gspread.authorize(creds)
   return client
 
