@@ -517,13 +517,13 @@ with aba_concluidos:
   else:
     st.info("Nenhum dado encontrado.")
 
-# --- RODAPÉ COM O SONIC BEM PEQUENININHO ---
+# --- RODAPÉ COM O SONIC ---
 st.markdown("---")
 st.markdown(
     """
     <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 10px;">
         <span style="font-size: 11px; color: #777777;">Validação de LPN a todo vapor</span>
-        <img src="https://i.pinimg.com/originals/84/90/f0/8490f0cab98f44a6e905a72cb61b72aa.gif" width="24" style="border-radius: 2px;">
+        <img src="https://i.pinimg.com/originals/84/90/f0/8490f0cab98f44a6e905a72cb61b72aa.gif" width="40" style="border-radius: 2px;">
     </div>
     """,
     unsafe_allow_html=True,
