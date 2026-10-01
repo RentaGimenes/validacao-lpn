@@ -25,8 +25,12 @@ def init_connection():
       "https://www.googleapis.com/auth/spreadsheets",
       "https://www.googleapis.com/auth/drive",
   ]
-  # Carrega as credenciais diretamente dos segredos configurados no Streamlit Cloud
   creds_dict = dict(st.secrets["gcp_service_account"])
+
+  # Blindagem contra erros de quebra de linha na chave privada do JWT
+  if "private_key" in creds_dict:
+    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+
   creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
   client = gspread.authorize(creds)
   return client
