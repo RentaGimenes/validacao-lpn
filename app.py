@@ -183,6 +183,10 @@ if "etapa_validacao" not in st.session_state:
 if "lpns_validadas_por_pedido" not in st.session_state:
     st.session_state.lpns_validadas_por_pedido = {}
 
+# Controle de qual input focar no momento (1, 2 ou 3)
+if "passo_leitura" not in st.session_state:
+    st.session_state.passo_leitura = 1
+
 registos = []
 dados_validos = []
 try:
@@ -293,11 +297,12 @@ with aba_painel:
                     for key_limpar in ["input_bc1", "input_bc2", "input_bc3"]:
                         if key_limpar in st.session_state:
                             del st.session_state[key_limpar]
+                    st.session_state.passo_leitura = 1
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erro: {e}")
             else:
-                st.error("⚠️ Selecione 'Sim' em ambas as confirmações!")
+                st.error("⚠️️ Selecione 'Sim' em ambas as confirmações!")
         st.markdown("---")
 
     col_form, col_img = st.columns(2)
@@ -329,7 +334,19 @@ with aba_painel:
             "📌 Selecione o Número do Pedido", opcoes_pedidos
         )
 
-        # --- LÓGICA DE CALLBACK PARA AVANÇO AUTOMÁTICO E VALIDAÇÃO NO 3º ---
+        # --- FUNÇÕES DE TRANSIÇÃO E VALIDAÇÃO EM CASCATA ---
+        def avanca_para_bc2():
+            if st.session_state.get("input_bc1", "").strip():
+                st.session_state.passo_leitura = 2
+            else:
+                st.warning("⚠️ Preencha o primeiro código.")
+
+        def avanca_para_bc3():
+            if st.session_state.get("input_bc2", "").strip():
+                st.session_state.passo_leitura = 3
+            else:
+                st.warning("⚠️ Preencha o segundo código.")
+
         def executar_validacao_automatica():
             bc1_val = st.session_state.get("input_bc1", "").strip()
             bc2_val = st.session_state.get("input_bc2", "").strip()
@@ -342,7 +359,7 @@ with aba_painel:
                 st.warning("⚠️ Selecione o pedido.")
                 return
             if not bc1_val or not bc2_val or not bc3_val:
-                return  # Aguarda preencher todos os 3
+                return
 
             lpn_lida = processar_codigo_1(bc1_val)
             mat_lido, lote_lido = processar_codigo_2(bc2_val)
@@ -408,25 +425,32 @@ with aba_painel:
                 }
                 st.session_state.etapa_validacao = True
                 
-                # LIMPA OS CAMPOS APÓS VALIDAR COM SUCESSO PARA O PRÓXIMO CICLO
+                # Limpa os campos e reinicia a cascata
                 st.session_state["input_bc1"] = ""
                 st.session_state["input_bc2"] = ""
                 st.session_state["input_bc3"] = ""
+                st.session_state.passo_leitura = 1
 
+        # Renderiza os campos dinamicamente baseado no passo atual (foco automático)
         bc1 = st.text_input(
             "1º Código de Barras (LPN)",
             placeholder="Ex: (00)378911505103650406",
             key="input_bc1",
+            disabled=(st.session_state.passo_leitura != 1),
+            on_change=avanca_para_bc2
         )
         bc2 = st.text_input(
             "2º Código de Barras",
             placeholder="Ex: (90)65684949...",
             key="input_bc2",
+            disabled=(st.session_state.passo_leitura != 2),
+            on_change=avanca_para_bc3
         )
         bc3 = st.text_input(
             "3º Código de Barras",
             placeholder="Ex: (02)77891150103763...",
             key="input_bc3",
+            disabled=(st.session_state.passo_leitura != 3),
             on_change=executar_validacao_automatica
         )
 
