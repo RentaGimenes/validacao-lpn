@@ -1,96 +1,91 @@
 import tkinter as tk
 from tkinter import messagebox
 
-class AppValidacaoCodigos:
+class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("Validação de Códigos de Barras")
+        self.root.title("Validador de Códigos")
         self.root.geometry("420x350")
         self.root.config(bg="#f0f0f0")
 
-        # Título do projeto // Leitura e validação dos lotes
-        titulo = tk.Label(root, text="Leitor e Validador de Lote", font=("Arial", 14, "bold"), bg="#f0f0f0")
+        # Cabeçalho da tela
+        titulo = tk.Label(root, text="Leitor de Código de Barras", font=("Arial", 14, "bold"), bg="#f0f0f0")
         titulo.pack(pady=15)
 
-        # Variáveis para os campos
-        self.var1 = tk.StringVar()
-        self.var2 = tk.StringVar()
-        self.var3 = tk.StringVar()
+        # Variáveis pra guardar o que for lido em cada input
+        self.v1 = tk.StringVar()
+        self.v2 = tk.StringVar()
+        self.v3 = tk.StringVar()
 
-        # Frame para organizar os campos
-        frame_campos = tk.Frame(root, bg="#f0f0f0")
-        frame_campos.pack(pady=5)
+        # Container dos campos
+        box = tk.Frame(root, bg="#f0f0f0")
+        box.pack(pady=5)
 
-        # --- CAMPO 1 ---// primeiro código de barras // o que vai para a planilha
-        tk.Label(frame_campos, text="1º Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
-        self.entry1 = tk.Entry(frame_campos, textvariable=self.var1, font=("Arial", 14), width=25)
-        self.entry1.pack(pady=5)
-        # Vincula a tecla Enter (Return) para ir ao campo 2
-        self.entry1.bind("<Return>", lambda event: self.focar_campo2())
+        # Campo 1
+        tk.Label(box, text="Primeiro Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
+        self.e1 = tk.Entry(box, textvariable=self.v1, font=("Arial", 14), width=25)
+        self.e1.pack(pady=5)
+        self.e1.bind("<Return>", lambda e: self.pula_para_dois())
 
-        # --- CAMPO 2 ---// seg. aqui confirma o material e o lote
-        tk.Label(frame_campos, text="2º Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
-        self.entry2 = tk.Entry(frame_campos, textvariable=self.var2, font=("Arial", 14), width=25)
-        self.entry2.pack(pady=5)
-        # alteração para ir para o proximo automaticamente
-        self.entry2.bind("<Return>", lambda event: self.focar_campo3())
+        # Campo 2
+        tk.Label(box, text="Segundo Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
+        self.e2 = tk.Entry(box, textvariable=self.v2, font=("Arial", 14), width=25)
+        self.e2.pack(pady=5)
+        self.e2.bind("<Return>", lambda e: self.pula_para_tres())
 
-        # --- CAMPO 3 ---// ter. valida a dun e as datas de criação e validade
-        tk.Label(frame_campos, text="3º Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
-        self.entry3 = tk.Entry(frame_campos, textvariable=self.var3, font=("Arial", 14), width=25)
-        self.entry3.pack(pady=5)
-        # alteração para validar direto após o 3 bipe
-        self.entry3.bind("<Return>", lambda event: self.validar_e_limpar())
+        # Campo 3
+        tk.Label(box, text="Terceiro Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
+        self.e3 = tk.Entry(box, textvariable=self.v3, font=("Arial", 14), width=25)
+        self.e3.pack(pady=5)
+        self.e3.bind("<Return>", lambda e: self.processa_validacao())
 
-        # status / Feedback visual 
-        self.lbl_status = tk.Label(root, text="Aguardando leitura do 1º código...", font=("Arial", 10, "italic"), fg="gray", bg="#f0f0f0")
-        self.lbl_status.pack(pady=15)
+        # Texto embaixo pra ver o status atual
+        self.status = tk.Label(root, text="Bipe o primeiro código...", font=("Arial", 10, "italic"), fg="gray", bg="#f0f0f0")
+        self.status.pack(pady=15)
 
-        # configurar o foco inicial no primeiro campo ao abrir o programa
-        self.entry1.focus_set()
+        # Já joga o cursor direto no primeiro input
+        self.e1.focus_set()
 
-    def focar_campo2(self):
-        if self.var1.get().strip():
-            self.entry2.focus_set()
-            self.lbl_status.config(text="Aguardando leitura do 2º código...", fg="blue")
+    def pula_para_dois(self):
+        # Só avança se tiver algo digitado no primeiro
+        if self.v1.get().strip():
+            self.e2.focus_set()
+            self.status.config(text="Aguardando o segundo...", fg="blue")
         else:
-            messagebox.showwarning("Atenção", "O primeiro campo está vazio!")
+            messagebox.showwarning("Opa!", "Preencha o primeiro campo antes.")
 
-    def focar_campo3(self):
-        if self.var2.get().strip():
-            self.entry3.focus_set()
-            self.lbl_status.config(text="Aguardando leitura do 3º código...", fg="blue")
+    def pula_para_tres(self):
+        # Só avança se tiver algo no segundo
+        if self.v2.get().strip():
+            self.e3.focus_set()
+            self.status.config(text="Aguardando o terceiro...", fg="blue")
         else:
-            messagebox.showwarning("Atenção", "O segundo campo está vazio!")
+            messagebox.showwarning("Opa!", "Preencha o segundo campo antes.")
 
-    def validar_e_limpar(self):
-        c1 = self.var1.get().strip()
-        c2 = self.var2.get().strip()
-        c3 = self.var3.get().strip()
+    def processa_validacao(self):
+        # Pega os valores dos três campos
+        c1 = self.v1.get().strip()
+        c2 = self.v2.get().strip()
+        c3 = self.v3.get().strip()
 
         if not c3:
-            messagebox.showwarning("Atenção", "O terceiro campo está vazio!")
+            messagebox.showwarning("Opa!", "Faltou o terceiro código!")
             return
 
-        # ==========================================
-        # iniciando a logica de validação // bater com as infos da planilha
-        # ==========================================
-        print(f"Validando lote -> C1: {c1} | C2: {c2} | C3: {c3}")
+        # TODO: Colocar aqui a lógica de validação ou consulta na planilha depois
+        print(f"Lote lido -> {c1} | {c2} | {c3}")
         
-        # simulando uma validação bem-sucedida:
-        
-        # atualiza o status informando quando da certo
-        self.lbl_status.config(text=f"Último lote validado com sucesso!", fg="green")
+        self.status.config(text="Validado com sucesso!", fg="green")
 
-        # LIMPA OS CAMPOS PARA O PRÓXIMO CICLO // EXTREMAMANTE FUNCIONAL 
-        self.var1.set("")
-        self.var2.set("")
-        self.var3.set("")
+        # Limpa tudo pra reiniciar o ciclo do zero
+        self.v1.set("")
+        self.v2.set("")
+        self.v3.set("")
 
-        # devolve o foco automaticamente para o primeiro campo
-        self.entry1.focus_set()
+        # Devolve o foco pro começo da fila
+        self.e1.focus_set()
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = AppValidacaoCodigos(root)
+    app = App(root)
     root.mainloop()
