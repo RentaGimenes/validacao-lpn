@@ -186,9 +186,8 @@ if "lpns_validadas_por_pedido" not in st.session_state:
 if "passo_leitura" not in st.session_state:
     st.session_state.passo_leitura = 1
 
-# Estados para guardar quais campos tiveram erro (para destacar visualmente)
 if "erro_campo" not in st.session_state:
-    st.session_state.erro_campo = None  # Pode ser 'bc1', 'bc2', 'bc3' ou None
+    st.session_state.erro_campo = None
 
 registos = []
 dados_validos = []
@@ -298,7 +297,6 @@ with aba_painel:
                     if "dados_conferencia" in st.session_state:
                         del st.session_state.dados_conferencia
                     
-                    # Limpa os campos após sucesso completo
                     for key_limpar in ["input_bc1", "input_bc2", "input_bc3"]:
                         if key_limpar in st.session_state:
                             del st.session_state[key_limpar]
@@ -341,7 +339,8 @@ with aba_painel:
         )
 
         def avanca_para_bc2():
-            if st.session_state.get("input_bc1", "").strip():
+            val = st.session_state.get("input_bc1", "").strip()
+            if val:
                 st.session_state.passo_leitura = 2
                 st.session_state.erro_campo = None
             else:
@@ -349,13 +348,15 @@ with aba_painel:
                 st.warning("⚠️ Preencha o primeiro código.")
 
         def avanca_para_bc3():
-            if st.session_state.get("input_bc2", "").strip():
+            val = st.session_state.get("input_bc2", "").strip()
+            if val:
                 st.session_state.passo_leitura = 3
                 st.session_state.erro_campo = None
             else:
                 st.session_state.erro_campo = "bc2"
                 st.warning("⚠️ Preencha o segundo código.")
 
+        # --- FUNÇÃO CENTRAL DE VALIDAÇÃO (Usada tanto pelo Enter do 3º quanto pelo Botão) ---
         def executar_validacao_automatica():
             bc1_val = st.session_state.get("input_bc1", "").strip()
             bc2_val = st.session_state.get("input_bc2", "").strip()
@@ -369,6 +370,7 @@ with aba_painel:
                 return
             if not bc1_val or not bc2_val or not bc3_val:
                 st.session_state.erro_campo = "bc3" if not bc3_val else ("bc2" if not bc2_val else "bc1")
+                st.warning("⚠️ Preencha todos os 3 códigos de barras.")
                 return
 
             lpn_lida = processar_codigo_1(bc1_val)
@@ -440,7 +442,7 @@ with aba_painel:
                 }
                 st.session_state.etapa_validacao = True
 
-        # Aplica destaque visual em bordas de campos com erro se necessário
+        # Estilo de erro dinâmico via CSS
         if st.session_state.erro_campo == "bc1":
             st.markdown(
                 "<style>div[data-baseweb='input']:has(input[aria-label*='1º Código'])"
@@ -519,6 +521,7 @@ with aba_painel:
         else:
             st.warning("⚠️ Imagem `etiqueta_exemplo.jpg` não encontrada.")
 
+    # Garante que o botão execute exatamente a mesma lógica de validação
     if btn_comparar:
         executar_validacao_automatica()
         st.rerun()
@@ -571,18 +574,18 @@ with aba_concluidos:
 
         if concluidos_recentes:
             for r, data_str in concluidos_recentes:
-                    idx_linha = registos.index(r) + 1
-                    lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
-                    material = r[7] if len(r) > 7 else "N/D"
-                    responsavel = r[11] if len(r) > 11 else "N/D"
-                    st.markdown(
-                        f"""
+                idx_linha = registos.index(r) + 1
+                lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
+                material = r[7] if len(r) > 7 else "N/D"
+                responsavel = r[11] if len(r) > 11 else "N/D"
+                st.markdown(
+                    f"""
                         <div style="background-color: #1e1e1e; border: 1px solid #333333; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; color: #ffffff;">
                             <b>📦 LPNs:</b> {lpn_col_b} &nbsp;|&nbsp; <b>Mat:</b> {material} &nbsp;|&nbsp; <b>👤 Resp:</b> {responsavel} &nbsp;|&nbsp; <b>🕒</b> {data_str}
                         </div>
                         """,
-                        unsafe_allow_html=True,
-                    )
+                    unsafe_allow_html=True,
+                )
         else:
             st.info("Nenhum pedido concluído nas últimas 24 horas.")
     else:
