@@ -75,11 +75,9 @@ def formatar_data_aammdd(data_str):
 
 
 def converter_para_data_obj(data_str):
-    """Converte qualquer formato de data (AAMMDD, DD/MM/AAAA, etc) num objeto date para comparação exata."""
     if not data_str:
         return None
     data_str = str(data_str).strip()
-
     digitos = re.sub(r"\D", "", data_str)
     if len(data_str) == 6 and "/" not in data_str and "-" not in data_str:
         try:
@@ -182,12 +180,6 @@ if "etapa_validacao" not in st.session_state:
 
 if "lpns_validadas_por_pedido" not in st.session_state:
     st.session_state.lpns_validadas_por_pedido = {}
-
-if "passo_leitura" not in st.session_state:
-    st.session_state.passo_leitura = 1
-
-if "erro_campo" not in st.session_state:
-    st.session_state.erro_campo = None
 
 registos = []
 dados_validos = []
@@ -297,11 +289,9 @@ with aba_painel:
                     if "dados_conferencia" in st.session_state:
                         del st.session_state.dados_conferencia
                     
-                    for key_limpar in ["input_bc1", "input_bc2", "input_bc3"]:
-                        if key_limpar in st.session_state:
-                            del st.session_state[key_limpar]
-                    st.session_state.passo_leitura = 1
-                    st.session_state.erro_campo = None
+                    for k in ["input_bc1", "input_bc2", "input_bc3"]:
+                        if k in st.session_state:
+                            del st.session_state[k]
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erro: {e}")
@@ -338,26 +328,8 @@ with aba_painel:
             "📌 Selecione o Número do Pedido", opcoes_pedidos
         )
 
-        def avanca_para_bc2():
-            val = st.session_state.get("input_bc1", "").strip()
-            if val:
-                st.session_state.passo_leitura = 2
-                st.session_state.erro_campo = None
-            else:
-                st.session_state.erro_campo = "bc1"
-                st.warning("⚠️ Preencha o primeiro código.")
-
-        def avanca_para_bc3():
-            val = st.session_state.get("input_bc2", "").strip()
-            if val:
-                st.session_state.passo_leitura = 3
-                st.session_state.erro_campo = None
-            else:
-                st.session_state.erro_campo = "bc2"
-                st.warning("⚠️ Preencha o segundo código.")
-
-        # --- FUNÇÃO CENTRAL DE VALIDAÇÃO (Usada tanto pelo Enter do 3º quanto pelo Botão) ---
-        def executar_validacao_automatica():
+        # --- NÚCLEO DE VALIDAÇÃO DIRETA (SEM TRAVAS DE FOCO) ---
+        def executar_validacao():
             bc1_val = st.session_state.get("input_bc1", "").strip()
             bc2_val = st.session_state.get("input_bc2", "").strip()
             bc3_val = st.session_state.get("input_bc3", "").strip()
@@ -369,8 +341,7 @@ with aba_painel:
                 st.warning("⚠️ Selecione o pedido.")
                 return
             if not bc1_val or not bc2_val or not bc3_val:
-                st.session_state.erro_campo = "bc3" if not bc3_val else ("bc2" if not bc2_val else "bc1")
-                st.warning("⚠️ Preencha todos os 3 códigos de barras.")
+                st.warning("⚠️ Preencha os 3 códigos de barras.")
                 return
 
             lpn_lida = processar_codigo_1(bc1_val)
@@ -391,7 +362,6 @@ with aba_painel:
                 return
             elif lpn_lida in lpns_ja_lidas:
                 st.error("❌ Esta LPN já foi validada neste pedido!")
-                st.session_state.erro_campo = "bc1"
                 return
 
             mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
@@ -404,16 +374,13 @@ with aba_painel:
 
             if not mat_lido or mat_lido != mat_planilha:
                 erros_divergencia.append(
-                    f"Material divergente (Lido: {mat_lido} | Planilha:"
-                    f" {mat_planilha})"
+                    f"Material divergente (Lido: {mat_lido} | Planilha: {mat_planilha})"
                 )
-                st.session_state.erro_campo = "bc2"
 
             if lote_planilha and lote_lido and lote_lido != lote_planilha:
                 erros_divergencia.append(
                     f"Lote divergente (Lido: {lote_lido} | Planilha: {lote_planilha})"
                 )
-                st.session_state.erro_campo = "bc2"
 
             if data_planilha_raw and venc_lido:
                 data_obj_planilha = converter_para_data_obj(data_planilha_raw)
@@ -422,17 +389,14 @@ with aba_painel:
                 if data_obj_planilha and data_obj_lida:
                     if data_obj_lida != data_obj_planilha:
                         erros_divergencia.append(
-                            f"Data/Validade divergente (Lida: {venc_lido} | Planilha:"
-                            f" {data_planilha_raw})"
+                            f"Data/Validade divergente (Lida: {venc_lido} | Planilha: {data_planilha_raw})"
                         )
-                        st.session_state.erro_campo = "bc3"
 
             if erros_divergencia:
                 st.error("❌ Erro de divergência encontrado:")
                 for erro in erros_divergencia:
                     st.warning(f"• {erro}")
             else:
-                st.session_state.erro_campo = None
                 st.session_state.dados_conferencia = {
                     "linha": linha_encontrada,
                     "num_pedido": num_pedido_escolhido,
@@ -441,47 +405,24 @@ with aba_painel:
                     "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
                 }
                 st.session_state.etapa_validacao = True
+                st.rerun()
 
-        # Estilo de erro dinâmico via CSS
-        if st.session_state.erro_campo == "bc1":
-            st.markdown(
-                "<style>div[data-baseweb='input']:has(input[aria-label*='1º Código'])"
-                " {border: 2px solid #ff4b4b; border-radius: 4px;}</style>",
-                unsafe_allow_html=True,
-            )
-        elif st.session_state.erro_campo == "bc2":
-            st.markdown(
-                "<style>div[data-baseweb='input']:has(input[aria-label*='2º Código'])"
-                " {border: 2px solid #ff4b4b; border-radius: 4px;}</style>",
-                unsafe_allow_html=True,
-            )
-        elif st.session_state.erro_campo == "bc3":
-            st.markdown(
-                "<style>div[data-baseweb='input']:has(input[aria-label*='3º Código'])"
-                " {border: 2px solid #ff4b4b; border-radius: 4px;}</style>",
-                unsafe_allow_html=True,
-            )
-
+        # Removidos os travamentos de 'disabled' e os 'on_change' conflitantes. 
+        # Agora o operador digita/bipa livremente em qualquer campo e clica direto no botão de validação.
         bc1 = st.text_input(
             "1º Código de Barras (LPN)",
             placeholder="Ex: (00)378911505103650406",
             key="input_bc1",
-            disabled=(st.session_state.passo_leitura != 1),
-            on_change=avanca_para_bc2,
         )
         bc2 = st.text_input(
             "2º Código de Barras",
             placeholder="Ex: (90)65684949...",
             key="input_bc2",
-            disabled=(st.session_state.passo_leitura != 2),
-            on_change=avanca_para_bc3,
         )
         bc3 = st.text_input(
             "3º Código de Barras",
             placeholder="Ex: (02)77891150103763...",
             key="input_bc3",
-            disabled=(st.session_state.passo_leitura != 3),
-            on_change=executar_validacao_automatica,
         )
 
         if pedido_selecionado != "Selecione o pedido...":
@@ -500,9 +441,8 @@ with aba_painel:
 
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
-            btn_comparar = st.button(
-                "Validar Próxima LPN", type="primary", use_container_width=True
-            )
+            if st.button("Validar Próxima LPN", type="primary", use_container_width=True):
+                executar_validacao()
         with col_btn2:
             btn_finalizar_pedido = st.button(
                 "Finalizar Pedido Completo", type="secondary", use_container_width=True
@@ -520,11 +460,6 @@ with aba_painel:
             )
         else:
             st.warning("⚠️ Imagem `etiqueta_exemplo.jpg` não encontrada.")
-
-    # Garante que o botão execute exatamente a mesma lógica de validação
-    if btn_comparar:
-        executar_validacao_automatica()
-        st.rerun()
 
     if btn_finalizar_pedido:
         if pedido_selecionado != "Selecione o pedido...":
