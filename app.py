@@ -1,89 +1,97 @@
-import streamlit as st
+import tkinter as tk
+from tkinter import messagebox
 
-# Configuração básica da página
-st.set_page_config(page_title="Validador de Códigos", page_icon="📦", layout="centered")
+class AppValidacaoCodigos:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Validação de Códigos de Barras")
+        self.root.geometry("420x350")
+        self.root.config(bg="#f0f0f0")
 
-st.title("📦 Leitor e Validador de Lote")
-st.write("Bipe os três códigos em sequência. Ao enviar o terceiro, a validação é feita e os campos são limpos.")
+        # Título da Aplicação
+        titulo = tk.Label(root, text="Leitor e Validador de Lote", font=("Arial", 14, "bold"), bg="#f0f0f0")
+        titulo.pack(pady=15)
 
-# Inicializa as variáveis no estado da sessão do Streamlit se não existirem
-if "etapa" not in st.session_state:
-    st.session_state.etapa = 1
-if "c1" not in st.session_state:
-    st.session_state.c1 = ""
-if "c2" not in st.session_state:
-    st.session_state.c2 = ""
-if "c3" not in st.session_state:
-    st.session_state.c3 = ""
+        # Variáveis para armazenar o texto de cada campo
+        self.var1 = tk.StringVar()
+        self.var2 = tk.StringVar()
+        self.var3 = tk.StringVar()
 
-# Função para avançar ou processar ao pressionar Enter / submeter
-def lidar_envio():
-    # Etapa 1: Preencheu o primeiro código
-    if st.session_state.etapa == 1:
-        if st.session_state.input_atual.strip():
-            st.session_state.c1 = st.session_state.input_atual.strip()
-            st.session_state.etapa = 2
-            st.session_state.input_atual = "" # Limpa o input para o próximo
+        # Frame central para organizar os campos
+        frame_campos = tk.Frame(root, bg="#f0f0f0")
+        frame_campos.pack(pady=5)
+
+        # --- CAMPO 1 ---
+        tk.Label(frame_campos, text="1º Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
+        self.entry1 = tk.Entry(frame_campos, textvariable=self.var1, font=("Arial", 14), width=25)
+        self.entry1.pack(pady=5)
+        # Vincula a tecla Enter (Return) para ir ao campo 2
+        self.entry1.bind("<Return>", lambda event: self.focar_campo2())
+
+        # --- CAMPO 2 ---
+        tk.Label(frame_campos, text="2º Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
+        self.entry2 = tk.Entry(frame_campos, textvariable=self.var2, font=("Arial", 14), width=25)
+        self.entry2.pack(pady=5)
+        # Vincula a tecla Enter para ir ao campo 3
+        self.entry2.bind("<Return>", lambda event: self.focar_campo3())
+
+        # --- CAMPO 3 ---
+        tk.Label(frame_campos, text="3º Código:", font=("Arial", 11), bg="#f0f0f0").pack(anchor="w", pady=2)
+        self.entry3 = tk.Entry(frame_campos, textvariable=self.var3, font=("Arial", 14), width=25)
+        self.entry3.pack(pady=5)
+        # Vincula a tecla Enter para disparar a validação e limpeza automática
+        self.entry3.bind("<Return>", lambda event: self.validar_e_limpar())
+
+        # Status / Feedback visual para o usuário
+        self.lbl_status = tk.Label(root, text="Aguardando leitura do 1º código...", font=("Arial", 10, "italic"), fg="gray", bg="#f0f0f0")
+        self.lbl_status.pack(pady=15)
+
+        # Define o foco inicial no primeiro campo ao abrir o programa
+        self.entry1.focus_set()
+
+    def focar_campo2(self):
+        if self.var1.get().strip():
+            self.entry2.focus_set()
+            self.lbl_status.config(text="Aguardando leitura do 2º código...", fg="blue")
         else:
-            st.warning("Opa! Preencha o primeiro código.")
+            messagebox.showwarning("Atenção", "O primeiro campo está vazio!")
 
-    # Etapa 2: Preencheu o segundo código
-    elif st.session_state.etapa == 2:
-        if st.session_state.input_atual.strip():
-            st.session_state.c2 = st.session_state.input_atual.strip()
-            st.session_state.etapa = 3
-            st.session_state.input_atual = ""
+    def focar_campo3(self):
+        if self.var2.get().strip():
+            self.entry3.focus_set()
+            self.lbl_status.config(text="Aguardando leitura do 3º código...", fg="blue")
         else:
-            st.warning("Opa! Preencha o segundo código.")
+            messagebox.showwarning("Atenção", "O segundo campo está vazio!")
 
-    # Etapa 3: Preencheu o terceiro código (Validação e Limpeza)
-    elif st.session_state.etapa == 3:
-        if st.session_state.input_atual.strip():
-            st.session_state.c3 = st.session_state.input_atual.strip()
-            
-            # Pega todos os códigos do lote atual
-            c1 = st.session_state.c1
-            c2 = st.session_state.c2
-            c3 = st.session_state.c3
+    def validar_e_limpar(self):
+        c1 = self.var1.get().strip()
+        c2 = self.var2.get().strip()
+        c3 = self.var3.get().strip()
 
-            # TODO: Colocar aqui a lógica de validação ou consulta na planilha
-            st.success(f"Lote validado com sucesso! -> {c1} | {c2} | {c3}")
+        if not c3:
+            messagebox.showwarning("Atenção", "O terceiro campo está vazio!")
+            return
 
-            # Reseta tudo para reiniciar o ciclo do zero
-            st.session_state.c1 = ""
-            st.session_state.c2 = ""
-            st.session_state.c3 = ""
-            st.session_state.etapa = 1
-            st.session_state.input_atual = ""
-        else:
-            st.warning("Opa! Faltou o terceiro código.")
+        # ==========================================
+        # AQUI VOCÊ COLOCA A SUA LÓGICA DE VALIDAÇÃO
+        # ==========================================
+        print(f"Validando lote -> C1: {c1} | C2: {c2} | C3: {c3}")
+        
+        # Exemplo simulando uma validação bem-sucedida:
+        # (Se quiser cruzar com planilha ou banco de dados, insira a lógica aqui)
+        
+        # Atualiza o status informando o sucesso
+        self.lbl_status.config(text=f"Último lote validado com sucesso!", fg="green")
 
-# Mostra o status atual do lote que está a ser montado
-if st.session_state.etapa > 1:
-    st.info(f"**1º Código lido:** {st.session_state.c1}")
-if st.session_state.etapa > 2:
-    st.info(f"**2º Código lido:** {st.session_state.c2}")
+        # LIMPA OS CAMPOS PARA O PRÓXIMO CICLO
+        self.var1.set("")
+        self.var2.set("")
+        self.var3.set("")
 
-# Mensagem orientando qual código deve ser bipado agora
-instrucoes = {
-    1: "Bipe o **primeiro** código e aperte Enter:",
-    2: "Bipe o **segundo** código e aperte Enter:",
-    3: "Bipe o **terceiro** código e aperte Enter para validar:"
-}
+        # Retorna o foco automaticamente para o primeiro campo
+        self.entry1.focus_set()
 
-# Campo de texto único dinâmico que recebe a leitura do leitor de código de barras
-st.text_input(
-    instrucoes[st.session_state.etapa], 
-    key="input_atual", 
-    on_change=lidar_envio,
-    autofocus=True
-)
-
-# Botão opcional caso queira reiniciar manualmente
-if st.button("🔄 Reiniciar / Limpar Ciclo"):
-    st.session_state.c1 = ""
-    st.session_state.c2 = ""
-    st.session_state.c3 = ""
-    st.session_state.etapa = 1
-    st.session_state.input_atual = ""
-    st.rerun()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = AppValidacaoCodigos(root)
+    root.mainloop()
