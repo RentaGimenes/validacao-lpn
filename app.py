@@ -183,9 +183,12 @@ if "etapa_validacao" not in st.session_state:
 if "lpns_validadas_por_pedido" not in st.session_state:
     st.session_state.lpns_validadas_por_pedido = {}
 
-# Controle de qual input focar no momento (1, 2 ou 3)
 if "passo_leitura" not in st.session_state:
     st.session_state.passo_leitura = 1
+
+# Estados para guardar quais campos tiveram erro (para destacar visualmente)
+if "erro_campo" not in st.session_state:
+    st.session_state.erro_campo = None  # Pode ser 'bc1', 'bc2', 'bc3' ou None
 
 registos = []
 dados_validos = []
@@ -294,15 +297,18 @@ with aba_painel:
                     st.session_state.etapa_validacao = False
                     if "dados_conferencia" in st.session_state:
                         del st.session_state.dados_conferencia
+                    
+                    # Limpa os campos após sucesso completo
                     for key_limpar in ["input_bc1", "input_bc2", "input_bc3"]:
                         if key_limpar in st.session_state:
                             del st.session_state[key_limpar]
                     st.session_state.passo_leitura = 1
+                    st.session_state.erro_campo = None
                     st.rerun()
                 except Exception as e:
                     st.error(f"Erro: {e}")
             else:
-                st.error("⚠️️ Selecione 'Sim' em ambas as confirmações!")
+                st.error("⚠️ Selecione 'Sim' em ambas as confirmações!")
         st.markdown("---")
 
     col_form, col_img = st.columns(2)
@@ -334,17 +340,20 @@ with aba_painel:
             "📌 Selecione o Número do Pedido", opcoes_pedidos
         )
 
-        # --- FUNÇÕES DE TRANSIÇÃO E VALIDAÇÃO EM CASCATA ---
         def avanca_para_bc2():
             if st.session_state.get("input_bc1", "").strip():
                 st.session_state.passo_leitura = 2
+                st.session_state.erro_campo = None
             else:
+                st.session_state.erro_campo = "bc1"
                 st.warning("⚠️ Preencha o primeiro código.")
 
         def avanca_para_bc3():
             if st.session_state.get("input_bc2", "").strip():
                 st.session_state.passo_leitura = 3
+                st.session_state.erro_campo = None
             else:
+                st.session_state.erro_campo = "bc2"
                 st.warning("⚠️ Preencha o segundo código.")
 
         def executar_validacao_automatica():
@@ -359,6 +368,7 @@ with aba_painel:
                 st.warning("⚠️ Selecione o pedido.")
                 return
             if not bc1_val or not bc2_val or not bc3_val:
+                st.session_state.erro_campo = "bc3" if not bc3_val else ("bc2" if not bc2_val else "bc1")
                 return
 
             lpn_lida = processar_codigo_1(bc1_val)
@@ -379,6 +389,7 @@ with aba_painel:
                 return
             elif lpn_lida in lpns_ja_lidas:
                 st.error("❌ Esta LPN já foi validada neste pedido!")
+                st.session_state.erro_campo = "bc1"
                 return
 
             mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
@@ -394,11 +405,13 @@ with aba_painel:
                     f"Material divergente (Lido: {mat_lido} | Planilha:"
                     f" {mat_planilha})"
                 )
+                st.session_state.erro_campo = "bc2"
 
             if lote_planilha and lote_lido and lote_lido != lote_planilha:
                 erros_divergencia.append(
                     f"Lote divergente (Lido: {lote_lido} | Planilha: {lote_planilha})"
                 )
+                st.session_state.erro_campo = "bc2"
 
             if data_planilha_raw and venc_lido:
                 data_obj_planilha = converter_para_data_obj(data_planilha_raw)
@@ -410,12 +423,14 @@ with aba_painel:
                             f"Data/Validade divergente (Lida: {venc_lido} | Planilha:"
                             f" {data_planilha_raw})"
                         )
+                        st.session_state.erro_campo = "bc3"
 
             if erros_divergencia:
                 st.error("❌ Erro de divergência encontrado:")
                 for erro in erros_divergencia:
                     st.warning(f"• {erro}")
             else:
+                st.session_state.erro_campo = None
                 st.session_state.dados_conferencia = {
                     "linha": linha_encontrada,
                     "num_pedido": num_pedido_escolhido,
@@ -424,34 +439,47 @@ with aba_painel:
                     "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
                 }
                 st.session_state.etapa_validacao = True
-                
-                # Limpa os campos e reinicia a cascata
-                st.session_state["input_bc1"] = ""
-                st.session_state["input_bc2"] = ""
-                st.session_state["input_bc3"] = ""
-                st.session_state.passo_leitura = 1
 
-        # Renderiza os campos dinamicamente baseado no passo atual (foco automático)
+        # Aplica destaque visual em bordas de campos com erro se necessário
+        if st.session_state.erro_campo == "bc1":
+            st.markdown(
+                "<style>div[data-baseweb='input']:has(input[aria-label*='1º Código'])"
+                " {border: 2px solid #ff4b4b; border-radius: 4px;}</style>",
+                unsafe_allow_html=True,
+            )
+        elif st.session_state.erro_campo == "bc2":
+            st.markdown(
+                "<style>div[data-baseweb='input']:has(input[aria-label*='2º Código'])"
+                " {border: 2px solid #ff4b4b; border-radius: 4px;}</style>",
+                unsafe_allow_html=True,
+            )
+        elif st.session_state.erro_campo == "bc3":
+            st.markdown(
+                "<style>div[data-baseweb='input']:has(input[aria-label*='3º Código'])"
+                " {border: 2px solid #ff4b4b; border-radius: 4px;}</style>",
+                unsafe_allow_html=True,
+            )
+
         bc1 = st.text_input(
             "1º Código de Barras (LPN)",
             placeholder="Ex: (00)378911505103650406",
             key="input_bc1",
             disabled=(st.session_state.passo_leitura != 1),
-            on_change=avanca_para_bc2
+            on_change=avanca_para_bc2,
         )
         bc2 = st.text_input(
             "2º Código de Barras",
             placeholder="Ex: (90)65684949...",
             key="input_bc2",
             disabled=(st.session_state.passo_leitura != 2),
-            on_change=avanca_para_bc3
+            on_change=avanca_para_bc3,
         )
         bc3 = st.text_input(
             "3º Código de Barras",
             placeholder="Ex: (02)77891150103763...",
             key="input_bc3",
             disabled=(st.session_state.passo_leitura != 3),
-            on_change=executar_validacao_automatica
+            on_change=executar_validacao_automatica,
         )
 
         if pedido_selecionado != "Selecione o pedido...":
@@ -543,18 +571,18 @@ with aba_concluidos:
 
         if concluidos_recentes:
             for r, data_str in concluidos_recentes:
-                idx_linha = registos.index(r) + 1
-                lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
-                material = r[7] if len(r) > 7 else "N/D"
-                responsavel = r[11] if len(r) > 11 else "N/D"
-                st.markdown(
-                    f"""
+                    idx_linha = registos.index(r) + 1
+                    lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
+                    material = r[7] if len(r) > 7 else "N/D"
+                    responsavel = r[11] if len(r) > 11 else "N/D"
+                    st.markdown(
+                        f"""
                         <div style="background-color: #1e1e1e; border: 1px solid #333333; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; color: #ffffff;">
                             <b>📦 LPNs:</b> {lpn_col_b} &nbsp;|&nbsp; <b>Mat:</b> {material} &nbsp;|&nbsp; <b>👤 Resp:</b> {responsavel} &nbsp;|&nbsp; <b>🕒</b> {data_str}
                         </div>
                         """,
-                    unsafe_allow_html=True,
-                )
+                        unsafe_allow_html=True,
+                    )
         else:
             st.info("Nenhum pedido concluído nas últimas 24 horas.")
     else:
