@@ -41,13 +41,14 @@ count = st_autorefresh(interval=180000, key="datarefresh")
 # ==========================================
 st.markdown("""
     <style>
-    /* Ajusta o espaçamento superior e garante folga no rodapé para ele não sumir */
+    /* Sobe todos os elementos zerando margens superiores do container principal e do header */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0rem !important;
         padding-bottom: 6rem !important;
     }
     header[data-testid="stHeader"] {
         background: transparent;
+        display: none;
     }
     
     /* Animaçãozinha pro alerta de erro piscar na tela */
@@ -255,8 +256,8 @@ def obter_quantidade_total_lpns(r):
     total = obter_quantidade_inteira(r) + len(obter_lista_quebras(r))
     return total if total > 0 else 1
 
-# Título principal
-st.markdown("## 📦 Validação das informações das Lpn")
+# Título principal com margem superior zerada
+st.markdown("<h2 style='margin-top: 0px; padding-top: 0px;'>📦 Validação das informações das Lpn</h2>", unsafe_allow_html=True)
 
 # Inicializa as variáveis na sessão pra não resetar sozinho
 if "etapa_validacao" not in st.session_state:
@@ -304,7 +305,7 @@ if st.session_state.etapa_validacao:
     st.markdown(f"""
     <div style="background-color: #000000; border: 2px solid #f1c40f; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: inline-flex; align-items: center; max-width: 100%;">
         <div style="color: #f1c40f; font-size: 14px; font-weight: bold; line-height: 1.4;">
-            ⚠️️ LPNs MERAMENTE ILUSTRATIVAS<br>
+            ⚠ LPNs MERAMENTE ILUSTRATIVAS<br>
             SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
         </div>
         {sonic_html}
@@ -314,7 +315,8 @@ if st.session_state.etapa_validacao:
     st.markdown(f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>', unsafe_allow_html=True)
     st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
 
-    col_conf1, col_conf2 = st.columns(2)
+    col_conf1, col_conf2, col_btn_quadrado = columns_conf = st.columns([2, 2, 1])
+    
     with col_conf1:
         st.markdown("📌 **A descrição está correta?**")
         resp_desc = st.radio("desc_radio", ["Sim", "Não"], index=None, horizontal=True, label_visibility="collapsed", key="r_desc")
@@ -337,49 +339,67 @@ if st.session_state.etapa_validacao:
             
         if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
 
-    if st.button("Confirmar esta LPN", type="primary", use_container_width=True):
-        if resp_ordem == "Sim" and resp_desc == "Sim":
-            try:
-                linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
-                if num_ped not in st.session_state.lpns_validadas_por_pedido: st.session_state.lpns_validadas_por_pedido[num_ped] = []
-                if lpn_atual not in st.session_state.lpns_validadas_por_pedido[num_ped]: st.session_state.lpns_validadas_por_pedido[num_ped].append(lpn_atual)
+    with col_btn_quadrado:
+        st.markdown("<br><br>", unsafe_allow_html=True) # Alinha verticalmente com a área ao lado da etiqueta
+        st.markdown("""
+            <style>
+            div.stButton > button[kind="primary"] {
+                height: 180px !important;
+                width: 180px !important;
+                border-radius: 12px !important;
+                font-size: 16px !important;
+                font-weight: bold !important;
+                white-space: normal !important;
+                word-wrap: break-word !important;
+                text-align: center !important;
+                line-height: 1.3 !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        if st.button("Confirmar\nesta\nLPN", type="primary"):
+            if resp_ordem == "Sim" and resp_desc == "Sim":
+                try:
+                    linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
+                    if num_ped not in st.session_state.lpns_validadas_por_pedido: st.session_state.lpns_validadas_por_pedido[num_ped] = []
+                    if lpn_atual not in st.session_state.lpns_validadas_por_pedido[num_ped]: st.session_state.lpns_validadas_por_pedido[num_ped].append(lpn_atual)
+                    
+                    lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
+                    if len(lpns_lidas_pedido) >= total_necessario:
+                        fuso_horario = pytz.timezone("America/Sao_Paulo")
+                        hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
+                        todas_lpns_str = ", ".join(lpns_lidas_pedido)
+                        
+                        sheet.update_cell(linha, 12, responsavel_acao)
+                        sheet.update_cell(linha, 13, todas_lpns_str)
+                        sheet.update_cell(linha, 14, hora_atual)
+                        
+                        if num_ped in st.session_state.lpns_validadas_por_pedido: del st.session_state.lpns_validadas_por_pedido[num_ped]
+                        if st.session_state.pedido_selecionado_idx == num_ped: st.session_state.pedido_selecionado_idx = None
+                        
+                        st.session_state.etapa_validacao = False
+                        st.session_state.erro_ativo = None
+                        st.session_state.dados_conferencia = {}
+                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                        st.cache_data.clear()
+                        st.balloons()
+                        st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
+                        st.rerun()
+                    else:
+                        st.success(f"✅ LPN `{lpn_atual}` aceita! Restam {total_necessario - len(lpns_lidas_pedido)} LPN(s).")
+                        st.session_state.etapa_validacao = False
+                        st.session_state.erro_ativo = None
+                        st.session_state.dados_conferencia = {}
+                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro: {e}")
+            else:
+                st.error("⚠ Você precisa selecionar 'Sim' em ambas as confirmações para prosseguir!")
                 
-                lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
-                if len(lpns_lidas_pedido) >= total_necessario:
-                    fuso_horario = pytz.timezone("America/Sao_Paulo")
-                    hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
-                    todas_lpns_str = ", ".join(lpns_lidas_pedido)
-                    
-                    sheet.update_cell(linha, 12, responsavel_acao)
-                    sheet.update_cell(linha, 13, todas_lpns_str)
-                    sheet.update_cell(linha, 14, hora_atual)
-                    
-                    if num_ped in st.session_state.lpns_validadas_por_pedido: del st.session_state.lpns_validadas_por_pedido[num_ped]
-                    if st.session_state.pedido_selecionado_idx == num_ped: st.session_state.pedido_selecionado_idx = None
-                    
-                    st.session_state.etapa_validacao = False
-                    st.session_state.erro_ativo = None
-                    st.session_state.dados_conferencia = {}
-                    st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
-                    st.cache_data.clear()
-                    st.balloons()
-                    st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
-                    st.rerun()
-                else:
-                    st.success(f"✅ LPN `{lpn_atual}` aceita! Restam {total_necessario - len(lpns_lidas_pedido)} LPN(s).")
-                    st.session_state.etapa_validacao = False
-                    st.session_state.erro_ativo = None
-                    st.session_state.dados_conferencia = {}
-                    st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Erro: {e}")
-        else:
-            st.error("⚠ Você precisa selecionar 'Sim' em ambas as confirmações para prosseguir!")
     st.markdown("---")
 
 else:
-    # Apenas 1 aba no topo (Painel Principal e Validação), removendo a aba de concluídos para limpeza total
     st.subheader("📋 Painel de Solicitações Pendentes e Validação")
 
     col_tit_painel, col_btn_att = st.columns([5, 1.5])
