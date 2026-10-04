@@ -169,7 +169,14 @@ def converter_para_data_obj(data_str):
     return None
   data_str = str(data_str).strip()
 
-  # Tratamento específico para formato YY.MM.DD (ex: 26.09.09 vindo do Forms/Planilha)
+  # Formato YYYY-MM-DD
+  if re.match(r"^\d{4}-\d{2}-\d{2}$", data_str):
+    try:
+      return datetime.strptime(data_str, "%Y-%m-%d").date()
+    except Exception:
+      pass
+
+  # Formato com pontos YY.MM.DD (ex: 26.10.01 ou 26.09.09)
   if re.match(r"^\d{2}\.\d{2}\.\d{2}$", data_str):
     try:
       partes = data_str.split(".")
@@ -180,7 +187,7 @@ def converter_para_data_obj(data_str):
     except Exception:
       pass
 
-  # Se vier em formato puro AAMMDD (6 dígitos sem separadores)
+  # Formato puro AAMMDD (6 dígitos sem separadores, vindo do código de barras)
   if len(data_str) == 6 and data_str.isdigit():
     try:
       ano = int("20" + data_str[0:2])
@@ -554,6 +561,7 @@ with aba_painel:
             tocar_som_erro()
             return
 
+      # Validação estrita da Data de Fabricação (Coluna D - Índice 3)
       if data_fabricacao_planilha_raw and fab_lido:
         data_fab_obj_planilha = converter_para_data_obj(
             data_fabricacao_planilha_raw
@@ -569,6 +577,14 @@ with aba_painel:
             }
             tocar_som_erro()
             return
+        else:
+          st.session_state.erro_ativo = "datafab03"
+          st.session_state.detalhes_erro = {
+              "solicitado": str(data_fabricacao_planilha_raw),
+              "lido": str(fab_lido),
+          }
+          tocar_som_erro()
+          return
 
       st.session_state.erro_ativo = None
       st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
