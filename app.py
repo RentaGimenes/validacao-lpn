@@ -31,7 +31,7 @@ IMAGENS = {
     "lpn_duplicada": "lpnduplicada.PNG",
     "sonic_gif": "sonicgif/SONICGIF.gif",
     "att_gif": "att.gif",
-    "validar_btn": "validar.png",  # Imagem personalizada para o botão
+    "validar_btn": "validar.png",
 }
 
 # Atualiza a página a cada 3 minutos
@@ -126,7 +126,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ESTILOS PARA CENTRALIZAÇÃO NA COLUNA DO MEIO (ETIQUETA/GUIA) */
+    /* COLUNA DO MEIO: Ajustada com margem à esquerda para empurrar a LPN mais para a direita */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -134,9 +134,10 @@ st.markdown("""
         justify-content: center;
         width: 100%;
         text-align: center;
+        margin-left: 35px; 
     }
 
-    /* ESTILOS PARA CENTRALIZAÇÃO NA COLUNA DA DIREITA (AVISOS E BOTÃO) */
+    /* COLUNA DA DIREITA: Garante alinhamento central absoluto para todos os elementos internos */
     .container-coluna-direita {
         display: flex;
         flex-direction: column;
@@ -146,7 +147,6 @@ st.markdown("""
         text-align: center;
     }
 
-    /* ESTILO PARA CENTRALIZAR O BOTÃO DE IMAGEM E APLICAR NEON/TRANSPARÊNCIA */
     .container-botao-imagem {
         display: flex;
         justify-content: center;
@@ -154,7 +154,6 @@ st.markdown("""
         width: 100%;
     }
 
-    /* Remove o fundo branco da imagem usando mix-blend-mode ou filtros, arredonda e cria o efeito neon */
     .btn-neon-img {
         display: block;
         border-radius: 16px;
@@ -517,7 +516,7 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
-        # Envolve o conteúdo da coluna do meio num container flex centralizado
+        # Coluna do meio com o modelo da LPN levemente deslocado à direita
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
         
         erro = st.session_state.get("erro_ativo")
@@ -570,7 +569,7 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_acao:
-        # Envolve o conteúdo da coluna da direita num container flex centralizado
+        # Coluna da direita com aviso e botão perfeitamente centralizados
         st.markdown('<div class="container-coluna-direita">', unsafe_allow_html=True)
 
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
@@ -595,7 +594,6 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        # Botão com imagem centralizada (fundo removido por blend mode, cantos arredondados, neon e transparência)
         validar_img_base64 = ""
         if os.path.exists(IMAGENS["validar_btn"]):
             with open(IMAGENS["validar_btn"], "rb") as f:
@@ -730,7 +728,7 @@ else:
                 "linha": linha_encontrada,
                 "num_pedido": num_pedido_escolhido,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolh_ido) > 2 else "",
+                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
