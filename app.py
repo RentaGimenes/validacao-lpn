@@ -27,7 +27,7 @@ IMAGENS = {
     "validacao_qtd": "validação da quantidade.PNG",
     "lpn_duplicada": "lpnduplicada.PNG",
     "sonic_gif": "sonicgif/SONICGIF.gif",
-    "att_gif": "att.gif", # GIF do anel / ícone de atualização
+    "att_gif": "att.gif",
 }
 
 # Configura a pagina do streamlit pra usar o layout largo
@@ -130,7 +130,7 @@ st.markdown("""
         position: fixed !important;
         bottom: 0 !important;
         left: 0 !important;
-        width: 100vw !important;
+        width: 100% !important;
         background-color: #0e1117 !important;
         border-top: 1px solid #333333 !important;
         padding: 8px 0 !important;
@@ -331,52 +331,51 @@ except Exception as e:
 # CONTEÚDO DA ABA PRINCIPAL
 # ==========================================
 with aba_painel:
-    # Linha com o título do painel e o botão compacto de atualizar pedidos
+    # Linha com o título do painel e o botão de atualizar pedidos na mesma altura
     col_tit_painel, col_btn_att = st.columns([5, 1.5])
     with col_tit_painel:
         st.subheader("📋 Painel de Solicitações Pendentes")
     
     with col_btn_att:
-        # Prepara o GIF do anel bem menor para ficar na altura do texto
+        # Prepara o GIF do anel
         gif_html = ""
         if os.path.exists(IMAGENS["att_gif"]):
             with open(IMAGENS["att_gif"], "rb") as f:
                 encoded_att = base64.b64encode(f.read()).decode()
-                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="18px" style="display: inline-block; vertical-align: middle; margin-right: 4px;">'
+                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="16px" style="display: inline-block; vertical-align: middle; margin-right: 4px;">'
         else:
             gif_html = '<span style="font-size: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">🟡</span>'
 
-        html_botao_custom = f"""
-        <div style="float: right; margin-top: 4px; background-color: #000000; border: 1.5px solid #00bfff; border-radius: 8px; padding: 3px 8px; text-align: center; box-shadow: 0 0 6px rgba(0, 191, 255, 0.4); cursor: pointer; display: inline-flex; align-items: center;">
-            {gif_html}
-            <span style="color: #00bfff; font-size: 9px; font-weight: bold; font-family: sans-serif; letter-spacing: 0.3px; line-height: 1;">ATUALIZAR PEDIDOS</span>
-        </div>
-        <div style="clear: both;"></div>
-        """
-        
-        # Botão invisível do Streamlit que captura o clique
-        if st.button("Atualizar Pedidos", key="btn_atualizar_customizado", use_container_width=True, help="Atualizar dados da planilha"):
+        # Criação do botão limpo e totalmente funcional usando st.button estilizado por CSS
+        st.markdown("""
+        <style>
+        /* Estiliza o botão do Streamlit para ter o tamanho exato da marcação */
+        div[data-testid="column"] button[kind="secondary"] {
+            background-color: #000000 !important;
+            border: 1.5px solid #00bfff !important;
+            border-radius: 8px !important;
+            color: #00bfff !important;
+            font-size: 10px !important;
+            font-weight: bold !important;
+            padding: 4px 10px !important;
+            box-shadow: 0 0 6px rgba(0, 191, 255, 0.4) !important;
+            width: auto !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            float: right !important;
+            margin-top: 5px !important;
+        }
+        div[data-testid="column"] button[kind="secondary"]:hover {
+            border-color: #ffffff !important;
+            color: #ffffff !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        if st.button(f"🔄 ATUALIZAR PEDIDOS", key="btn_atualizar_pedidos", help="Clique para atualizar os dados"):
             st.cache_data.clear()
             st.rerun()
-            
-        # Aplica o visual customizado compacto por cima do botão do Streamlit
-        st.markdown(f"""
-        <style>
-        div[data-testid="column"] button[key="btn_atualizar_customizado"] p {{
-            visibility: hidden;
-        }}
-        div[data-testid="column"] button[key="btn_atualizar_customizado"] {{
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            height: auto !important;
-            min-height: 0px !important;
-        }}
-        </style>
-        <div style="margin-top: -46px; pointer-events: none;">
-            {html_botao_custom}
-        </div>
-        """, unsafe_allow_html=True)
 
     mapa_pedidos = {}
     if dados_validos:
