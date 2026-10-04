@@ -9,7 +9,6 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 # --- CONFIGURAÇÃO DOS NOMES DAS IMAGENS ---
-# Atualizado conforme as suas especificações (dataf01, datav02, dun03, material04, guia05, lote06, descricao07, ordem08)
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",  # Imagem de exemplo de LPN
     "conf_desc": (
@@ -37,7 +36,7 @@ IMAGENS = {
 # Configurando a página do app (visual limpo e moderno)
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
 
-# Atualiza a página sozinho a cada 3 minutos pra não deixar o painel desatualizado
+# Atualiza a página sozinho a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
 # CSS personalizado ajustando os cards e tamanhos de fonte
@@ -237,22 +236,22 @@ def processar_codigo_2(barcode):
 def processar_codigo_3(barcode):
   try:
     limpo = barcode.replace("(", "").replace(")", "")
+
+    # Extrai o DUN (padrão antes do 17)
     match_dun = re.search(r"02(\d+?)(?=17|$)", limpo)
     dun = match_dun.group(1) if match_dun else limpo[2:16]
 
+    # Extrai a Data de Vencimento (identificada pelo prefixo 17 + 6 dígitos)
     match_venc = re.search(r"17(\d{6})", limpo)
     vencimento = (
         formatar_data_aammdd(match_venc.group(1)) if match_venc else ""
     )
 
-    digitos_limpos = re.sub(r"\D", "", limpo)
-    data_palete = (
-        formatar_data_aammdd(digitos_limpos[-6:])
-        if len(digitos_limpos) >= 6
-        else ""
-    )
+    # Extrai a Data de Fabricação (identificada pelo prefixo 11 + 6 dígitos)
+    match_fab = re.search(r"11(\d{6})", limpo)
+    fabricacao = formatar_data_aammdd(match_fab.group(1)) if match_fab else ""
 
-    return limpar_texto(dun), limpar_texto(vencimento), limpar_texto(data_palete)
+    return limpar_texto(dun), limpar_texto(vencimento), limpar_texto(fabricacao)
   except Exception:
     return "", "", ""
 
@@ -475,7 +474,7 @@ with aba_painel:
 
       lpn_lida = processar_codigo_1(bc1_val)
       mat_lido, lote_lido = processar_codigo_2(bc2_val)
-      dun_lido, venc_lido, palete_lido = processar_codigo_3(bc3_val)
+      dun_lido, venc_lido, fab_lido = processar_codigo_3(bc3_val)
 
       info_pedido = mapa_pedidos[pedido_selecionado]
       linha_encontrada = info_pedido["linha"]
@@ -541,6 +540,7 @@ with aba_painel:
         tocar_som_erro()
         return
 
+      # Validação da Data de Vencimento (datav02) com o campo extraído via '17'
       if data_planilha_raw and venc_lido:
         data_obj_planilha = converter_para_data_obj(data_planilha_raw)
         data_obj_lida = converter_para_data_obj(venc_lido)
