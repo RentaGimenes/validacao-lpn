@@ -476,13 +476,13 @@ with aba_painel:
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # AVISO AUMENTADO E COM O GIF EXIBIDO COM st.image()
-    col_aviso_txt, col_aviso_img = st.columns([4, 1])
+    # AVISO COM O GIF DO SONIC INTEGRADO DENTRO DA CAIXA AMARELA
+    col_aviso_txt, col_aviso_img = st.columns([5, 1])
     with col_aviso_txt:
       st.markdown(
           """
-            <div style="background-color: #1e1e1e; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-                <span style="color: #f1c40f; font-size: 16px; font-weight: bold; line-height: 1.6;">
+            <div style="background-color: #1e1e1e; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px; height: 100%; display: flex; align-items: center;">
+                <span style="color: #f1c40f; font-size: 15px; font-weight: bold; line-height: 1.5;">
                     ⚠️ LPNS MERAMENTE ILUSTRATIVAS<br>
                     SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
                 </span>
@@ -492,7 +492,9 @@ with aba_painel:
       )
     with col_aviso_img:
       if os.path.exists(IMAGENS["sonic_gif"]):
-        st.image(IMAGENS["sonic_gif"], width=80)
+        st.image(IMAGENS["sonic_gif"], width=75)
+      else:
+        st.warning("GIF não encontrado")
 
     st.markdown(
         f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>',
