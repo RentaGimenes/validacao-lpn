@@ -421,21 +421,19 @@ with aba_painel:
 
               with st.container():
                 st.markdown(
-                    f"""
-                      <div class="{classe_card}" style="{destaque_sel}">
-                          {tag_prioridade_html}
-                          <b>Linha:</b> {linha_pedido}<br>
-                          <b>Cód Mat:</b> {cod_material}<br>
-                          <b>Desc:</b> {desc_resumida}<br>
-                          <b>Data Palete:</b> {data_palete}<br>
-                          <b>Venc:</b> {data_vencimento}<br>
-                          <b>Lote:</b> {lote}<br>
-                          <b>LPN Inteira:</b> {lpn_inteira}<br>
-                          <b>Quebra:</b> {quebra_txt}<br>
-                          <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
-                          <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
-                      </div>
-                      """,
+                    f"""<div class="{classe_card}" style="{destaque_sel}">
+{tag_prioridade_html}
+<b>Linha:</b> {linha_pedido}<br>
+<b>Cód Mat:</b> {cod_material}<br>
+<b>Desc:</b> {desc_resumida}<br>
+<b>Data Palete:</b> {data_palete}<br>
+<b>Venc:</b> {data_vencimento}<br>
+<b>Lote:</b> {lote}<br>
+<b>LPN Inteira:</b> {lpn_inteira}<br>
+<b>Quebra:</b> {quebra_txt}<br>
+<hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
+<span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+</div>""",
                     unsafe_allow_html=True,
                 )
 
