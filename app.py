@@ -329,8 +329,15 @@ if "detalhes_erro" not in st.session_state:
 if "pedido_selecionado_idx" not in st.session_state:
   st.session_state.pedido_selecionado_idx = None
 
-if "limpar_inputs" not in st.session_state:
-  st.session_state.limpar_inputs = False
+# Estados para guardar os valores digitados e não perdê-los
+if "val_nome" not in st.session_state:
+  st.session_state.val_nome = ""
+if "val_bc1" not in st.session_state:
+  st.session_state.val_bc1 = ""
+if "val_bc2" not in st.session_state:
+  st.session_state.val_bc2 = ""
+if "val_bc3" not in st.session_state:
+  st.session_state.val_bc3 = ""
 
 registos = []
 dados_validos = []
@@ -553,7 +560,11 @@ with aba_painel:
             if "dados_conferencia" in st.session_state:
               del st.session_state.dados_conferencia
 
-            st.session_state.limpar_inputs = True
+            # Limpa os campos após finalizar o pedido com sucesso
+            st.session_state.val_bc1 = ""
+            st.session_state.val_bc2 = ""
+            st.session_state.val_bc3 = ""
+
             st.cache_data.clear()
             st.balloons()
             st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
@@ -569,7 +580,10 @@ with aba_painel:
             if "dados_conferencia" in st.session_state:
               del st.session_state.dados_conferencia
 
-            st.session_state.limpar_inputs = True
+            # Limpa os campos para a próxima LPN do mesmo pedido
+            st.session_state.val_bc1 = ""
+            st.session_state.val_bc2 = ""
+            st.session_state.val_bc3 = ""
             st.rerun()
 
         except Exception as e:
@@ -581,7 +595,15 @@ with aba_painel:
   col_form, col_img = st.columns(2)
   with col_form:
     st.subheader("📝 Validar e Dar Baixa na LPN")
-    nome_responsavel = st.text_input("Nome", placeholder="Digite seu nome...")
+
+    # Input do nome conectado ao session_state
+    nome_responsavel = st.text_input(
+        "Nome",
+        value=st.session_state.val_nome,
+        placeholder="Digite seu nome...",
+        key="input_nome_field",
+    )
+    st.session_state.val_nome = nome_responsavel
 
     idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
@@ -593,11 +615,11 @@ with aba_painel:
           f" {linha_s} - Mat: {mat_s})"
       )
     else:
-      # AVISO SOLICITADO CASO NENHUM PEDIDO ESTEJA SELECIONADO
+      # AVISO EM DESTAQUE CASO NENHUM PEDIDO ESTEJA SELECIONADO
       st.markdown(
           """
-            <div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 10px; border-radius: 6px; margin-bottom: 10px; text-align: center;">
-                <span style="color: #ff4b4b; font-size: 14px; font-weight: bold;">
+            <div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
+                <span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">
                     ⚠️ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN
                 </span>
             </div>
@@ -605,16 +627,10 @@ with aba_painel:
           unsafe_allow_html=True,
       )
 
-    if st.session_state.get("limpar_inputs", False):
-      st.session_state["input_bc1"] = ""
-      st.session_state["input_bc2"] = ""
-      st.session_state["input_bc3"] = ""
-      st.session_state.limpar_inputs = False
-
     def executar_validacao():
-      bc1_val = st.session_state.get("input_bc1", "").strip()
-      bc2_val = st.session_state.get("input_bc2", "").strip()
-      bc3_val = st.session_state.get("input_bc3", "").strip()
+      bc1_val = st.session_state.get("val_bc1", "").strip()
+      bc2_val = st.session_state.get("val_bc2", "").strip()
+      bc3_val = st.session_state.get("val_bc3", "").strip()
 
       if not nome_responsavel.strip():
         st.warning("⚠️ Digite o seu nome.")
@@ -766,18 +782,27 @@ with aba_painel:
       st.session_state.etapa_validacao = True
       st.rerun()
 
+    # Inputs de códigos de barras vinculados ao session_state para manterem preenchidos
     bc1 = st.text_input(
         "1º Código de Barras (LPN)",
-        key="input_bc1",
+        value=st.session_state.val_bc1,
+        key="input_bc1_field",
     )
+    st.session_state.val_bc1 = bc1
+
     bc2 = st.text_input(
         "2º Código de Barras",
-        key="input_bc2",
+        value=st.session_state.val_bc2,
+        key="input_bc2_field",
     )
+    st.session_state.val_bc2 = bc2
+
     bc3 = st.text_input(
         "3º Código de Barras",
-        key="input_bc3",
+        value=st.session_state.val_bc3,
+        key="input_bc3_field",
     )
+    st.session_state.val_bc3 = bc3
 
     texto_botao_validar = "Validar LPN"
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
@@ -800,11 +825,6 @@ with aba_painel:
 
     if st.button(texto_botao_validar, type="primary", use_container_width=True):
       executar_validacao()
-      if not st.session_state.get("erro_ativo") and not st.session_state.get(
-          "etapa_validacao"
-      ):
-        st.session_state.limpar_inputs = True
-        st.rerun()
 
   with col_img:
     erro = st.session_state.get("erro_ativo")
