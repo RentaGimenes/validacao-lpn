@@ -133,15 +133,15 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Coluna do meio empurrada ainda mais para a direita */
+    /* Centralizado e puxado para cima (subido) para alinhar perfeitamente */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
         text-align: center;
-        margin-left: 60px;
+        margin-top: -35px;
     }
     .container-coluna-meio img {
         display: block;
@@ -155,6 +155,7 @@ st.markdown("""
         justify-content: center;
         width: 100%;
         text-align: center;
+        margin-top: -10px;
     }
     .container-botao-imagem {
         display: flex;
@@ -518,7 +519,6 @@ else:
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
-    # Ajuste de proporção: [1.2, 1.4, 1.1] traz o bloco do meio (LPN) mais perto da direita
     col_form, col_img, col_acao = st.columns([1.2, 1.4, 1.1], gap="large")
     
     with col_form:
@@ -732,7 +732,7 @@ else:
                 "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
+                "descricao": r_escolhido[2] if len(r_escolh_id := r_escolhido) > 2 else "N/D",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
