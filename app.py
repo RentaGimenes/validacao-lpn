@@ -236,6 +236,17 @@ def limpar_texto(texto):
     if not texto: return ""
     return str(texto).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
 
+def extrair_hora_da_string(texto_coluna):
+    if not texto_coluna: return ""
+    texto_str = str(texto_coluna).strip()
+    # Tenta encontrar padrão de hora (HH:MM:SS ou HH:MM)
+    match_hora = re.search(r'(\d{2}:\d{2}(?::\d{2})?)', texto_str)
+    if match_hora:
+        hora_encontrada = match_hora.group(1)
+        # Se veio com segundos (HH:MM:SS), corta para HH:MM se preferir, ou mantém. Vamos manter limpo.
+        return hora_encontrada
+    return texto_str
+
 def formatar_lote_rigoroso(lote_str):
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
@@ -570,6 +581,10 @@ else:
                             qtd_lidas = len(lpns_ja_lidas)
                             porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
                             
+                            # Extração da hora da solicitação da primeira coluna (índice 0)
+                            hora_solicitacao_bruta = r[0] if len(r) > 0 else ""
+                            hora_solicitacao = extrair_hora_da_string(hora_solicitacao_bruta)
+                            
                             mapa_pedidos[idx_p] = {"num_pedido": idx_p, "linha": linha_real, "registro": r, "total_esperado": total_esperado}
                             
                             with cols[i]:
@@ -589,6 +604,7 @@ else:
 <b>Lote:</b> {lote}<br>
 <b>LPN Inteira:</b> {lpn_inteira}<br>
 <b>Quebra:</b> {quebra_txt}<br>
+<b>Hora Solicitação:</b> {hora_solicitacao}<br>
 <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
 <span style="color: #00bfff;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
 </div>""", unsafe_allow_html=True)
@@ -600,7 +616,7 @@ else:
                         except Exception:
                             continue
             else:
-                st.success("🎉 Todos os pedidos pendentes já foram validados e concluídos!")
+                st.success("Todas os LPNs pendentes já foram validadas e concluídas")
 
         with aba_concluidos:
             if pedidos_concluidos_24h:
