@@ -1,4 +1,3 @@
-import streamlit as st
 from datetime import datetime, timedelta
 import os
 import re
@@ -14,12 +13,9 @@ st.set_page_config(
     page_title="Validação de LPN", page_icon="📦", layout="wide"
 )
 
-# Configuração da página
-st.set_page_config(page_title="Sistema de Conferência e Validação", layout="wide")
 # Atualiza a página sozinho a cada 3 minutos pra não deixar o painel desatualizado
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# Função para tocar o som de erro/alerta (Opção 28)
 # CSS personalizado para o efeito de alerta piscando na tela quando der erro
 st.markdown("""
     <style>
@@ -55,14 +51,13 @@ st.markdown("""
 
 # Função para tocar o som de erro (Opção 28 - Glitch curto)
 def tocar_som_erro():
-sound_html = """
-       <audio autoplay>
-@@ -13,28 +58,636 @@ def tocar_som_erro():
-   """
-st.markdown(sound_html, unsafe_allow_html=True)
+    sound_html = """
+        <audio autoplay>
+            <source src="https://assets.mixkit.co/active_storage/sfx/2575/2575-preview.mp3" type="audio/mpeg">
+        </audio>
+    """
+    st.markdown(sound_html, unsafe_allow_html=True)
 
-# Exemplo de estrutura principal do app
-st.title("📦 Sistema de Conferência por Código de Barras")
 # Conectando com o Google Sheets usando os secrets do Streamlit
 @st.cache_resource
 def init_connection():
@@ -466,15 +461,10 @@ with aba_painel:
                 tocar_som_erro()
                 return
 
-# Inicializando o estado da sessão se necessário
-if "dados" not in st.session_state:
-    st.session_state.dados = []
             if data_planilha_raw and venc_lido:
                 data_obj_planilha = converter_para_data_obj(data_planilha_raw)
                 data_obj_lida = converter_para_data_obj(venc_lido)
 
-# Área de entrada para simular a leitura do código de barras
-codigo_barras = st.text_input("Aguardando leitura do código de barras:", key="input_leitura")
                 if data_obj_planilha and data_obj_lida:
                     if data_obj_lida != data_obj_planilha:
                         st.session_state.erro_ativo = "validade"
@@ -485,11 +475,6 @@ codigo_barras = st.text_input("Aguardando leitura do código de barras:", key="i
                         tocar_som_erro()
                         return
 
-if codigo_barras:
-    # Lógica de exemplo para validação (substitua pela sua lógica real de conferência)
-    if codigo_barras == "123456":
-        st.success(f"Código {codigo_barras} validado com sucesso!")
-        st.session_state.dados.append({"Código": codigo_barras, "Status": "OK"})
             st.session_state.erro_ativo = None
             st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
             st.session_state.dados_conferencia = {
@@ -692,16 +677,7 @@ with aba_concluidos:
                 )
         else:
             st.info("Nenhum pedido concluído nas últimas 24 horas.")
-else:
-        st.error(f"Atenção: Código {codigo_barras} não encontrado ou divergente!")
-        tocar_som_erro() # Toca o som da opção 28 automaticamente aqui
-        st.session_state.dados.append({"Código": codigo_barras, "Status": "Erro"})
-
-# Exibição dos registros recentes
-if st.session_state.dados:
-    st.subheader("Histórico de Leituras")
-    df = pd.DataFrame(st.session_state.dados)
-    st.dataframe(df, use_container_width=True)
+    else:
         st.info("Nenhum dado encontrado.")
 
 # Rodapé com o Sonic correndo
