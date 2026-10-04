@@ -112,11 +112,11 @@ st.markdown("""
         color: #f1c40f;
     }
     
-    /* Caixa escura unificada envolvendo a pergunta e os botões */
+    /* Caixa escura unificada para envolver todo o bloco de confirmação */
     .box-pergunta-container {
         background-color: #1a1a1a;
         border: 1px solid #444;
-        padding: 14px 16px;
+        padding: 16px;
         border-radius: 8px;
         margin-bottom: 15px;
     }
@@ -311,22 +311,24 @@ if st.session_state.etapa_validacao:
     col_conf1, col_conf2, col_btn_quadrado = st.columns([2, 2, 1])
     
     with col_conf1:
-        # Caixa unificada contendo a pergunta e o rádio por dentro
+        # Caixa escura envolvendo todo o conteúdo (pergunta, rádio e imagem)
         st.markdown('<div class="box-pergunta-container">', unsafe_allow_html=True)
         st.markdown("📌 **A descrição está correta?**")
         resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed")
+        
+        if os.path.exists(IMAGENS["conf_desc"]): 
+            st.image(IMAGENS["conf_desc"], width=420)
         st.markdown('</div>', unsafe_allow_html=True)
         
-        if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
-        
     with col_conf2:
-        # Caixa unificada contendo a pergunta e o rádio por dentro
+        # Caixa escura envolvendo todo o conteúdo (pergunta, rádio e imagem)
         st.markdown('<div class="box-pergunta-container">', unsafe_allow_html=True)
         st.markdown("📌 **Você verificou a ordem?**")
         resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed")
-        st.markdown('</div>', unsafe_allow_html=True)
         
-        if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
+        if os.path.exists(IMAGENS["conf_ordem"]): 
+            st.image(IMAGENS["conf_ordem"], width=420)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_btn_quadrado:
         st.markdown("<br><br>", unsafe_allow_html=True)
