@@ -272,14 +272,18 @@ def processar_codigo_2(barcode):
         match_mat = re.search(r'90(\d+?)(?=37|$)', limpo)
         mat = match_mat.group(1) if match_mat else limpo[2:10]
         
-        # Extrai a quantidade
+        # Extrai a quantidade (evita conflito com o 10 da quantidade 104)
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
-        # Ajuste feito aqui: capturando o lote mantendo os zeros à esquerda corretamente
-        match_lote = re.search(r'10([A-Za-z0-9]+)', limpo)
-        lote = match_lote.group(1) if match_lote else ""
-        
+        # Tratamento seguro para extrair o lote sem conflito com o '10' da quantidade
+        partes_lote = limpo.split('10')
+        lote = ""
+        if len(partes_lote) > 2:
+            lote = partes_lote[-1]
+        elif len(partes_lote) == 2:
+            lote = partes_lote[1]
+            
         return limpar_texto(mat), quantidade, lote[:10]
     except Exception:
         return "", 0, ""
