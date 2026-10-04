@@ -342,16 +342,23 @@ if "val_bc2" not in st.session_state:
 if "val_bc3" not in st.session_state:
   st.session_state.val_bc3 = ""
 
-registos = []
-dados_validos = []
-try:
-  registos = sheet.get_all_values()
-  if len(registos) > 1:
-    for r in registos[1:]:
-      if any(str(celula).strip() for celula in r):
-        dados_validos.append(r)
-except Exception as e:
-  st.warning(f"Aviso ao carregar dados da planilha: {e}")
+
+# Função cacheada para carregar dados do Sheets com rapidez
+@st.cache_data(ttl=30)
+def carregar_dados_planilha():
+  try:
+    registos = sheet.get_all_values()
+    dados_validos = []
+    if len(registos) > 1:
+      for r in registos[1:]:
+        if any(str(celula).strip() for celula in r):
+          dados_validos.append(r)
+    return registos, dados_validos
+  except Exception as e:
+    return [], []
+
+
+registos, dados_validos = carregar_dados_planilha()
 
 aba_painel, aba_concluidos = st.tabs(
     ["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"]
@@ -477,13 +484,23 @@ with aba_painel:
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # AVISO COM O GIF DO SONIC EMBUTIDO EM BASE64 DENTRO DA CAIXA AMARELA
-    sonic_path = IMAGENS["sonic_gif"]
-    sonic_html = ""
+    # Tratamento flexível e robusto para encontrar o GIF em diferentes diretórios
+    sonic_paths = [
+        IMAGENS["sonic_gif"],
+        "sonicgif/SONICGIF.gif",
+        "SONICGIF.gif",
+        "sonic.gif",
+    ]
+    sonic_path_encontrado = None
+    for p in sonic_paths:
+      if os.path.exists(p):
+        sonic_path_encontrado = p
+        break
 
-    if os.path.exists(sonic_path):
+    sonic_html = ""
+    if sonic_path_encontrado:
       try:
-        with open(sonic_path, "rb") as f:
+        with open(sonic_path_encontrado, "rb") as f:
           data_bytes = f.read()
           encoded = base64.b64encode(data_bytes).decode()
           sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="75" style="vertical-align: middle;">'
@@ -491,7 +508,7 @@ with aba_painel:
         sonic_html = ""
     else:
       sonic_html = (
-          '<span style="color: #ff4b4b; font-size: 12px;">(GIF não'
+          '<span style="color: #ff4b4b; font-size: 11px;">(GIF não'
           " encontrado)</span>"
       )
 
@@ -619,14 +636,27 @@ with aba_painel:
   with col_form:
     st.subheader("📝 Validar e Dar Baixa na LPN")
 
-    # Input do nome conectado ao session_state
-    nome_responsavel = st.text_input(
+    # Funções de callback para atualizar o session_state instantaneamente (deixando a digitação rápida)
+    def atualizar_nome():
+      st.session_state.val_nome = st.session_state.input_nome_field
+
+    def atualizar_bc1():
+      st.session_state.val_bc1 = st.session_state.input_bc1_field
+
+    def atualizar_bc2():
+      st.session_state.val_bc2 = st.session_state.input_bc2_field
+
+    def atualizar_bc3():
+      st.session_state.val_bc3 = st.session_state.input_bc3_field
+
+    # Input do nome conectado ao session_state com callback
+    st.text_input(
         "Nome",
         value=st.session_state.val_nome,
         placeholder="Digite seu nome...",
         key="input_nome_field",
+        on_change=atualizar_nome,
     )
-    st.session_state.val_nome = nome_responsavel
 
     idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
@@ -638,7 +668,6 @@ with aba_painel:
           f" {linha_s} - Mat: {mat_s})"
       )
     else:
-      # AVISO EM DESTAQUE CASO NENHUM PEDIDO ESTEJA SELECIONADO
       st.markdown(
           """
             <div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
@@ -654,8 +683,9 @@ with aba_painel:
       bc1_val = st.session_state.get("val_bc1", "").strip()
       bc2_val = st.session_state.get("val_bc2", "").strip()
       bc3_val = st.session_state.get("val_bc3", "").strip()
+      nome_responsavel = st.session_state.get("val_nome", "").strip()
 
-      if not nome_responsavel.strip():
+      if not nome_responsavel:
         st.warning("⚠️ Digite o seu nome.")
         return
 
@@ -796,7 +826,7 @@ with aba_painel:
       st.session_state.dados_conferencia = {
           "linha": linha_encontrada,
           "num_pedido": num_pedido_escolhido,
-          "responsavel": nome_responsavel.strip(),
+          "responsavel": nome_responsavel,
           "lpn": lpn_lida,
           "quantidade_extraida": qtd_lida,
           "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
@@ -805,27 +835,25 @@ with aba_painel:
       st.session_state.etapa_validacao = True
       st.rerun()
 
-    # Inputs de códigos de barras vinculados ao session_state para manterem preenchidos
-    bc1 = st.text_input(
+    # Inputs de códigos de barras vinculados com callbacks de alta performance
+    st.text_input(
         "1º Código de Barras (LPN)",
         value=st.session_state.val_bc1,
         key="input_bc1_field",
+        on_change=atualizar_bc1,
     )
-    st.session_state.val_bc1 = bc1
-
-    bc2 = st.text_input(
+    st.text_input(
         "2º Código de Barras",
         value=st.session_state.val_bc2,
         key="input_bc2_field",
+        on_change=atualizar_bc2,
     )
-    st.session_state.val_bc2 = bc2
-
-    bc3 = st.text_input(
+    st.text_input(
         "3º Código de Barras",
         value=st.session_state.val_bc3,
         key="input_bc3_field",
+        on_change=atualizar_bc3,
     )
-    st.session_state.val_bc3 = bc3
 
     texto_botao_validar = "Validar LPN"
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
