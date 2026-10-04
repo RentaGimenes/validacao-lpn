@@ -126,7 +126,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ESTILO PARA ALINHAR O BOTÃO DE IMAGEM TOTALMENTE À ESQUERDA SEM SOBRAS */
+    /* ESTILO PARA ALINHAR O BOTÃO DE IMAGEM TOTALMENTE À ESQUERDA E APLICAR NEON/TRANSPARÊNCIA */
     .container-botao-imagem {
         display: flex;
         justify-content: flex-start;
@@ -134,6 +134,22 @@ st.markdown("""
         margin-left: 0px !important;
         padding-left: 0px !important;
         width: 100%;
+    }
+
+    /* Remove o fundo branco da imagem usando mix-blend-mode ou filtros, arredonda e cria o efeito neon */
+    .btn-neon-img {
+        display: block;
+        border-radius: 16px; /* Pontas arredondadas */
+        /* Mistura a cor para ocultar o fundo branco e deixar transparente */
+        mix-blend-mode: screen; 
+        background: rgba(0, 255, 100, 0.15); /* Fundo levemente transparente */
+        border: 2px solid #00ff66; /* Borda neon */
+        box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4); /* Brilho neon */
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-neon-img:hover {
+        box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6);
+        background: rgba(0, 255, 100, 0.25);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -554,7 +570,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        # Lógica para converter a imagem validar.png num botão clicável alinhado totalmente à esquerda
+        # Botão com imagem convertida (fundo removido por blend mode, cantos arredondados, neon e transparência)
         validar_img_base64 = ""
         if os.path.exists(IMAGENS["validar_btn"]):
             with open(IMAGENS["validar_btn"], "rb") as f:
@@ -562,7 +578,6 @@ else:
 
         st.markdown('<div class="container-botao-imagem">', unsafe_allow_html=True)
         
-        # Criação do botão via formulário HTML GET para disparar o clique no Streamlit
         btn_validar_clicado = False
         if validar_img_base64:
             st.markdown(f"""
@@ -574,17 +589,15 @@ else:
                     cursor: pointer;
                     margin-left: 0px;
                 ">
-                    <img src="data:image/png;base64,{validar_img_base64}" width="240px" style="display: block; border-radius: 8px;">
+                    <img src="data:image/png;base64,{validar_img_base64}" width="240px" class="btn-neon-img">
                 </button>
             </form>
             """, unsafe_allow_html=True)
             
-            # Verifica se o parâmetro de clique da imagem foi acionado
             if "executar_validacao" in st.query_params:
                 st.query_params.clear()
                 btn_validar_clicado = True
         else:
-            # Fallback caso a imagem validar.png não seja encontrada na pasta
             st.warning("⚠️ Imagem 'validar.png' não encontrada na pasta. Usando botão padrão de texto.")
             btn_validar_clicado = st.button("VALIDAR LPN", key="btn_validar_lpn_fallback", use_container_width=True)
 
