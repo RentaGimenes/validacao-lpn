@@ -112,13 +112,16 @@ st.markdown("""
         color: #f1c40f;
     }
     
-    /* Estilo para a caixinha de seleção idêntica à referência */
+    /* Caixa estilizada envolvendo as opções de Sim/Não */
     .box-pergunta {
         background-color: #1a1a1a;
         border: 1px solid #444;
-        padding: 12px;
+        padding: 10px 14px;
         border-radius: 6px;
-        margin-bottom: 10px;
+        margin-top: 8px;
+        margin-bottom: 12px;
+        display: inline-block;
+        min-width: 180px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -311,15 +314,15 @@ if st.session_state.etapa_validacao:
     col_conf1, col_conf2, col_btn_quadrado = st.columns([2, 2, 1])
     
     with col_conf1:
-        st.markdown('<div class="box-pergunta">', unsafe_allow_html=True)
         st.markdown("📌 **A descrição está correta?**")
+        st.markdown('<div class="box-pergunta">', unsafe_allow_html=True)
         resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
         if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
         
     with col_conf2:
-        st.markdown('<div class="box-pergunta">', unsafe_allow_html=True)
         st.markdown("📌 **Você verificou a ordem?**")
+        st.markdown('<div class="box-pergunta">', unsafe_allow_html=True)
         resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed")
         st.markdown('</div>', unsafe_allow_html=True)
         if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
