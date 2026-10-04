@@ -228,32 +228,27 @@ def limpar_texto(texto):
 
 def formatar_lote_rigoroso(lote_str):
     """
-    Garante o formato de lote solicitado: 
-    Adiciona 7 zeros à esquerda de um valor composto por 4 dígitos do ano + 3 dígitos do calendário juliano.
+    Garante o formato de lote da planilha: 
+    Adiciona 7 zeros à esquerda dos dígitos do lote.
     """
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
     if not digitos:
         return ""
-    # Retorna com 7 zeros à esquerda baseando-se estritamente nos dígitos encontrados
-    return "0000000" + digitos
+    miolo = digitos[-7:] if len(digitos) >= 7 else digitos.zfill(7)
+    return "0000000" + miolo
 
 def formatar_lote_lido_rigoroso(lote_str):
     """
-    Extrai o lote da segunda leitura:
-    - Pega os dígitos.
-    - Adiciona 7 zeros iniciais + 4 dígitos do ano + 3 dígitos julianos.
-    - Ignora os 6 últimos dígitos subsequentes.
+    Extrai e formata o lote lido:
+    Pega os últimos 7 dígitos significativos (Ano com 4 + Juliano com 3) e adiciona 7 zeros à esquerda.
     """
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
-    if len(digitos) >= 11:
-        # Pega os 11 caracteres principais (ano + juliano ou o miolo útil) após os identificadores
-        base = digitos[:11]
-        return "0000000" + base
     if not digitos:
         return ""
-    return "0000000" + digitos
+    miolo_lote = digitos[-7:] if len(digitos) >= 7 else digitos.zfill(7)
+    return "0000000" + miolo_lote
 
 def converter_para_data_obj(data_str):
     if not data_str: return None
@@ -301,9 +296,9 @@ def processar_codigo_2(barcode):
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
-        # Extração do lote do código de barras
+        # Extração precisa do lote delimitada pelo identificador '10' até o '17'
         lote = ""
-        match_lote = re.search(r'10([0-9A-Za-z]+)', limpo)
+        match_lote = re.search(r'10(\d+?)(?=17|$)', limpo)
         if match_lote:
             lote = match_lote.group(1).strip()
         else:
@@ -606,7 +601,7 @@ else:
                         except Exception:
                             continue
             else:
-                st.success("🎉 Todos los pedidos pendentes já foram validados e concluídos!")
+                st.success("🎉 Todos os pedidos pendentes já foram validados e concluídos!")
 
         with aba_concluidos:
             if pedidos_concluidos_24h:
@@ -644,7 +639,7 @@ else:
     st.markdown("---")
 
     # ==========================================
-    # FORMULÁRIO DE LEITURA E VALIDAÇÃO (APENAS O LOTE)
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
@@ -738,7 +733,7 @@ else:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Lógica central executada ao clicar em "INICIAR VALIDAÇÃO" (Conferindo apenas o lote rigoroso com 7 zeros e ignorando o final)
+        # Lógica central executada ao clicar em "INICIAR VALIDAÇÃO"
         def executar_validacao_logica():
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -771,7 +766,7 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # VALIDAÇÃO EXCLUSIVA E RIGOROSA DO LOTE (7 ZEROS + ANO + JULIANO, IGNORANDO O FINAL NO LIDO)
+            # VALIDAÇÃO EXCLUSIVA E RIGOROSA DO LOTE
             lote_esperado_bruto = r_escolhido[10] if len(r_escolhido) > 10 else ""
             lote_esperado_formatado = formatar_lote_rigoroso(lote_esperado_bruto)
             
