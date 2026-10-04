@@ -16,7 +16,7 @@ st.set_page_config(
 # Atualiza a página sozinho a cada 3 minutos pra não deixar o painel desatualizado
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado ajustando o card em formato de quadrado compacto, com fonte maior e borda amarela
+# CSS personalizado ajustando o card para ter metade da largura atual
 st.markdown("""
     <style>
     @keyframes piscar {
@@ -49,14 +49,16 @@ st.markdown("""
     .card-pedido {
         background-color: #1e1e1e;
         border: 2px solid #f1c40f;
-        padding: 8px 10px;
+        padding: 6px 8px;
         border-radius: 6px;
-        font-size: 15px;
+        font-size: 14px;
         color: #ffffff;
         margin-bottom: 8px;
         text-align: center;
-        width: 100%;
-        line-height: 1.4;
+        max-width: 220px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.3;
     }
     </style>
 """, unsafe_allow_html=True)
