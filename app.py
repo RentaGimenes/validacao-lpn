@@ -419,22 +419,25 @@ with aba_painel:
                   else ""
               )
 
-              conteudo_cartao = f"""
-              <div class="{classe_card}" style="{destaque_sel}">
-                  {tag_prioridade_html}
-                  <b>Linha:</b> {linha_pedido}<br>
-                  <b>Cód Mat:</b> {cod_material}<br>
-                  <b>Desc:</b> {desc_resumida}<br>
-                  <b>Data Palete:</b> {data_palete}<br>
-                  <b>Venc:</b> {data_vencimento}<br>
-                  <b>Lote:</b> {lote}<br>
-                  <b>LPN Inteira:</b> {lpn_inteira}<br>
-                  <b>Quebra:</b> {quebra_txt}<br>
-                  <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
-                  <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
-              </div>
-              """
-              st.markdown(conteudo_cartao, unsafe_allow_html=True)
+              with st.container():
+                st.markdown(
+                    f"""
+                      <div class="{classe_card}" style="{destaque_sel}">
+                          {tag_prioridade_html}
+                          <b>Linha:</b> {linha_pedido}<br>
+                          <b>Cód Mat:</b> {cod_material}<br>
+                          <b>Desc:</b> {desc_resumida}<br>
+                          <b>Data Palete:</b> {data_palete}<br>
+                          <b>Venc:</b> {data_vencimento}<br>
+                          <b>Lote:</b> {lote}<br>
+                          <b>LPN Inteira:</b> {lpn_inteira}<br>
+                          <b>Quebra:</b> {quebra_txt}<br>
+                          <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
+                          <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+                      </div>
+                      """,
+                    unsafe_allow_html=True,
+                )
 
               label_botao = (
                   "✅ Selecionado"
@@ -594,7 +597,7 @@ with aba_painel:
       idx_sel = st.session_state.get("pedido_selecionado_idx")
       if not idx_sel or idx_sel not in mapa_pedidos:
         st.warning(
-            "⚠️️ Selecione um pedido clicando no cartão correspondente no painel"
+            "⚠ Selecione um pedido clicando no cartão correspondente no painel"
             " acima."
         )
         return
