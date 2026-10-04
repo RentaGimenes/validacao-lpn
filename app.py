@@ -11,9 +11,7 @@ from streamlit_autorefresh import st_autorefresh
 # --- CONFIGURAÇÃO DOS NOMES DAS IMAGENS ---
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
-    "conf_desc": (
-        "descricao material.png"
-    ),  # Nome exato corrigido com o espaço correto
+    "conf_desc": "descricao material.png",
     "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
     "lote06": "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png",
@@ -405,6 +403,8 @@ with aba_painel:
           linha = d["linha"]
           num_ped = d["num_pedido"]
           lpn_atual = d["lpn"]
+          responsavel_acao = d["responsavel"]
+          total_necessario = d["total_esperado"]
 
           if num_ped not in st.session_state.lpns_validadas_por_pedido:
             st.session_state.lpns_validadas_por_pedido[num_ped] = []
@@ -413,19 +413,54 @@ with aba_painel:
                 lpn_atual
             )
 
-          st.success(
-              f"✅ LPN `{lpn_atual}` aceita! Total validadas:"
-              f" {len(st.session_state.lpns_validadas_por_pedido[num_ped])}"
-          )
-          st.session_state.etapa_validacao = False
-          st.session_state.erro_ativo = None
-          if "dados_conferencia" in st.session_state:
-            del st.session_state.dados_conferencia
+          lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
 
-          for k in ["input_bc1", "input_bc2", "input_bc3"]:
-            if k in st.session_state:
-              del st.session_state[k]
-          st.rerun()
+          # VERIFICAÇÃO INTELIGENTE: Se atingiu o total necessário (seja 1 ou a última de várias), finaliza na planilha
+          if len(lpns_lidas_pedido) >= total_necessario:
+            fuso_horario = pytz.timezone("America/Sao_Paulo")
+            hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
+            todas_lpns_str = ", ".join(lpns_lidas_pedido)
+
+            sheet.update_cell(linha, 12, responsavel_acao)
+            sheet.update_cell(linha, 13, todas_lpns_str)
+            sheet.update_cell(linha, 14, hora_atual)
+
+            if num_ped in st.session_state.lpns_validadas_por_pedido:
+              del st.session_state.lpns_validadas_por_pedido[num_ped]
+
+            st.session_state.etapa_validacao = False
+            st.session_state.erro_ativo = None
+            if "dados_conferencia" in st.session_state:
+              del st.session_state.dados_conferencia
+
+            for k in ["input_bc1", "input_bc2", "input_bc3"]:
+              if k in st.session_state:
+                del st.session_state[k]
+
+            st.cache_data.clear()
+            st.balloons()
+            st.success(
+                "🎉 Última LPN confirmada! Pedido concluído com sucesso!"
+            )
+            st.rerun()
+          else:
+            # Caso ainda faltem LPNs para este pedido
+            st.success(
+                f"✅ LPN `{lpn_atual}` aceita! Restam"
+                f" {total_necessario - len(lpns_lidas_pedido)} LPN(s) para este"
+                " pedido."
+            )
+            st.session_state.etapa_validacao = False
+            st.session_state.erro_ativo = None
+            if "dados_conferencia" in st.session_state:
+              del st.session_state.dados_conferencia
+
+            for k in ["input_bc1", "input_bc2", "input_bc3"]:
+              if k in st.session_state:
+                del st.session_state[k]
+
+            st.rerun()
+
         except Exception as e:
           st.error(f"Erro: {e}")
       else:
@@ -596,6 +631,7 @@ with aba_painel:
           "responsavel": nome_responsavel.strip(),
           "lpn": lpn_lida,
           "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
+          "total_esperado": total_necessario,
       }
       st.session_state.etapa_validacao = True
       st.rerun()
@@ -636,16 +672,8 @@ with aba_painel:
       )
       st.progress(porcentagem_calc / 100.0)
 
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-      if st.button(
-          texto_botao_validar, type="primary", use_container_width=True
-      ):
-        executar_validacao()
-    with col_btn2:
-      btn_finalizar_pedido = st.button(
-          "Finalizar Pedido Completo", type="secondary", use_container_width=True
-      )
+    if st.button(texto_botao_validar, type="primary", use_container_width=True):
+      executar_validacao()
 
   with col_img:
     erro = st.session_state.get("erro_ativo")
@@ -808,42 +836,6 @@ with aba_painel:
             f"⚠ Salve a imagem com o nome `{img_guia}` na mesma pasta do"
             " script."
         )
-
-  if btn_finalizar_pedido:
-    if pedido_selecionado != "Selecione o pedido...":
-      info_pedido = mapa_pedidos[pedido_selecionado]
-      num_ped = info_pedido["num_pedido"]
-      linha_encontrada = info_pedido["linha"]
-      total_necessario = info_pedido["total_esperado"]
-      lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido.get(
-          num_ped, []
-      )
-
-      if len(lpns_lidas_pedido) < total_necessario:
-        st.error("⚠ Faltam LPNs a serem validadas.")
-        tocar_som_erro()
-      else:
-        fuso_horario = pytz.timezone("America/Sao_Paulo")
-        hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
-        todas_lpns_str = ", ".join(lpns_lidas_pedido)
-
-        sheet.update_cell(linha_encontrada, 12, nome_responsavel.strip())
-        sheet.update_cell(linha_encontrada, 13, todas_lpns_str)
-        sheet.update_cell(linha_encontrada, 14, hora_atual)
-
-        if num_ped in st.session_state.lpns_validadas_por_pedido:
-          del st.session_state.lpns_validadas_por_pedido[num_ped]
-
-        st.session_state.erro_ativo = None
-        st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
-
-        for k in ["input_bc1", "input_bc2", "input_bc3"]:
-          if k in st.session_state:
-            del st.session_state[k]
-
-        st.balloons()
-        st.success("🎉 Pedido concluído com sucesso!")
-        st.rerun()
 
 with aba_concluidos:
   st.subheader("🕒 Histórico de Pedidos Concluídos (Últimas 24 Horas)")
