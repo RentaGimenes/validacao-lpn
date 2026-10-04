@@ -20,13 +20,14 @@ IMAGENS = {
     "conf_desc": "descricao material.png",
     "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
-    "lote06": "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png" if "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png" else "lote06.png",
+    "lote06": "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png" if os.path.exists("LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png") else "lote06.png",
     "datav02": "DATA DE VENCIMENTO NAO ESTA COMPATIVEL.png",
     "datafab03": "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png",
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
     "validacao_qtd": "validação da quantidade.PNG",
-    "lpn_duplicada": "lpnduplicada.PNG",  # Imagem pro erro de LPN repetida
+    "lpn_duplicada": "lpnduplicada.PNG",
     "sonic_gif": "sonicgif/SONICGIF.gif",
+    "att_gif": "att.gif", # GIF ao lado do botão de atualizar se houver
 }
 
 # Configura a pagina do streamlit pra usar o layout largo
@@ -40,6 +41,15 @@ count = st_autorefresh(interval=180000, key="datarefresh")
 # ==========================================
 st.markdown("""
     <style>
+    /* Remove o espaço em branco excessivo no topo da página do Streamlit */
+    .block-container {
+        padding-top: 1.2rem !important;
+        padding-bottom: 5rem !important;
+    }
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
+    
     @keyframes piscar {
         0% { opacity: 1; }
         50% { opacity: 0.3; }
@@ -113,6 +123,18 @@ st.markdown("""
         font-size: 18px !important;
         font-weight: bold;
         color: #f1c40f;
+    }
+    /* Estilo do botão azul claro personalizado */
+    .stButton > button.btn-atualizar {
+        background-color: #3498db !important;
+        color: white !important;
+        font-weight: bold !important;
+        border-radius: 6px !important;
+        border: none !important;
+        padding: 0.4rem 1rem !important;
+    }
+    .stButton > button.btn-atualizar:hover {
+        background-color: #2980b9 !important;
     }
     </style>
     
@@ -266,7 +288,7 @@ def obter_quantidade_total_lpns(r):
     total = obter_quantidade_inteira(r) + len(obter_lista_quebras(r))
     return total if total > 0 else 1
 
-# Cabeçalho da pagina
+# Cabeçalho da pagina (compactado no topo)
 st.markdown("## 📦 Validação das informações das Lpn")
 
 # Inicializa as variáveis de controle no session_state se não existirem
@@ -286,6 +308,25 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
+# Organização do topo com abas e o botão "ATUALIZAR PEDIDOS" ao lado
+col_abas, col_botao_att = st.columns([5, 1.8])
+
+with col_abas:
+    aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
+
+with col_botao_att:
+    st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
+    subcol_btn, subcol_gif = st.columns([3, 1])
+    with subcol_btn:
+        if st.button("🔄 ATUALIZAR", use_container_width=True, help="Atualizar dados da planilha"):
+            st.cache_data.clear()
+            st.rerun()
+    with subcol_gif:
+        if os.path.exists(IMAGENS["att_gif"]):
+            with open(IMAGENS["att_gif"], "rb") as f:
+                encoded_att = base64.b64encode(f.read()).decode()
+                st.markdown(f'<img src="data:image/gif;base64,{encoded_att}" width="30px" style="margin-top: 5px;">', unsafe_allow_html=True)
+
 # Pega todos os dados da planilha
 registos, dados_validos = [], []
 try:
@@ -298,15 +339,12 @@ except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
 # ==========================================
-# ESTRUTURA DE ABAS PRINCIPAIS
+# CONTEÚDO DA ABA PRINCIPAL
 # ==========================================
-aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
-
 with aba_painel:
     st.subheader("📋 Painel de Solicitações Pendentes")
     mapa_pedidos = {}
     if dados_validos:
-        # Filtra só o que não está concluído
         pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and r[13].strip())]
         if pedidos_pendentes:
             num_colunas = 6
@@ -415,7 +453,6 @@ with aba_painel:
                         hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
                         todas_lpns_str = ", ".join(lpns_lidas_pedido)
                         
-                        # Grava os dados na planilha oficial
                         sheet.update_cell(linha, 12, responsavel_acao)
                         sheet.update_cell(linha, 13, todas_lpns_str)
                         sheet.update_cell(linha, 14, hora_atual)
@@ -444,7 +481,6 @@ with aba_painel:
                 st.error("⚠ Selecione 'Sim' em ambas as confirmações!")
         st.markdown("---")
 
-    # Área de inserção dos códigos de barras e painel de erros lado a lado
     col_form, col_img = st.columns(2)
     with col_form:
         st.subheader("📝 Validar e Dar Baixa na LPN")
@@ -460,7 +496,6 @@ with aba_painel:
         else:
             st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠️ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
 
-        # Função principal que valida os códigos bipados
         def executar_validacao():
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -488,7 +523,6 @@ with aba_painel:
             total_necessario = info_pedido["total_esperado"]
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
 
-            # Validação 1: Checa se a LPN já foi lida antes neste pedido
             if lpn_lida in lpns_ja_lidas:
                 st.session_state.erro_ativo = "lpn_duplicada"
                 st.session_state.detalhes_erro = {"solicitado": "", "lido": f"LPN já validada anteriormente: {lpn_lida}"}
@@ -516,7 +550,6 @@ with aba_painel:
             data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
             dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
-            # Validações de divergência de material, DUN, lote e datas
             if not mat_lido or mat_lido != mat_planilha:
                 st.session_state.erro_ativo = "material04"
                 st.session_state.detalhes_erro = {"solicitado": mat_planilha or "(Vazio)", "lido": mat_lido or "(Não identificado)"}
@@ -545,7 +578,6 @@ with aba_painel:
                     tocar_som_erro()
                     return
 
-            # Se passou em tudo sem erro, vai pra confirmação visual
             st.session_state.erro_ativo = None
             st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
             st.session_state.dados_conferencia = {
@@ -557,7 +589,6 @@ with aba_painel:
             st.session_state.etapa_validacao = True
             st.rerun()
 
-        # Campos de input para os códigos de barras
         bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
         st.session_state.val_bc1 = bc1
         bc2 = st.text_input("2º Código de Barras", value=st.session_state.val_bc2, key="input_bc2_field")
@@ -579,7 +610,6 @@ with aba_painel:
         if st.button(texto_botao_validar, type="primary", use_container_width=True):
             executar_validacao()
 
-    # Coluna da direita: Exibição dos erros com imagens explicativas
     with col_img:
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
@@ -624,7 +654,9 @@ with aba_painel:
             if os.path.exists(IMAGENS["guia05"]): st.image(IMAGENS["guia05"], width=450)
             else: st.warning(f"⚠ Imagem `{IMAGENS['guia05']}` não encontrada.")
 
-# Aba de histórico dos concluídos nas últimas 24h
+# ==========================================
+# CONTEÚDO DA ABA DE CONCLUÍDOS
+# ==========================================
 with aba_concluidos:
     st.subheader("🕒 Histórico de Pedidos Concluídos (Últimas 24 Horas)")
     if dados_validos:
@@ -666,10 +698,9 @@ with aba_concluidos:
         st.info("Nenhum dado encontrado.")
 
 # ==========================================
-# RODAPÉ FIXO COM O GIF DO SONIC (sonicrodape.gif)
+# RODAPÉ FIXO NA BASE DA TELA
 # ==========================================
 caminho_meu_gif = "sonicrodape.gif"
-
 if os.path.exists(caminho_meu_gif):
     with open(caminho_meu_gif, "rb") as f:
         encoded_r = base64.b64encode(f.read()).decode()
@@ -678,7 +709,7 @@ else:
     sonic_rodape_html = '<span style="font-size: 20px;">🦔💨</span>'
 
 st.markdown(f"""
-    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(14, 17, 23, 0.9); border-top: 1px solid #333; padding: 6px 0; text-align: center; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(14, 17, 23, 0.95); border-top: 1px solid #333; padding: 6px 0; text-align: center; z-index: 99999; display: flex; justify-content: center; align-items: center; gap: 10px;">
         {sonic_rodape_html}
         <span style="color: #f1c40f; font-size: 14px; font-weight: bold; font-family: sans-serif;">Validação de Lpn a todo vapor!</span>
     </div>
