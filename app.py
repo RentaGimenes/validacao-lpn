@@ -16,14 +16,14 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Validação de Lpn", page_icon="📦", layout="wide")
 
 # ==========================================
-# MAPEAMENTO DE IMAGENS E ARQUIVOS
+# MAPEAMENTO DE IMAGENS E ARQUIVOS (EXATO DO REPOSITÓRIO)
 # ==========================================
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
     "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
-    "lote06": "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png" if os.path.exists("LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png") else "lote06.png",
+    "lote06": "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png",
     "datav02": "DATA DE VENCIMENTO NAO ESTA COMPATIVEL.png",
     "datafab03": "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png",
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
@@ -276,12 +276,19 @@ def processar_codigo_2(barcode):
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
-        # Extração do lote: ignora os últimos 6 dígitos, pega 7 e remove os zeros à esquerda
+        # Extração do lote: encontra o '10', pega os dígitos seguintes, ignora os 6 últimos dígitos, 
+        # pega os 7 do lote e remove os zeros à esquerda.
         lote = ""
         match_lote = re.search(r'10(\d+)', limpo)
         if match_lote:
             digitos_lote = match_lote.group(1)
-            lote = digitos_lote[:7].lstrip('0')
+            if len(digitos_lote) > 6:
+                # Ignora os 6 últimos dígitos
+                sem_ultimos_6 = digitos_lote[:-6]
+                # Pega os 7 dígitos que vão no lote e remove zeros à esquerda
+                lote = sem_ultimos_6[:7].lstrip('0')
+            else:
+                lote = digitos_lote.lstrip('0')
             
         return limpar_texto(mat), quantidade, lote
     except Exception:
@@ -300,6 +307,12 @@ def processar_codigo_3(barcode):
     except Exception:
         return "", "", ""
 
+def obter_quantidade_inteira(r):
+    try:
+        return int(re.sub(r'\D', '', str(r[4]))) if len(r) > 4 and str(r[4]).strip() else 0
+    except Exception:
+        return 0
+
 def obter_lista_quebras(r):
     try:
         texto_quebras = str(r[6]).strip() if len(r) > 6 else ""
@@ -307,12 +320,6 @@ def obter_lista_quebras(r):
         return [int(re.sub(r'\D', '', p)) for p in texto_quebras.split(',') if p.strip() and re.sub(r'\D', '', p).isdigit()]
     except Exception:
         return []
-
-def obter_quantidade_inteira(r):
-    try:
-        return int(re.sub(r'\D', '', str(r[4]))) if len(r) > 4 and str(r[4]).strip() else 0
-    except Exception:
-        return 0
 
 def obter_quantidade_total_lpns(r):
     total = obter_quantidade_inteira(r) + len(obter_lista_quebras(r))
@@ -359,7 +366,7 @@ if st.session_state.etapa_validacao:
     d = st.session_state.dados_conferencia
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
     
-    sonic_path = IMAGENS["sonic_gif"] if os.path.exists(IMAGENS["sonic_gif"]) else "SONICGIF.gif"
+    sonic_path = IMAGENS["sonic_gif"]
     sonic_html = ""
     if os.path.exists(sonic_path):
         with open(sonic_path, "rb") as f:
@@ -722,8 +729,6 @@ else:
         else:
             if os.path.exists(IMAGENS["guia05"]):
                 st.image(IMAGENS["guia05"], width=450)
-            elif os.path.exists("image_51919d.png"):
-                st.image("image_51919d.png", width=450)
                 
         st.markdown('</div>', unsafe_allow_html=True)
 
