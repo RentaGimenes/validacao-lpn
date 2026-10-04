@@ -9,7 +9,7 @@ import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# Definição dos nomes das imagens que uso na tela
+# Dicionario com os arquivos de imagem usados na interface
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
@@ -27,13 +27,13 @@ IMAGENS = {
     "sonic_gif": "sonicgif/SONICGIF.gif",
 }
 
-# Configuro a página do app aqui
+# Configuração inicial da pagina do aplicativo
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
 
-# Refresh automático a cada 3 minutos
+# Atualiza a pagina automaticamente a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# Meu CSS customizado + Script JavaScript para rolar a página automaticamente
+# Estilos visuais em CSS e o script pra rolar a tela automaticamente
 st.markdown(
     """
     <style>
@@ -114,7 +114,6 @@ st.markdown(
     </style>
     
     <script>
-    // Função para rolar suavemente para a seção de validação assim que o Streamlit atualizar
     function rolarParaValidacao() {
         const elemento = document.getElementById('secao-validacao');
         if (elemento) {
@@ -128,6 +127,7 @@ st.markdown(
 )
 
 
+# Funcao para tocar o som de erro
 def tocar_som_erro():
   sound_html = """
         <audio autoplay>
@@ -137,6 +137,7 @@ def tocar_som_erro():
   st.markdown(sound_html, unsafe_allow_html=True)
 
 
+# Conexao com a planilha do Google Sheets
 @st.cache_resource
 def init_connection():
   scope = [
@@ -162,6 +163,7 @@ except Exception as e:
   st.stop()
 
 
+# Funcao simples para limpar caracteres especiais dos codigos
 def limpar_texto(texto):
   if not texto:
     return ""
@@ -175,6 +177,7 @@ def limpar_texto(texto):
   )
 
 
+# Formata a data para o padrao dia/mes/ano
 def formatar_data_aammdd(data_str):
   if not data_str:
     return data_str
@@ -191,6 +194,7 @@ def formatar_data_aammdd(data_str):
     return data_str
 
 
+# Converte string em objeto de data real
 def converter_para_data_obj(data_str):
   if not data_str:
     return None
@@ -239,10 +243,12 @@ def converter_para_data_obj(data_str):
   return None
 
 
+# Processa o primeiro codigo de barras
 def processar_codigo_1(barcode):
   return barcode.replace("(", "").replace(")", "").strip()
 
 
+# Processa o segundo codigo de barras extraindo material, quantidade e lote
 def processar_codigo_2(barcode):
   try:
     limpo = barcode.replace("(", "").replace(")", "")
@@ -269,6 +275,7 @@ def processar_codigo_2(barcode):
     return "", 0, ""
 
 
+# Processa o terceiro codigo de barras extraindo DUN, vencimento e fabricacao
 def processar_codigo_3(barcode):
   try:
     limpo = barcode.replace("(", "").replace(")", "")
@@ -291,6 +298,7 @@ def processar_codigo_3(barcode):
     return "", "", ""
 
 
+# Pega a lista de quebras cadastradas
 def obter_lista_quebras(r):
   try:
     texto_quebras = str(r[6]).strip() if len(r) > 6 else ""
@@ -306,6 +314,7 @@ def obter_lista_quebras(r):
     return []
 
 
+# Pega a quantidade inteira da linha
 def obter_quantidade_inteira(r):
   try:
     val_inteiros = (
@@ -318,6 +327,7 @@ def obter_quantidade_inteira(r):
   return val_inteiros
 
 
+# Calcula o total de LPNs esperadas
 def obter_quantidade_total_lpns(r):
   val_inteiros = obter_quantidade_inteira(r)
   lista_quebras = obter_lista_quebras(r)
@@ -327,6 +337,7 @@ def obter_quantidade_total_lpns(r):
 
 st.markdown("## 📦 Validação das informações das Lpn")
 
+# Inicializacao das variaveis de estado do aplicativo
 if "etapa_validacao" not in st.session_state:
   st.session_state.etapa_validacao = False
   st.session_state.dados_conferencia = {}
@@ -343,7 +354,6 @@ if "detalhes_erro" not in st.session_state:
 if "pedido_selecionado_idx" not in st.session_state:
   st.session_state.pedido_selecionado_idx = None
 
-# Estados para guardar os valores digitados e não perdê-los
 if "val_nome" not in st.session_state:
   st.session_state.val_nome = ""
 if "val_bc1" not in st.session_state:
@@ -353,6 +363,7 @@ if "val_bc2" not in st.session_state:
 if "val_bc3" not in st.session_state:
   st.session_state.val_bc3 = ""
 
+# Leitura dos registros da planilha
 registos = []
 dados_validos = []
 try:
@@ -364,6 +375,7 @@ try:
 except Exception as e:
   st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
+# Criacao das abas principais
 aba_painel, aba_concluidos = st.tabs(
     ["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"]
 )
@@ -482,16 +494,17 @@ with aba_painel:
 
   st.markdown("---")
 
-  # Âncora HTML para a rolagem automática ir direto para cá
+  # Ancora para a rolagem automatica da pagina
   st.markdown('<div id="secao-validacao"></div>', unsafe_allow_html=True)
 
+  # Etapa de confirmacao visual obrigatoria
   if st.session_state.etapa_validacao:
     st.subheader("🔍 Confirmação Visual Obrigatória")
     d = st.session_state.dados_conferencia
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # Tratamento flexível para encontrar o GIF (busca em diferentes caminhos comuns)
+    # Procura pelo arquivo de GIF do Sonic
     caminhos_possiveis = [
         IMAGENS["sonic_gif"],
         "sonicgif/SONICGIF.gif",
@@ -509,23 +522,25 @@ with aba_painel:
       with open(sonic_path, "rb") as f:
         data_bytes = f.read()
         encoded = base64.b64encode(data_bytes).decode()
-        sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="80px">'
+        sonic_html = (
+            f'<img src="data:image/gif;base64,{encoded}" width="75px"'
+            ' style="vertical-align: middle; margin-left: 15px;">'
+        )
     else:
       sonic_html = (
-          '<span style="color: #ff4b4b; font-size: 11px;">(Coloque'
-          " SONICGIF.gif na pasta)</span>"
+          '<span style="color: #ff4b4b; font-size: 11px; margin-left:'
+          ' 10px;">(GIF não encontrado)</span>'
       )
 
+    # Caixa de aviso ajustada para terminar exatamente apos o GIF usando inline-flex
     st.markdown(
         f"""
-        <div style="background-color: #000000; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-            <div style="color: #f1c40f; font-size: 15px; font-weight: bold; line-height: 1.5; flex-grow: 1;">
+        <div style="background-color: #000000; border: 2px solid #f1c40f; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: inline-flex; align-items: center; max-width: 100%;">
+            <div style="color: #f1c40f; font-size: 14px; font-weight: bold; line-height: 1.4;">
                 ⚠️ LPNs MERAMENTE ILUSTRATIVAS<br>
                 SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
             </div>
-            <div style="width: 100px; height: 80px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding-left: 15px;">
-                {sonic_html}
-            </div>
+            {sonic_html}
         </div>
         """,
         unsafe_allow_html=True,
@@ -604,7 +619,6 @@ with aba_painel:
             if "dados_conferencia" in st.session_state:
               del st.session_state.dados_conferencia
 
-            # Limpa os campos após finalizar o pedido com sucesso
             st.session_state.val_bc1 = ""
             st.session_state.val_bc2 = ""
             st.session_state.val_bc3 = ""
@@ -624,7 +638,6 @@ with aba_painel:
             if "dados_conferencia" in st.session_state:
               del st.session_state.dados_conferencia
 
-            # Limpa os campos para a próxima LPN do mesmo pedido
             st.session_state.val_bc1 = ""
             st.session_state.val_bc2 = ""
             st.session_state.val_bc3 = ""
@@ -640,7 +653,6 @@ with aba_painel:
   with col_form:
     st.subheader("📝 Validar e Dar Baixa na LPN")
 
-    # Input do nome conectado ao session_state
     nome_responsavel = st.text_input(
         "Nome",
         value=st.session_state.val_nome,
@@ -659,7 +671,6 @@ with aba_painel:
           f" {linha_s} - Mat: {mat_s})"
       )
     else:
-      # AVISO EM DESTAQUE CASO NENHUM PEDIDO ESTEJA SELECIONADO
       st.markdown(
           """
             <div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
@@ -671,6 +682,7 @@ with aba_painel:
           unsafe_allow_html=True,
       )
 
+    # Logica de validacao dos codigos de barras lidos
     def executar_validacao():
       bc1_val = st.session_state.get("val_bc1", "").strip()
       bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -826,7 +838,6 @@ with aba_painel:
       st.session_state.etapa_validacao = True
       st.rerun()
 
-    # Inputs de códigos de barras vinculados ao session_state para manterem preenchidos
     bc1 = st.text_input(
         "1º Código de Barras (LPN)",
         value=st.session_state.val_bc1,
@@ -1076,6 +1087,7 @@ with aba_painel:
             f"⚠ Salve a imagem com o nome `{img_guia}` na mesma pasta do script."
         )
 
+# Aba de historico de pedidos concluidos nas ultimas 24h
 with aba_concluidos:
   st.subheader("🕒 Histórico de Pedidos Concluídos (Últimas 24 Horas)")
   if dados_validos:
