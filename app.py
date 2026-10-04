@@ -276,16 +276,13 @@ def processar_codigo_2(barcode):
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
-        # Extração do lote: encontra o '10', pega os dígitos seguintes, ignora os 6 últimos dígitos, 
-        # pega os 7 do lote e remove os zeros à esquerda.
+        # Extração do lote
         lote = ""
         match_lote = re.search(r'10(\d+)', limpo)
         if match_lote:
             digitos_lote = match_lote.group(1)
             if len(digitos_lote) > 6:
-                # Ignora os 6 últimos dígitos
                 sem_ultimos_6 = digitos_lote[:-6]
-                # Pega os 7 dígitos que vão no lote e remove zeros à esquerda
                 lote = sem_ultimos_6[:7].lstrip('0')
             else:
                 lote = digitos_lote.lstrip('0')
@@ -797,8 +794,19 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            if fab_lido:
-                pass
+            # Validação rigorosa da Data do Palete (Coluna D / Índice 3)
+            data_palete_esperada_str = r_escolhido[3] if len(r_escolhido) > 3 else ""
+            data_palete_obj = converter_para_data_obj(data_palete_esperada_str)
+            if fab_lido and data_palete_obj:
+                data_lida_fab = converter_para_data_obj(fab_lido)
+                if data_lida_fab and data_lida_fab != data_palete_obj:
+                    st.session_state.erro_ativo = "datafab03"
+                    st.session_state.detalhes_erro = {
+                        "solicitado": data_palete_obj.strftime("%d/%m/%Y"), 
+                        "lido": data_lida_fab.strftime("%d/%m/%Y")
+                    }
+                    tocar_som_erro()
+                    st.rerun()
 
             st.session_state.erro_ativo = None
             st.session_state.etapa_validacao = True
