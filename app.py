@@ -120,8 +120,9 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Estilo preciso para o botão de Validar LPN (Retangular deitado igual ao modelo) */
-    div.stButton > button {
+    /* Estilo exclusivo e preciso apenas para o botão de Validar LPN (Retangular deitado) */
+    div.stButton > button[kind="secondary"].botao-validar-custom,
+    div.stButton > button.botao-validar-custom {
         background-color: #1b2421 !important;
         border: 2px solid #52b788 !important;
         color: #52b788 !important;
@@ -133,7 +134,8 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(82, 183, 136, 0.3) !important;
         transition: all 0.2s ease-in-out;
     }
-    div.stButton > button:hover {
+    div.stButton > button[kind="secondary"].botao-validar-custom:hover,
+    div.stButton > button.botao-validar-custom:hover {
         background-color: #2d6a4f !important;
         color: #ffffff !important;
         border-color: #74c69d !important;
@@ -584,7 +586,8 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
 
-        if st.button(texto_botao_validar, key="btn_validar_lpn_custom"):
+        # Aplicada a classe customizada estritamente a este botão
+        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada"):
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
             bc3_val = st.session_state.get("val_bc3", "").strip()
