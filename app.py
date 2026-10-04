@@ -26,7 +26,7 @@ st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wi
 # Atualiza a página sozinho a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado
+# CSS personalizado (com suporte à classe de prioridade vermelha)
 st.markdown(
     """
     <style>
@@ -67,6 +67,18 @@ st.markdown(
         margin-bottom: 8px;
         text-align: left;
         line-height: 1.4;
+    }
+    .card-pedido-prioridade {
+        background-color: #2b1616;
+        border: 2px solid #ff4b4b;
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #ffffff;
+        margin-bottom: 8px;
+        text-align: left;
+        line-height: 1.4;
+        box-shadow: 0 0 8px rgba(255, 75, 75, 0.6);
     }
     .card-concluido {
         background-color: #1e1e1e;
@@ -279,6 +291,25 @@ def obter_quantidade_total_lpns(r):
   return total if total > 0 else 1
 
 
+# Função auxiliar para converter a string de data/hora da planilha num objeto datetime com fuso
+def converter_horario_solicitacao(data_str):
+  if not data_str:
+    return None
+  try:
+    fuso_horario = pytz.timezone("America/Sao_Paulo")
+    data_limpa = re.sub(r"\s*\(.*?\)", "", str(data_str)).strip()
+    dt = datetime.strptime(data_limpa, "%d/%m/%Y %H:%M:%S")
+    return fuso_horario.localize(dt)
+  except Exception:
+    try:
+      # Tenta formato alternativo caso venha apenas como data ou outro padrão
+      fuso_horario = pytz.timezone("America/Sao_Paulo")
+      dt = datetime.strptime(data_str.strip(), "%Y-%m-%d %H:%M:%S")
+      return fuso_horario.localize(dt)
+    except Exception:
+      return None
+
+
 st.markdown("## 📦 Validação das informações das Lpn")
 
 if "etapa_validacao" not in st.session_state:
@@ -314,36 +345,63 @@ aba_painel, aba_concluidos = st.tabs(
 
 with aba_painel:
   st.subheader("📋 Painel de Solicitações Pendentes (Clique no cartão para selecionar)")
-  
+
   mapa_pedidos = {}
   if dados_validos:
     pedidos_pendentes = [
         r for r in dados_validos if not (len(r) > 13 and r[13].strip())
     ]
     if pedidos_pendentes:
+      total_pendentes = len(pedidos_pendentes)
+      fuso_horario = pytz.timezone("America/Sao_Paulo")
+      agora = datetime.now(fuso_horario)
+
       num_colunas = 6
       linhas_cards = [
           pedidos_pendentes[i : i + num_colunas]
           for i in range(0, len(pedidos_pendentes), num_colunas)
       ]
+      
       for bloco in linhas_cards:
         cols = st.columns(num_colunas)
         for i, r in enumerate(bloco):
           idx_p = dados_validos.index(r) + 1
           linha_real = registos.index(r) + 1
-          
+
           try:
             linha_pedido = r[1] if len(r) > 1 else ""
             cod_material = r[7] if len(r) > 7 else ""
-            
+
             desc_completa = r[2] if len(r) > 2 else ""
-            desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
+            desc_resumida = (
+                (desc_completa[:22] + "...")
+                if len(desc_completa) > 22
+                else desc_completa
+            )
 
             data_palete = r[3] if len(r) > 3 else ""
             data_vencimento = r[9] if len(r) > 9 else ""
             lote = r[10] if len(r) > 10 else ""
             lpn_inteira = r[4] if len(r) > 4 else "0"
             quebra_txt = r[6] if len(r) > 6 else "0"
+            
+            # Assumindo que a coluna de horário de criação/solicitação está na coluna 15 (índice 14) 
+            # ou ajustado conforme a sua estrutura. Caso o horário venha de outra coluna, ajuste aqui:
+            horario_str = r[14] if len(r) > 14 else ""
+            dt_criacao = converter_horario_solicitacao(horario_str)
+
+            # Cálculo de tempo de espera se houver horário registado
+            passou_de_1h30 = False
+            if dt_criacao:
+              tempo_decorrido = agora - dt_criacao
+              if tempo_decorrido > timedelta(hours=1, minutes=30):
+                passou_de_1h30 = True
+
+            # REGRAS DE PRIORIDADE:
+            # 1. Se este for o primeiro pedido da lista E o total de pendentes for >= 5
+            # OU 2. Se o pedido ultrapassou 1h30 de espera
+            is_primeiro = (r == pedidos_pendentes[0])
+            e_prioridade = (is_primeiro and total_pendentes >= 5) or passou_de_1h30
 
             total_esperado = obter_quantidade_total_lpns(r)
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(idx_p, [])
@@ -358,13 +416,26 @@ with aba_painel:
             }
 
             with cols[i]:
-              is_selecionado = (st.session_state.pedido_selecionado_idx == idx_p)
-              borda_cor = "#2ecc71" if is_selecionado else "#f1c40f"
-              destaque_sel = "box-shadow: 0 0 10px #2ecc71;" if is_selecionado else ""
+              is_selecionado = st.session_state.pedido_selecionado_idx == idx_p
+              
+              # Define o estilo do card com base na prioridade e seleção
+              if is_selecionado:
+                borda_cor = "#2ecc71"
+                destaque_sel = "box-shadow: 0 0 10px #2ecc71; border: 2px solid #2ecc71;"
+                classe_card = "card-pedido"
+              elif e_prioridade:
+                classe_card = "card-pedido-prioridade"
+                destaque_sel = ""
+              else:
+                classe_card = "card-pedido"
+                destaque_sel = ""
+
+              tag_prioridade_html = '<span style="color: #ff4b4b; font-weight: bold;">🔴 URGENTE / PRIORIDADE</span><br>' if e_prioridade else ''
 
               st.markdown(
                   f"""
-                  <div class="card-pedido" style="border: 2px solid {borda_cor}; {destaque_sel}">
+                  <div class="{classe_card}" style="{destaque_sel}">
+                      {tag_prioridade_html}
                       <b>Linha:</b> {linha_pedido}<br>
                       <b>Cód Mat:</b> {cod_material}<br>
                       <b>Desc:</b> {desc_resumida}<br>
@@ -379,9 +450,15 @@ with aba_painel:
                   """,
                   unsafe_allow_html=True,
               )
-              
-              label_botao = f"✅ Selecionado" if is_selecionado else f"Selecionar Pedido {idx_p}"
-              if st.button(label_botao, key=f"btn_sel_{idx_p}", use_container_width=True):
+
+              label_botao = (
+                  f"✅ Selecionado"
+                  if is_selecionado
+                  else f"Selecionar Pedido {idx_p}"
+              )
+              if st.button(
+                  label_botao, key=f"btn_sel_{idx_p}", use_container_width=True
+              ):
                 st.session_state.pedido_selecionado_idx = idx_p
                 st.rerun()
 
@@ -464,7 +541,7 @@ with aba_painel:
 
             if num_ped in st.session_state.lpns_validadas_por_pedido:
               del st.session_state.lpns_validadas_por_pedido[num_ped]
-            
+
             if st.session_state.pedido_selecionado_idx == num_ped:
               st.session_state.pedido_selecionado_idx = None
 
@@ -484,7 +561,8 @@ with aba_painel:
           else:
             st.success(
                 f"✅ LPN `{lpn_atual}` aceita! Restam"
-                f" {total_necessario - len(lpns_lidas_pedido)} LPN(s) para este pedido."
+                f" {total_necessario - len(lpns_lidas_pedido)} LPN(s) para este"
+                " pedido."
             )
             st.session_state.etapa_validacao = False
             st.session_state.erro_ativo = None
@@ -508,14 +586,14 @@ with aba_painel:
     st.subheader("📝 Validar e Dar Baixa na LPN")
     nome_responsavel = st.text_input("Nome", placeholder="Digite seu nome...")
 
-    # Exibindo o pedido atualmente selecionado de forma limpa (sem o aviso quando vazio)
     idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
       p_sel = mapa_pedidos[idx_sel_atual]
       mat_s = p_sel["registro"][2] if len(p_sel["registro"]) > 2 else "N/D"
       linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
       st.markdown(
-          f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})"
+          f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha:"
+          f" {linha_s} - Mat: {mat_s})"
       )
 
     def executar_validacao():
@@ -526,10 +604,13 @@ with aba_painel:
       if not nome_responsavel.strip():
         st.warning("⚠️ Digite o seu nome.")
         return
-      
+
       idx_sel = st.session_state.get("pedido_selecionado_idx")
       if not idx_sel or idx_sel not in mapa_pedidos:
-        st.warning("⚠️ Selecione um pedido clicando no cartão correspondente no painel acima.")
+        st.warning(
+            "⚠️ Selecione um pedido clicando no cartão correspondente no painel"
+            " acima."
+        )
         return
 
       if not bc1_val or not bc2_val or not bc3_val:
@@ -546,7 +627,9 @@ with aba_painel:
       r_escolhido = info_pedido["registro"]
       total_necessario = info_pedido["total_esperado"]
 
-      lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
+      lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
+          num_pedido_escolhido, []
+      )
       if len(lpns_ja_lidas) >= total_necessario:
         st.session_state.erro_ativo = "limite"
         st.session_state.detalhes_erro = {
@@ -565,7 +648,9 @@ with aba_painel:
         return
 
       mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
-      lote_planilha = limpar_texto(r_escolhido[10] if len(r_escolhido) > 10 else "")
+      lote_planilha = limpar_texto(
+          r_escolhido[10] if len(r_escolhido) > 10 else ""
+      )
       data_vencimento_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
       data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
       dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
@@ -612,7 +697,9 @@ with aba_painel:
             return
 
       if data_fabricacao_planilha_raw and fab_lido:
-        data_fab_obj_planilha = converter_para_data_obj(data_fabricacao_planilha_raw)
+        data_fab_obj_planilha = converter_para_data_obj(
+            data_fabricacao_planilha_raw
+        )
         data_fab_obj_lida = converter_para_data_obj(fab_lido)
 
         if data_fab_obj_planilha and data_fab_obj_lida:
@@ -665,7 +752,9 @@ with aba_painel:
     texto_botao_validar = "Validar LPN"
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
       p_info = mapa_pedidos[idx_sel_atual]
-      lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(p_info["num_pedido"], [])
+      lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(
+          p_info["num_pedido"], []
+      )
       tot_esperado_pedido = p_info["total_esperado"]
       qtd_lidas = len(lidas_atualmente)
 
@@ -674,7 +763,8 @@ with aba_painel:
 
       porcentagem_calc = min(int((qtd_lidas / tot_esperado_pedido) * 100), 100)
       st.markdown(
-          f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs ({porcentagem_calc}%)"
+          f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs"
+          f" ({porcentagem_calc}%)"
       )
       st.progress(porcentagem_calc / 100.0)
 
@@ -833,7 +923,9 @@ with aba_painel:
       if os.path.exists(img_guia):
         st.image(img_guia, width=450)
       else:
-        st.warning(f"⚠ Salve a imagem com o nome `{img_guia}` na mesma pasta do script.")
+        st.warning(
+            f"⚠ Salve a imagem com o nome `{img_guia}` na mesma pasta do script."
+        )
 
 with aba_concluidos:
   st.subheader("🕒 Histórico de Pedidos Concluídos (Últimas 24 Horas)")
@@ -864,9 +956,13 @@ with aba_concluidos:
         for i, (r, data_str) in enumerate(bloco):
           linha_pedido = r[1] if len(r) > 1 else ""
           cod_material = r[7] if len(r) > 7 else ""
-          
+
           desc_completa_c = r[2] if len(r) > 2 else ""
-          desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
+          desc_resumida_c = (
+              (desc_completa_c[:22] + "...")
+              if len(desc_completa_c) > 22
+              else desc_completa_c
+          )
 
           data_palete = r[3] if len(r) > 3 else ""
           data_vencimento = r[9] if len(r) > 9 else ""
