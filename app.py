@@ -228,7 +228,6 @@ def limpar_texto(texto):
 
 def limpar_lote(lote_str):
     if not lote_str: return ""
-    # Remove pontos, barras, hífens, espaços e retira zeros à esquerda para comparação exata
     limpo = str(lote_str).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
     return limpo.lstrip('0')
 
@@ -273,16 +272,10 @@ def processar_codigo_1(barcode):
 def processar_codigo_2(barcode):
     try:
         limpo = barcode.replace("(", "").replace(")", "")
-        
-        # Extrai o material
         match_mat = re.search(r'90(\d+?)(?=37|$)', limpo)
         mat = match_mat.group(1) if match_mat else limpo[2:10]
-        
-        # Extrai a quantidade
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
-        
-        # Extração do lote
         lote = ""
         match_lote = re.search(r'10(\d+)', limpo)
         if match_lote:
@@ -292,7 +285,6 @@ def processar_codigo_2(barcode):
                 lote = sem_ultimos_6[:7].lstrip('0')
             else:
                 lote = digitos_lote.lstrip('0')
-            
         return limpar_texto(mat), quantidade, lote
     except Exception:
         return "", 0, ""
@@ -679,9 +671,23 @@ else:
             """, unsafe_allow_html=True)
 
         st.markdown('<div class="container-botao-centralizado">', unsafe_allow_html=True)
-        btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
-        st.markdown('</div>', unsafe_allow_html=True)
         
+        erro = st.session_state.get("erro_ativo")
+        
+        # Se houver erro, divide o espaço central em duas colunas idênticas para os dois botões ficarem lado a lado com o mesmo tamanho
+        if erro is not None:
+            col_b1, col_b2 = st.columns(2, gap="small")
+            with col_b1:
+                btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
+            with col_b2:
+                btn_tentar_novamente_clicado = st.button("🔄 Tentar Novamente", key="btn_tentar_novamente_erro")
+                if btn_tentar_novamente_clicado:
+                    st.session_state.erro_ativo = None
+                    st.rerun()
+        else:
+            btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
+            
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_dir:
@@ -732,13 +738,6 @@ else:
         else:
             if os.path.exists(IMAGENS["guia05"]):
                 st.image(IMAGENS["guia05"], width=450)
-                
-        # Novo botão exclusivo para validar novamente após corrigir os dados
-        if erro is not None:
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("🔄 Tentar Novamente / Validar Corrigido", key="btn_tentar_novamente_erro", use_container_width=True):
-                st.session_state.erro_ativo = None
-                st.rerun()
 
         st.markdown('</div>', unsafe_allow_html=True)
 
