@@ -129,7 +129,7 @@ st.markdown("""
         border-radius: 12px !important;
         font-size: 18px !important;
         font-weight: bold !important;
-        height: 100px !important;
+        height: 80px !important;
         width: 100% !important;
         box-shadow: 0 4px 12px rgba(82, 183, 136, 0.3) !important;
         transition: all 0.2s ease-in-out;
@@ -496,23 +496,14 @@ else:
 
     st.markdown("---")
 
-    col_form, col_img, col_acao = st.columns([1.5, 1.5, 1])
+    # Layout de 3 Colunas: Esquerda (Formulário), Meio (Imagem/Guia), Direita (Alerta de seleção + Botão Validar)
+    col_form, col_img, col_acao = st.columns([1.5, 1.5, 1.2])
     
     with col_form:
         st.subheader("📝 Validar e Dar Baixa na LPN")
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
         st.session_state.val_nome = nome_responsavel
         
-        # O ALERTA DE SELEÇÃO DE PEDIDO VOLTOU CORRETAMENTE PARA A COLUNA ESQUERDA
-        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
-        if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
-            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
-        else:
-            p_sel = mapa_pedidos[idx_sel_atual]
-            mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
-            linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
-            st.markdown(f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})")
-
         bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
         st.session_state.val_bc1 = bc1
         bc2 = st.text_input("2º Código de Barras", value=st.session_state.val_bc2, key="input_bc2_field")
@@ -520,6 +511,7 @@ else:
         bc3 = st.text_input("3º Código de Barras", value=st.session_state.val_bc3, key="input_bc3_field")
         st.session_state.val_bc3 = bc3
 
+        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if idx_sel_atual and idx_sel_atual in mapa_pedidos:
             p_info = mapa_pedidos[idx_sel_atual]
             lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(p_info["num_pedido"], [])
@@ -572,14 +564,22 @@ else:
             st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validas.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
-            st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             if os.path.exists(IMAGENS["guia05"]):
                 st.image(IMAGENS["guia05"], width=330)
 
     with col_acao:
+        # ALERTA DE SELEÇÃO DE PEDIDO AGORA POSICIONADO CORRETAMENTE NA COLUNA DA DIREITA
+        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
+        if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
+            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 14px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+        else:
+            p_sel = mapa_pedidos[idx_sel_atual]
+            mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
+            linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
+            st.markdown(f"""<div style="background-color: #152c1a; border: 2px solid #52b788; padding: 14px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><span style="color: #52b788; font-size: 14px; font-weight: bold;">🎯 Pedido Selecionado:</span><br><span style="color: #ffffff; font-size: 13px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span></div>""", unsafe_allow_html=True)
+
         # BOTÃO VERDE EXCLUSIVO NA COLUNA DA DIREITA
-        st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)
-        
         texto_botao_validar = "VALIDAR LPN"
         idx_sel_atual_btn = st.session_state.get("pedido_selecionado_idx")
         if idx_sel_atual_btn and idx_sel_atual_btn in mapa_pedidos:
