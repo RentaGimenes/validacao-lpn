@@ -21,6 +21,7 @@ IMAGENS = {
     "datafab03": "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png",
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
     "validacao_qtd": "validação da quantidade.PNG",
+    "sonic_gif": "SONICGIF.gif",
 }
 
 # Configuro a página do app aqui
@@ -462,6 +463,20 @@ with aba_painel:
     d = st.session_state.dados_conferencia
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
+
+    # AVISO ADICIONADO AQUI COM O TEXTO E O GIF DO SONIC
+    st.markdown(
+        f"""
+        <div style="background-color: #1e1e1e; border: 1px solid #444; padding: 10px; border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="color: #f1c40f; font-size: 11px; font-weight: bold; line-height: 1.4;">
+                LPNS MERAMENTE ILUSTRATIVAS<br>
+                SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGENCIA.
+            </span>
+            <img src="{IMAGENS['sonic_gif']}" width="35" style="margin-left: 10px;">
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>',
