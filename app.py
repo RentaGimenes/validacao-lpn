@@ -226,6 +226,12 @@ def limpar_texto(texto):
     if not texto: return ""
     return str(texto).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
 
+def limpar_lote(lote_str):
+    if not lote_str: return ""
+    # Remove pontos, barras, hífens, espaços e retira zeros à esquerda para comparação exata
+    limpo = str(lote_str).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
+    return limpo.lstrip('0')
+
 def converter_para_data_obj(data_str):
     if not data_str: return None
     data_str = str(data_str).strip()
@@ -727,9 +733,17 @@ else:
             if os.path.exists(IMAGENS["guia05"]):
                 st.image(IMAGENS["guia05"], width=450)
                 
+        # Novo botão exclusivo para validar novamente após corrigir os dados
+        if erro is not None:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("🔄 Tentar Novamente / Validar Corrigido", key="btn_tentar_novamente_erro", use_container_width=True):
+                st.session_state.erro_ativo = None
+                st.rerun()
+
         st.markdown('</div>', unsafe_allow_html=True)
 
-        if btn_validar_clicado:
+        # Lógica central executada ao clicar em "INICIAR VALIDAÇÃO"
+        def executar_validacao_logica():
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
             bc3_val = st.session_state.get("val_bc3", "").strip()
@@ -787,10 +801,13 @@ else:
                     tocar_som_erro()
                     st.rerun()
 
-            lote_esperado = limpar_texto(r_escolhido[10]) if len(r_escolhido) > 10 else ""
-            if lote_lido and lote_esperado and lote_lido != lote_esperado:
+            # Validação rigorosa do Lote (Coluna K / Índice 10)
+            lote_esperado_bruto = r_escolhido[10] if len(r_escolhido) > 10 else ""
+            lote_esp_limpo = limpar_lote(lote_esperado_bruto)
+            lote_lido_limpo = limpar_lote(lote_lido)
+            if lote_lido_limpo and lote_esp_limpo and lote_lido_limpo != lote_esp_limpo:
                 st.session_state.erro_ativo = "lote06"
-                st.session_state.detalhes_erro = {"solicitado": lote_esperado, "lido": lote_lido}
+                st.session_state.detalhes_erro = {"solicitado": lote_esperado_bruto.strip(), "lido": lote_lido.strip()}
                 tocar_som_erro()
                 st.rerun()
 
@@ -819,6 +836,9 @@ else:
                 "total_esperado": total_necessario
             }
             st.rerun()
+
+        if btn_validar_clicado:
+            executar_validacao_logica()
 
     st.markdown("""
         <script>
