@@ -152,7 +152,7 @@ st.markdown("""
         margin-right: auto;
     }
     
-    /* Centralização estrita e largura controlada para o botão */
+    /* Botão estendido preenchendo 100% da largura do bloco */
     .container-botao-centralizado {
         display: flex;
         flex-direction: column;
@@ -162,8 +162,7 @@ st.markdown("""
         margin: 0 auto;
     }
     .container-botao-centralizado div.stButton {
-        width: 80% !important;
-        max-width: 320px !important;
+        width: 100% !important;
         display: flex !important;
         justify-content: center !important;
     }
@@ -179,6 +178,10 @@ st.markdown("""
         transition: all 0.2s ease-in-out !important;
         width: 100% !important;
         height: 75px !important;
+        text-align: center !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
     div.stButton > button:hover {
         box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6) !important;
@@ -255,7 +258,6 @@ def formatar_para_aammdd(data_str):
     data_obj = converter_para_data_obj(str(data_str))
     if data_obj:
         return data_obj.strftime("%y%m%d")
-    # Se já vier limpo e com 6 dígitos numéricos
     digitos = re.sub(r'\D', '', str(data_str))
     if len(digitos) == 6:
         return digitos
@@ -637,7 +639,7 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_meio:
-        # MEIO: Aviso de selecionar pedido, status e botão de validação 100% centralizados
+        # MEIO: Aviso de selecionar pedido, status e botão de validação estendido com texto centralizado
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
 
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
@@ -662,7 +664,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        # Botão envolvido na classe CSS de centralização rigorosa
+        # Botão envolvido na classe CSS para ocupar 100% da largura do bloco com texto centralizado
         st.markdown('<div class="container-botao-centralizado">', unsafe_allow_html=True)
         btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -766,7 +768,7 @@ else:
                 st.rerun()
 
             # 2. Validação de DUN
-            dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolh_id) > 8 else "" if False else (limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else "")
+            dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
             if dun_lido and dun_esperado and dun_lido != dun_esperado:
                 st.session_state.erro_ativo = "dun03"
                 st.session_state.detalhes_erro = {"solicitado": dun_esperado, "lido": dun_lido}
@@ -814,7 +816,7 @@ else:
         <script>
             const element = document.getElementById('ancora-validacao');
             if (element) {
-                element.scrollInfoview({ behavior: 'smooth', block: 'start' });
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         </script>
     """, unsafe_allow_html=True)
