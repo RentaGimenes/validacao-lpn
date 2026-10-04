@@ -1,5 +1,3 @@
-Modifiquei a função processar_codigo_2 para tratar corretamente o formato do lote. Agora, após o identificador 10 (que pode vir entre parênteses ou não), o sistema remove os zeros à esquerda e considera apenas os caracteres subsequentes (começando pelo ano do lote, como você orientou).
-Aqui está o código completo atualizado com essa regra implementada:
 # ==========================================
 # IMPORTAÇÕES DE BIBLIOTECAS
 # ==========================================
@@ -277,7 +275,7 @@ def processar_codigo_2(barcode):
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
-        # Procura o 10 seguido opcionalmente de zeros e captura os dígitos do lote a partir do ano
+        # Procura o 10 seguido de zeros e captura os dígitos do lote a partir do ano
         match_lote = re.search(r'100*(\d+)', limpo)
         lote = match_lote.group(1) if match_lote else ""
         
@@ -803,7 +801,7 @@ else:
                 "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
+                "descricao": r_escolhido[2] if len(r_escolh_id := r_escolhido) > 2 else "N/D", # mantido seguro
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
@@ -817,4 +815,3 @@ else:
             }
         </script>
     """, unsafe_allow_html=True)
-
