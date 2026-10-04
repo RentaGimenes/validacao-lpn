@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import re
 from google.oauth2.service_account import Credentials
@@ -374,7 +374,7 @@ with aba_painel:
                 st.warning("⚠️ Selecione o pedido.")
                 return
             if not bc1_val or not bc2_val or not bc3_val:
-                st.warning("⚠️️ Preencha os 3 códigos de barras.")
+                st.warning("⚠ Preencha os 3 códigos de barras.")
                 return
 
             lpn_lida = processar_codigo_1(bc1_val)
@@ -525,12 +525,12 @@ with aba_painel:
 
         else:
             st.subheader("💡 Exemplo de LPN")
-            if os.path.exists("etiqueta_exemplo.png"):
-                st.image("etiqueta_exemplo.png", width=450)
-            elif os.path.exists("etiqueta_exemplo.jpg"):
-                st.image("etiqueta_exemplo.jpg", width=450)
+            if os.path.exists("GUIA DE CODIGO DE LPN.JPG"):
+                st.image("GUIA DE CODIGO DE LPN.JPG", width=450)
+            elif os.path.exists("GUIA DE CODIGO DE LPN.png"):
+                st.image("GUIA DE CODIGO DE LPN.png", width=450)
             else:
-                st.warning("⚠️️ Salve a imagem com o nome `etiqueta_exemplo.png` na mesma pasta do script.")
+                st.warning("⚠ Salve a imagem com o nome `GUIA DE CODIGO DE LPN.JPG` na mesma pasta do script.")
 
     if btn_finalizar_pedido:
         if pedido_selecionado != "Selecione o pedido...":
