@@ -120,23 +120,22 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Botão verde exclusivo para Validar LPN */
-    div.stButton > button#b_validar_lpn_custom {
-        background-color: #1b2421 !important;
-        border: 2px solid #52b788 !important;
-        color: #52b788 !important;
-        border-radius: 12px !important;
+    /* ESTILO DEFINITIVO PARA O BOTÃO VERDE DE VALIDAÇÃO */
+    div.stButton > button {
+        background-color: #28a745 !important;
+        color: white !important;
         font-size: 18px !important;
         font-weight: bold !important;
-        height: 80px !important;
+        height: 55px !important;
         width: 100% !important;
-        box-shadow: 0 4px 12px rgba(82, 183, 136, 0.3) !important;
-        transition: all 0.2s ease-in-out;
+        border-radius: 8px !important;
+        border: none !important;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2) !important;
+        transition: 0.3s;
     }
-    div.stButton > button#b_validar_lpn_custom:hover {
-        background-color: #2d6a4f !important;
-        color: #ffffff !important;
-        border-color: #74c69d !important;
+    div.stButton > button:hover {
+        background-color: #218838 !important;
+        color: white !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -592,21 +591,10 @@ else:
             p_info_btn = mapa_pedidos[idx_sel_atual_btn]
             lidas_atualmente_btn = st.session_state.lpns_validadas_por_pedido.get(p_info_btn["num_pedido"], [])
             if len(lidas_atualmente_btn) > 0:
-                texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
+                texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # Botão com ID personalizado para ficar verde
-        btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", use_container_width=True)
-        
-        st.markdown("""
-            <script>
-                var buttons = window.parent.document.querySelectorAll('button');
-                buttons.forEach(function(el) {
-                    if (el.innerText.includes("VALIDAR LPN") || el.innerText.includes("VALIDAR\nPRÓXIMA LPN")) {
-                        el.id = "b_validar_lpn_custom";
-                    }
-                });
-            </script>
-        """, unsafe_allow_html=True)
+        # O BOTÃO VERDE ORIGINAL
+        btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_custom", use_container_width=True)
 
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
