@@ -18,7 +18,6 @@ st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wi
 # ==========================================
 # MAPEAMENTO DE IMAGENS E ARQUIVOS
 # ==========================================
-# Aqui a gente mapeia os nomes das imagens para facilitar na hora de exibir
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
@@ -134,7 +133,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Centralização das colunas */
+    /* Centralização das colunas e alinhamento */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -626,13 +625,14 @@ else:
         btn_validar_clicado = False
         if validar_img_base64:
             st.markdown(f"""
-            <form action="" method="get">
+            <form action="" method="get" style="display: flex; justify-content: center; width: 100%;">
                 <button type="submit" name="executar_validacao" value="true" style="
                     background: none;
                     border: none;
                     padding: 0;
                     cursor: pointer;
                     margin: 0 auto;
+                    display: block;
                 ">
                     <img src="data:image/png;base64,{validar_img_base64}" width="240px" class="btn-neon-img">
                 </button>
