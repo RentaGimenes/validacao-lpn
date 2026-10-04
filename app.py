@@ -1,3 +1,4 @@
+base64
 from datetime import datetime, timedelta
 import os
 import re
@@ -23,6 +24,18 @@ IMAGENS = {
     "validacao_qtd": "validação da quantidade.PNG",
     "sonic_gif": "SONICGIF.gif",
 }
+
+
+# Função auxiliar para carregar imagens/GIFs locais em Base64 com segurança
+def carregar_imagem_base64(caminho):
+  if os.path.exists(caminho):
+    import base64
+
+    with open(caminho, "rb") as f:
+      dados = f.read()
+    return base64.b64encode(dados).decode("utf-8")
+  return None
+
 
 # Configuro a página do app aqui
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
@@ -474,14 +487,23 @@ with aba_painel:
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
+    # AVISO AUMENTADO E COM GIF CARREGADO VIA BASE64 COM SEGURANÇA
+    sonic_b64 = carregar_imagem_base64(IMAGENS["sonic_gif"])
+    img_tag = (
+        f'<img src="data:image/gif;base64,{sonic_b64}" width="50"'
+        ' style="margin-left: 15px;">'
+        if sonic_b64
+        else ""
+    )
+
     st.markdown(
         f"""
-        <div style="background-color: #1e1e1e; border: 1px solid #444; padding: 10px; border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
-            <span style="color: #f1c40f; font-size: 11px; font-weight: bold; line-height: 1.4;">
-                LPNS MERAMENTE ILUSTRATIVAS<br>
-                SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGENCIA.
+        <div style="background-color: #1e1e1e; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="color: #f1c40f; font-size: 14px; font-weight: bold; line-height: 1.5;">
+                ⚠️ LPNS MERAMENTE ILUSTRATIVAS<br>
+                SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
             </span>
-            <img src="{IMAGENS['sonic_gif']}" width="35" style="margin-left: 10px;">
+            {img_tag}
         </div>
         """,
         unsafe_allow_html=True,
