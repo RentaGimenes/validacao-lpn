@@ -34,7 +34,7 @@ st.markdown("""
         color: #ff6b6b;
         font-size: 16px;
         font-weight: bold;
-        margin-bottom: 5px;
+        margin-bottom: 12px;
     }
     .alerta-comparacao {
         background-color: #2c1515;
@@ -44,6 +44,7 @@ st.markdown("""
         font-size: 14px;
         color: #ffffff;
         margin-bottom: 12px;
+        margin-top: 5px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -462,6 +463,7 @@ with aba_painel:
                         return
 
             st.session_state.erro_ativo = None
+            st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
             st.session_state.dados_conferencia = {
                 "linha": linha_encontrada,
                 "num_pedido": num_pedido_escolhido,
@@ -511,31 +513,35 @@ with aba_painel:
                 "Finalizar Pedido Completo", type="secondary", use_container_width=True
             )
 
-    # Lado direito: exibe alertas visuais ou a imagem de exemplo da LPN
+    # Lado direito: exibe alertas visuais e a tabela de comparação antes da imagem ou guia
     with col_img:
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
 
-        if erro:
+        if erro == "material":
+            st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Incompatível com o solicitado.</div>', unsafe_allow_html=True)
             st.markdown(f"""
                 <div class="alerta-comparacao">
                     <b>SOLICITADO:</b> {det['solicitado']}<br>
                     <b>Gerado na LPN:</b> {det['lido']}
                 </div>
             """, unsafe_allow_html=True)
-
-        if erro == "material":
-            st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">Incompatível com o solicitado.</div>', unsafe_allow_html=True)
             img_nome = "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png"
             if os.path.exists(img_nome):
                 st.image(img_nome, width=450)
             else:
-                st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+                st.warning(f"⚠️️ Imagem `{img_nome}` não encontrada.")
 
         elif erro == "lote":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Imcompatível com a data de vencimento.</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class="alerta-comparacao">
+                    <b>SOLICITADO:</b> {det['solicitado']}<br>
+                    <b>Gerado na LPN:</b> {det['lido']}
+                </div>
+            """, unsafe_allow_html=True)
             img_nome = "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png"
             if os.path.exists(img_nome):
                 st.image(img_nome, width=450)
@@ -545,6 +551,12 @@ with aba_painel:
         elif erro == "validade":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Validade/Fabricação</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Data de fabricação não está de acordo com o solicitado.</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class="alerta-comparacao">
+                    <b>SOLICITADO:</b> {det['solicitado']}<br>
+                    <b>Gerado na LPN:</b> {det['lido']}
+                </div>
+            """, unsafe_allow_html=True)
             img_nome = "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png"
             if os.path.exists(img_nome):
                 st.image(img_nome, width=450)
@@ -554,6 +566,12 @@ with aba_painel:
         elif erro == "dun":
             st.markdown('<div class="alerta-piscar">🚫 Erro de DUN</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">DUN não está correspondente à DUN do material solicitado.</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class="alerta-comparacao">
+                    <b>SOLICITADO:</b> {det['solicitado']}<br>
+                    <b>Gerado na LPN:</b> {det['lido']}
+                </div>
+            """, unsafe_allow_html=True)
             img_nome = "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png"
             if os.path.exists(img_nome):
                 st.image(img_nome, width=450)
@@ -563,6 +581,12 @@ with aba_painel:
         elif erro == "limite" or erro == "lpn_duplicada":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Quantidade / LPN</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Esta LPN já foi lida ou o limite total foi atingido.</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+                <div class="alerta-comparacao">
+                    <b>SOLICITADO:</b> {det['solicitado']}<br>
+                    <b>Gerado na LPN:</b> {det['lido']}
+                </div>
+            """, unsafe_allow_html=True)
             if os.path.exists("ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png"):
                 st.image("ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png", width=450)
 
