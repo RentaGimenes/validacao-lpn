@@ -503,7 +503,7 @@ else:
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
         st.session_state.val_nome = nome_responsavel
         
-        # ALERTA DE SELEÇÃO DE PEDIDO VOLTOU PARA A COLUNA ESQUERDA (EXATAMENTE ONDE ESTAVA ANTES)
+        # O ALERTA DE SELEÇÃO DE PEDIDO VOLTOU CORRETAMENTE PARA A COLUNA ESQUERDA
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
             st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
@@ -572,13 +572,12 @@ else:
             st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validas.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
-            # IMAGEM DESCIDA EXATAMENTE PARA FICAR ALINHADA COM OS CAMPOS DE ENTRADA À ESQUERDA
             st.markdown("<br><br><br><br>", unsafe_allow_html=True)
             if os.path.exists(IMAGENS["guia05"]):
                 st.image(IMAGENS["guia05"], width=330)
 
     with col_acao:
-        # ESPAÇAMENTO PARA O BOTÃO VERDE FICAR ALINHADO NA ALTURA DOS CÓDIGOS DE BARRAS
+        # BOTÃO VERDE EXCLUSIVO NA COLUNA DA DIREITA
         st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)
         
         texto_botao_validar = "VALIDAR LPN"
@@ -589,7 +588,6 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
 
-        # BOTÃO COM CLASSE E ESTILIZAÇÃO VERDE GARANTIDA
         if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", use_container_width=True):
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
