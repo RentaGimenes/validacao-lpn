@@ -126,25 +126,42 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ESTILO PARA ALINHAR O BOTÃO DE IMAGEM TOTALMENTE À ESQUERDA E APLICAR NEON/TRANSPARÊNCIA */
+    /* ESTILOS PARA CENTRALIZAÇÃO NA COLUNA DO MEIO (ETIQUETA/GUIA) */
+    .container-coluna-meio {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        text-align: center;
+    }
+
+    /* ESTILOS PARA CENTRALIZAÇÃO NA COLUNA DA DIREITA (AVISOS E BOTÃO) */
+    .container-coluna-direita {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        text-align: center;
+    }
+
+    /* ESTILO PARA CENTRALIZAR O BOTÃO DE IMAGEM E APLICAR NEON/TRANSPARÊNCIA */
     .container-botao-imagem {
         display: flex;
-        justify-content: flex-start;
+        justify-content: center;
         align-items: center;
-        margin-left: 0px !important;
-        padding-left: 0px !important;
         width: 100%;
     }
 
     /* Remove o fundo branco da imagem usando mix-blend-mode ou filtros, arredonda e cria o efeito neon */
     .btn-neon-img {
         display: block;
-        border-radius: 16px; /* Pontas arredondadas */
-        /* Mistura a cor para ocultar o fundo branco e deixar transparente */
+        border-radius: 16px;
         mix-blend-mode: screen; 
-        background: rgba(0, 255, 100, 0.15); /* Fundo levemente transparente */
-        border: 2px solid #00ff66; /* Borda neon */
-        box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4); /* Brilho neon */
+        background: rgba(0, 255, 100, 0.15);
+        border: 2px solid #00ff66;
+        box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4);
         transition: all 0.2s ease-in-out;
     }
     .btn-neon-img:hover {
@@ -500,6 +517,9 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
+        # Envolve o conteúdo da coluna do meio num container flex centralizado
+        st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
+        
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
         if erro == "material04":
@@ -546,8 +566,13 @@ else:
                 st.image(IMAGENS["guia05"], width=450)
             elif os.path.exists("image_51919d.png"):
                 st.image("image_51919d.png", width=450)
+                
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_acao:
+        # Envolve o conteúdo da coluna da direita num container flex centralizado
+        st.markdown('<div class="container-coluna-direita">', unsafe_allow_html=True)
+
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
             st.markdown("""
@@ -570,7 +595,7 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        # Botão com imagem convertida (fundo removido por blend mode, cantos arredondados, neon e transparência)
+        # Botão com imagem centralizada (fundo removido por blend mode, cantos arredondados, neon e transparência)
         validar_img_base64 = ""
         if os.path.exists(IMAGENS["validar_btn"]):
             with open(IMAGENS["validar_btn"], "rb") as f:
@@ -587,7 +612,7 @@ else:
                     border: none;
                     padding: 0;
                     cursor: pointer;
-                    margin-left: 0px;
+                    margin: 0 auto;
                 ">
                     <img src="data:image/png;base64,{validar_img_base64}" width="240px" class="btn-neon-img">
                 </button>
@@ -601,6 +626,7 @@ else:
             st.warning("⚠️ Imagem 'validar.png' não encontrada na pasta. Usando botão padrão de texto.")
             btn_validar_clicado = st.button("VALIDAR LPN", key="btn_validar_lpn_fallback", use_container_width=True)
 
+        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
         if btn_validar_clicado:
@@ -704,7 +730,7 @@ else:
                 "linha": linha_encontrada,
                 "num_pedido": num_pedido_escolhido,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
+                "descricao": r_escolhido[2] if len(r_escolh_ido) > 2 else "",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
