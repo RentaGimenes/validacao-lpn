@@ -120,7 +120,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Estilo exclusivo e preciso apenas para o botão de Validar LPN (Retangular deitado) */
+    /* Estilo exclusivo e preciso apenas para o botão de Validar LPN (Verde Customizado) */
     div.stButton > button[kind="secondary"].botao-validar-custom,
     div.stButton > button.botao-validar-custom {
         background-color: #1b2421 !important;
@@ -510,9 +510,7 @@ else:
             mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
             st.markdown(f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})")
-        else:
-            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
-
+        
         bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
         st.session_state.val_bc1 = bc1
         bc2 = st.text_input("2º Código de Barras", value=st.session_state.val_bc2, key="input_bc2_field")
@@ -530,6 +528,11 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
+        # ALERTA MOVIDO PARA A PARTE SUPERIOR DIREITA (conforme solicitado na marcação verde)
+        idx_sel_atual_alerta = st.session_state.get("pedido_selecionado_idx")
+        if not idx_sel_atual_alerta or idx_sel_atual_alerta not in mapa_pedidos:
+            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
         if erro == "material04":
@@ -586,8 +589,33 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
 
-        # Aplicada a classe customizada estritamente a este botão
-        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada"):
+        # Aplicada a classe customizada estritamente a este botão (Botão Verde de Validar)
+        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", type="secondary", args=(), kwargs={}):
+            # Atribuindo a classe CSS via seletor para garantir o estilo verde
+            pass
+
+        # Adiciona a classe CSS do botão verde logo após a criação usando component/markdown se necessário ou manipulando state
+        st.markdown("""
+            <script>
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    if (btn.innerText.includes("VALIDAR LPN") || btn.innerText.includes("VALIDAR\nPRÓXIMA LPN") || btn.innerText.includes("PRÓXIMA LPN")) {
+                        btn.classList.add("botao-validar-custom");
+                    }
+                });
+            </script>
+        """, unsafe_allow_html=True)
+
+        # Lógica executada quando o botão é clicado
+        # Como o Streamlit executa o bloco do botão diretamente ao ser clicado, colocamos a lógica logo abaixo:
+        # Nota: para capturar o clique do botão customizado com classe, verificamos o estado ou o próprio retorno do st.button:
+        
+    # Tratamento real da ação de validação abaixo do escopo das colunas ou integrado
+    # Vamos garantir que o st.button capture a ação corretamente:
+    
+    # Redefinimos a chamada do botão de forma limpa garantindo a captura do clique:
+    with col_acao:
+        if st.button(texto_botao_validar + " ", key="btn_acao_real", type="secondary"):
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
             bc3_val = st.session_state.get("val_bc3", "").strip()
@@ -656,27 +684,31 @@ else:
                 st.session_state.detalhes_erro = {"solicitado": lote_planilha, "lido": lote_lido}
                 tocar_som_erro()
                 st.rerun()
-            if data_vencimento_planilha_raw and venc_lido:
-                if converter_para_data_obj(venc_lido) != converter_para_data_obj(data_vencimento_planilha_raw):
-                    st.session_state.erro_ativo = "datav02"
-                    st.session_state.detalhes_erro = {"solicitado": str(data_vencimento_planilha_raw), "lido": formatar_data_aammdd(venc_lido)}
-                    tocar_som_erro()
-                    st.rerun()
-            if data_fabricacao_planilha_raw and fab_lido:
-                if converter_para_data_obj(fab_lido) != converter_para_data_obj(data_fabricacao_planilha_raw):
-                    st.session_state.erro_ativo = "datafab03"
-                    st.session_state.detalhes_erro = {"solicitado": str(data_fabricacao_planilha_raw), "lido": formatar_data_aammdd(fab_lido)}
-                    tocar_som_erro()
-                    st.rerun()
+
+            venc_planilha_obj = converter_para_data_obj(data_vencimento_planilha_raw)
+            venc_lido_obj = converter_para_data_obj(venc_lido)
+            if venc_planilha_obj and venc_lido_obj and venc_lido_obj != venc_planilha_obj:
+                st.session_state.erro_ativo = "datav02"
+                st.session_state.detalhes_erro = {"solicitado": venc_planilha_obj.strftime("%d/%m/%Y"), "lido": venc_lido_obj.strftime("%d/%m/%Y")}
+                tocar_som_erro()
+                st.rerun()
+
+            fab_planilha_obj = converter_para_data_obj(data_fabricacao_planilha_raw)
+            fab_lido_obj = converter_para_data_obj(fab_lido)
+            if fab_planilha_obj and fab_lido_obj and fab_lido_obj != fab_planilha_obj:
+                st.session_state.erro_ativo = "datafab03"
+                st.session_state.detalhes_erro = {"solicitado": fab_planilha_obj.strftime("%d/%m/%Y"), "lido": fab_lido_obj.strftime("%d/%m/%Y")}
+                tocar_som_erro()
+                st.rerun()
 
             st.session_state.erro_ativo = None
-            st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
             st.session_state.dados_conferencia = {
-                "linha": linha_encontrada, "num_pedido": num_pedido_escolhido,
-                "responsavel": nome_responsavel.strip(), "lpn": lpn_lida,
-                "quantidade_extraida": qtd_lida, "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
-                "total_esperado": total_necessario,
+                "num_pedido": num_pedido_escolhido,
+                "linha": linha_encontrada,
+                "lpn": lpn_lida,
+                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
+                "responsavel": nome_responsavel,
+                "total_esperado": total_necessario
             }
             st.session_state.etapa_validacao = True
             st.rerun()
-            
