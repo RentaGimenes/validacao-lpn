@@ -433,11 +433,11 @@ else:
     # ==========================================
     # TELA 2: PAINEL DE PEDIDOS E VALIDAÇÃO
     # ==========================================
-    st.subheader("📋 PEDIDOS DE LPN")
+    st.subheader("📋 PAINEL DE PEDIDOS")
 
     col_tit_painel, col_btn_att = st.columns([5, 1.5])
     with col_tit_painel:
-        st.markdown("### Selecione o pedido abaixo para iniciar:")
+        st.markdown("### Selecione o pedido nas abas abaixo:")
     
     with col_btn_att:
         gif_base64 = ""
@@ -499,41 +499,47 @@ else:
                         pedidos_concluidos_24h.append(r)
                 else:
                     pedidos_concluidos_24h.append(r)
-        
-        if pedidos_pendentes:
-            num_colunas = 6
-            linhas_cards = [pedidos_pendentes[i:i + num_colunas] for i in range(0, len(pedidos_pendentes), num_colunas)]
-            for bloco in linhas_cards:
-                cols = st.columns(num_colunas)
-                for i, r in enumerate(bloco):
-                    idx_p = dados_validos.index(r) + 1
-                    linha_real = registos.index(r) + 1
-                    try:
-                        linha_pedido = r[1] if len(r) > 1 else ""
-                        cod_material = r[7] if len(r) > 7 else ""
-                        dun_material = r[8] if len(r) > 8 else ""
-                        desc_completa = r[2] if len(r) > 2 else ""
-                        desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
-                        data_palete = r[3] if len(r) > 3 else ""
-                        data_vencimento = r[9] if len(r) > 9 else ""
-                        lote = r[10] if len(r) > 10 else ""
-                        lpn_inteira = r[4] if len(r) > 4 else "0"
-                        quebra_txt = r[6] if len(r) > 6 else "0"
-                        total_esperado = obter_quantidade_total_lpns(r)
-                        e_prioridade = len(pedidos_pendentes) > 5
-                        lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(idx_p, [])
-                        qtd_lidas = len(lpns_ja_lidas)
-                        porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
-                        
-                        mapa_pedidos[idx_p] = {"num_pedido": idx_p, "linha": linha_real, "registro": r, "total_esperado": total_esperado}
-                        
-                        with cols[i]:
-                            is_selecionado = (st.session_state.pedido_selecionado_idx == idx_p)
-                            classe_card = "card-pedido" if (is_selecionado or not e_prioridade) else "card-pedido-prioridade"
-                            destaque_sel = "border: 2px solid #00bfff; background-color: #16222b;" if is_selecionado else ""
-                            tag_prioridade_html = '<span style="color: #ff4b4b; font-weight: bold;">🔴 URGENTE / PRIORIDADE</span><br>' if e_prioridade else ''
+
+        # ==========================================
+        # ABAS PARA SEPARAR PENDENTES E CONCLUÍDOS
+        # ==========================================
+        aba_pendentes, aba_concluidos = st.tabs(["⏳ Pedidos Pendentes", "✅ Pedidos Concluídos"])
+
+        with aba_pendentes:
+            if pedidos_pendentes:
+                num_colunas = 6
+                linhas_cards = [pedidos_pendentes[i:i + num_colunas] for i in range(0, len(pedidos_pendentes), num_colunas)]
+                for bloco in linhas_cards:
+                    cols = st.columns(num_colunas)
+                    for i, r in enumerate(bloco):
+                        idx_p = dados_validos.index(r) + 1
+                        linha_real = registos.index(r) + 1
+                        try:
+                            linha_pedido = r[1] if len(r) > 1 else ""
+                            cod_material = r[7] if len(r) > 7 else ""
+                            dun_material = r[8] if len(r) > 8 else ""
+                            desc_completa = r[2] if len(r) > 2 else ""
+                            desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
+                            data_palete = r[3] if len(r) > 3 else ""
+                            data_vencimento = r[9] if len(r) > 9 else ""
+                            lote = r[10] if len(r) > 10 else ""
+                            lpn_inteira = r[4] if len(r) > 4 else "0"
+                            quebra_txt = r[6] if len(r) > 6 else "0"
+                            total_esperado = obter_quantidade_total_lpns(r)
+                            e_prioridade = len(pedidos_pendentes) > 5
+                            lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(idx_p, [])
+                            qtd_lidas = len(lpns_ja_lidas)
+                            porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
                             
-                            st.markdown(f"""<div class="{classe_card}" style="{destaque_sel}">
+                            mapa_pedidos[idx_p] = {"num_pedido": idx_p, "linha": linha_real, "registro": r, "total_esperado": total_esperado}
+                            
+                            with cols[i]:
+                                is_selecionado = (st.session_state.pedido_selecionado_idx == idx_p)
+                                classe_card = "card-pedido" if (is_selecionado or not e_prioridade) else "card-pedido-prioridade"
+                                destaque_sel = "border: 2px solid #00bfff; background-color: #16222b;" if is_selecionado else ""
+                                tag_prioridade_html = '<span style="color: #ff4b4b; font-weight: bold;">🔴 URGENTE / PRIORIDADE</span><br>' if e_prioridade else ''
+                                
+                                st.markdown(f"""<div class="{classe_card}" style="{destaque_sel}">
 {tag_prioridade_html}
 <b>Linha:</b> {linha_pedido}<br>
 <b>Cód Mat:</b> {cod_material}<br>
@@ -547,38 +553,34 @@ else:
 <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
 <span style="color: #00bfff;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
 </div>""", unsafe_allow_html=True)
-                            
-                            label_botao_card = "✔ Selecionado" if is_selecionado else f"Selecionar Pedido {idx_p}"
-                            if st.button(label_botao_card, key=f"btn_sel_{idx_p}", use_container_width=True):
-                                st.session_state.pedido_selecionado_idx = idx_p
-                                st.rerun()
-                    except Exception:
-                        continue
-        else:
-            st.success("🎉 Todos os pedidos pendentes já foram validados e concluídos!")
+                                
+                                label_botao_card = "✔ Selecionado" if is_selecionado else f"Selecionar Pedido {idx_p}"
+                                if st.button(label_botao_card, key=f"btn_sel_{idx_p}", use_container_width=True):
+                                    st.session_state.pedido_selecionado_idx = idx_p
+                                    st.rerun()
+                        except Exception:
+                            continue
+            else:
+                st.success("🎉 Todos os pedidos pendentes já foram validados e concluídos!")
 
-        # ==========================================
-        # ABA DE PEDIDOS CONCLUÍDOS NAS ÚLTIMAS 24H (Exibida apenas na página inicial)
-        # ==========================================
-        if pedidos_concluidos_24h:
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("### ✅ Pedidos concluídos nas últimas 24h")
-            num_colunas_conc = 6
-            linhas_cards_conc = [pedidos_concluidos_24h[i:i + num_colunas_conc] for i in range(0, len(pedidos_concluidos_24h), num_colunas_conc)]
-            for bloco_conc in linhas_cards_conc:
-                cols_conc = st.columns(num_colunas_conc)
-                for j, rc in enumerate(bloco_conc):
-                    try:
-                        linha_pedido_c = rc[1] if len(rc) > 1 else ""
-                        cod_material_c = rc[7] if len(rc) > 7 else ""
-                        dun_material_c = rc[8] if len(rc) > 8 else ""
-                        desc_completa_c = rc[2] if len(rc) > 2 else ""
-                        desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
-                        responsavel_c = rc[11] if len(rc) > 11 else ""
-                        data_conclusao_c = rc[13] if len(rc) > 13 else ""
-                        
-                        with cols_conc[j]:
-                            st.markdown(f"""<div class="card-pedido-concluido">
+        with aba_concluidos:
+            if pedidos_concluidos_24h:
+                num_colunas_conc = 6
+                linhas_cards_conc = [pedidos_concluidos_24h[i:i + num_colunas_conc] for i in range(0, len(pedidos_concluidos_24h), num_colunas_conc)]
+                for bloco_conc in linhas_cards_conc:
+                    cols_conc = st.columns(num_colunas_conc)
+                    for j, rc in enumerate(bloco_conc):
+                        try:
+                            linha_pedido_c = rc[1] if len(rc) > 1 else ""
+                            cod_material_c = rc[7] if len(rc) > 7 else ""
+                            dun_material_c = rc[8] if len(rc) > 8 else ""
+                            desc_completa_c = rc[2] if len(rc) > 2 else ""
+                            desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
+                            responsavel_c = rc[11] if len(rc) > 11 else ""
+                            data_conclusao_c = rc[13] if len(rc) > 13 else ""
+                            
+                            with cols_conc[j]:
+                                st.markdown(f"""<div class="card-pedido-concluido">
 <span style="color: #2ecc71; font-weight: bold;">✔ CONCLUÍDO</span><br>
 <b>Linha:</b> {linha_pedido_c}<br>
 <b>Cód Mat:</b> {cod_material_c}<br>
@@ -587,8 +589,10 @@ else:
 <b>Resp:</b> {responsavel_c}<br>
 <b>Data:</b> {data_conclusao_c}
 </div>""", unsafe_allow_html=True)
-                    except Exception:
-                        continue
+                        except Exception:
+                            continue
+            else:
+                st.info("Nenhum pedido concluído nas últimas 24 horas.")
     else:
         st.info("Nenhuma solicitação encontrada na planilha.")
 
@@ -779,7 +783,6 @@ else:
 
             # 5. Validação de Data de Fabricação
             if fab_lido:
-                # Caso haja divergência de fabricação se a regra exigir
                 pass
 
             # Passou em todas as validações sem erros, abre a tela de confirmação visual
