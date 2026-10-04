@@ -629,7 +629,7 @@ with aba_painel:
             st.session_state.erro_ativo = "validacao_qtd"
             st.session_state.detalhes_erro = {
                 "solicitado": f"Quebras esperadas pendentes: {lista_quebras}",
-                "lido": f"Quantidade informada no BC2 (37): {qtd_lida}",
+                "lido": "",
             }
             tocar_som_erro()
             return
@@ -931,7 +931,32 @@ with aba_painel:
         if os.path.exists(img_fallback):
           st.image(img_fallback, width=450)
 
-    elif erro == "limite" or erro == "validacao_qtd":
+    elif erro == "validacao_qtd":
+      st.markdown(
+          '<div class="alerta-piscar">🚫 Validação de Quantidade / LPN</div>',
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          '<div class="alerta-sub">LPN\'s inteiras desse pedido já foram validadas.</div>',
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          f"""
+                <div class="alerta-comparacao">
+                    <b>SOLICITADO:</b> {det['solicitado']}
+                </div>
+            """,
+          unsafe_allow_html=True,
+      )
+      img_qtd = IMAGENS["validacao_qtd"]
+      if os.path.exists(img_qtd):
+        st.image(img_qtd, width=450)
+      else:
+        img_fallback = IMAGENS["material04"]
+        if os.path.exists(img_fallback):
+          st.image(img_fallback, width=450)
+
+    elif erro == "limite":
       st.markdown(
           '<div class="alerta-piscar">🚫 Validação de Quantidade / LPN</div>',
           unsafe_allow_html=True,
