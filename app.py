@@ -151,13 +151,21 @@ st.markdown("""
         margin-left: auto;
         margin-right: auto;
     }
-    .container-botao-imagem {
+    
+    /* Centralização estrita e largura controlada para o botão */
+    .container-botao-centralizado {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         width: 100%;
         margin: 0 auto;
+    }
+    .container-botao-centralizado div.stButton {
+        width: 80% !important;
+        max-width: 320px !important;
+        display: flex !important;
+        justify-content: center !important;
     }
     
     div.stButton > button {
@@ -612,7 +620,7 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_meio:
-        # MEIO: Aviso de selecionar pedido, status e botão de validação centralizados
+        # MEIO: Aviso de selecionar pedido, status e botão de validação 100% centralizados
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
 
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
@@ -637,9 +645,11 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        st.markdown('<div class="container-botao-imagem">', unsafe_allow_html=True)
+        # Botão envolvido na classe CSS de centralização rigorosa
+        st.markdown('<div class="container-botao-centralizado">', unsafe_allow_html=True)
         btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
         st.markdown('</div>', unsafe_allow_html=True)
+        
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_dir:
