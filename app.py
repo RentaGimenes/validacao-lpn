@@ -165,19 +165,24 @@ st.markdown("""
         width: 100%;
         margin: 0 auto;
     }
-    .btn-neon-img {
-        display: block;
-        border-radius: 16px;
-        mix-blend-mode: screen; 
-        background: rgba(0, 255, 100, 0.15);
-        border: 2px solid #00ff66;
-        box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4);
-        transition: all 0.2s ease-in-out;
-        margin: 0 auto;
+    
+    /* Estilização para o botão nativo do Streamlit assumir o visual Neon */
+    div.stButton > button[kind="secondary"] {
+        background: rgba(0, 255, 100, 0.15) !important;
+        border: 2px solid #00ff66 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4) !important;
+        color: #00ff66 !important;
+        font-weight: bold !important;
+        transition: all 0.2s ease-in-out !important;
+        width: 100% !important;
+        height: 60px !important;
     }
-    .btn-neon-img:hover {
-        box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6);
-        background: rgba(0, 255, 100, 0.25);
+    div.stButton > button[kind="secondary"]:hover {
+        box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6) !important;
+        background: rgba(0, 255, 100, 0.25) !important;
+        border-color: #00ff88 !important;
+        color: #ffffff !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -623,36 +628,10 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        validar_img_base64 = ""
-        if os.path.exists(IMAGENS["validar_btn"]):
-            with open(IMAGENS["validar_btn"], "rb") as f:
-                validar_img_base64 = base64.b64encode(f.read()).decode()
-
         st.markdown('<div class="container-botao-imagem">', unsafe_allow_html=True)
         
-        btn_validar_clicado = False
-        if validar_img_base64:
-            st.markdown(f"""
-            <form action="" method="get" style="display: flex; justify-content: center; width: 100%;">
-                <button type="submit" name="executar_validacao" value="true" style="
-                    background: none;
-                    border: none;
-                    padding: 0;
-                    cursor: pointer;
-                    margin: 0 auto;
-                    display: block;
-                ">
-                    <img src="data:image/png;base64,{validar_img_base64}" width="240px" class="btn-neon-img">
-                </button>
-            </form>
-            """, unsafe_allow_html=True)
-            
-            if "executar_validacao" in st.query_params:
-                st.query_params.clear()
-                btn_validar_clicado = True
-        else:
-            st.warning("⚠️ Imagem 'validar.png' não encontrada na pasta. Usando botão padrão de texto.")
-            btn_validar_clicado = st.button("VALIDAR LPN", key="btn_validar_lpn_fallback", use_container_width=True)
+        # Botão nativo do Streamlit estilizado com CSS Neon para capturar corretamente o clique/ação
+        btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
 
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -736,7 +715,7 @@ else:
                 "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
+                "descricao": r_escolhido[2] if len(r_escolh_id := r_escolhido) > 2 else "N/D",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
