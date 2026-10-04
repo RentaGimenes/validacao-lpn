@@ -200,7 +200,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# Conexão com a planilha
+# Conexão com a planilha e cache de leitura para evitar erro 429
 @st.cache_resource
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -211,10 +211,22 @@ def init_connection():
     client = gspread.authorize(creds)
     return client
 
-try:
+@st.cache_data(ttl=30)
+py_cached_get_all_values()
+def carregar_dados_planilha():
     client = init_connection()
     spreadsheet_name = "SOLICITAÇÃO DE LPN"
     sheet = client.open(spreadsheet_name).worksheet("SOLICITAÇÕES")
+    registos = sheet.get_all_values()
+    return sheet, registos
+
+try:
+    sheet, registos = carregar_dados_planilha()
+    dados_validos = []
+    if len(registos) > 1:
+        for r in registos[1:]:
+            if any(str(celula).strip() for celula in r):
+                dados_validos.append(r)
 except Exception as e:
     st.error(f"Erro ao conectar com o Google Sheets: {e}")
     st.stop()
@@ -353,17 +365,6 @@ if "val_nome" not in st.session_state: st.session_state.val_nome = ""
 if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
-
-# Carregando dados da planilha
-registos, dados_validos = [], []
-try:
-    registos = sheet.get_all_values()
-    if len(registos) > 1:
-        for r in registos[1:]:
-            if any(str(celula).strip() for celula in r):
-                dados_validos.append(r)
-except Exception as e:
-    st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
 # ==========================================
 # TELA 1: CONFIRMAÇÃO VISUAL
