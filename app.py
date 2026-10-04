@@ -227,10 +227,6 @@ def limpar_texto(texto):
     return str(texto).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
 
 def formatar_lote_rigoroso(lote_str):
-    """
-    Garante o formato de lote da planilha: 
-    Adiciona 7 zeros à esquerda dos dígitos do lote.
-    """
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
     if not digitos:
@@ -239,10 +235,6 @@ def formatar_lote_rigoroso(lote_str):
     return "0000000" + miolo
 
 def formatar_lote_lido_rigoroso(lote_str):
-    """
-    Extrai e formata o lote lido:
-    Pega os últimos 7 dígitos significativos (Ano com 4 + Juliano com 3) e adiciona 7 zeros à esquerda.
-    """
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
     if not digitos:
@@ -296,7 +288,6 @@ def processar_codigo_2(barcode):
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
-        # Extração precisa do lote delimitada pelo identificador '10' até o '17'
         lote = ""
         match_lote = re.search(r'10(\d+?)(?=17|$)', limpo)
         if match_lote:
@@ -639,7 +630,7 @@ else:
     st.markdown("---")
 
     # ==========================================
-    # FORMULÁRIO DE LEITURA E VALIDAÇÃO
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO RIGOROSA
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
@@ -727,13 +718,33 @@ else:
             st.markdown('<div class="alerta-sub">Esta LPN já foi validada neste pedido.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao">{det['lido']}</div>""", unsafe_allow_html=True)
             if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=310)
+        elif erro == "material04":
+            st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Código do material incompatível com o solicitado.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["material04"]): st.image(IMAGENS["material04"], width=310)
+        elif erro == "dun03":
+            st.markdown('<div class="alerta-piscar">🚫 Erro no DUN</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">DUN não corresponde ao material solicitado.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=310)
+        elif erro == "datav02":
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Vencimento</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Data de vencimento não está compatível.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["datav02"]): st.image(IMAGENS["datav02"], width=310)
+        elif erro == "datafab03":
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Fabricação</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Data de fabricação não está de acordo com o solicitado.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["datafab03"]): st.image(IMAGENS["datafab03"], width=310)
         else:
             if os.path.exists(IMAGENS["guia05"]):
                 st.image(IMAGENS["guia05"], width=450)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Lógica central executada ao clicar em "INICIAR VALIDAÇÃO"
+        # Lógica central rigorosa de validação de todos os campos
         def executar_validacao_logica():
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -751,7 +762,8 @@ else:
                 st.stop()
                 
             lpn_lida = processar_codigo_1(bc1_val)
-            _, _, lote_lido_bruto = processar_codigo_2(bc2_val)
+            mat_lido, _, lote_lido_bruto = processar_codigo_2(bc2_val)
+            dun_lido, venc_lido, fab_lido = processar_codigo_3(bc3_val)
             
             info_pedido = mapa_pedidos[idx_sel]
             linha_encontrada = info_pedido["linha"]
@@ -760,16 +772,50 @@ else:
             total_necessario = info_pedido["total_esperado"]
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
 
+            # 1. VERIFICAÇÃO DE LPN DUPLICADA
             if lpn_lida in lpns_ja_lidas:
                 st.session_state.erro_ativo = "lpn_duplicada"
                 st.session_state.detalhes_erro = {"solicitado": "", "lido": f"LPN já validada anteriormente: {lpn_lida}"}
                 tocar_som_erro()
                 st.rerun()
 
-            # VALIDAÇÃO EXCLUSIVA E RIGOROSA DO LOTE
+            # 2. VERIFICAÇÃO DE CÓDIGO DO MATERIAL
+            mat_esperado = limpar_texto(r_escolhido[7]) if len(r_escolhido) > 7 else ""
+            if mat_esperado and mat_lido != mat_esperado:
+                st.session_state.erro_ativo = "material04"
+                st.session_state.detalhes_erro = {"solicitado": mat_esperado, "lido": mat_lido}
+                tocar_som_erro()
+                st.rerun()
+
+            # 3. VERIFICAÇÃO DO DUN
+            dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
+            if dun_esperado and dun_lido != dun_esperado:
+                st.session_state.erro_ativo = "dun03"
+                st.session_state.detalhes_erro = {"solicitado": dun_esperado, "lido": dun_lido}
+                tocar_som_erro()
+                st.rerun()
+
+            # 4. VERIFICAÇÃO DA DATA DE VENCIMENTO
+            venc_esperado = formatar_para_aammdd(r_escolhido[9] if len(r_escolhido) > 9 else "")
+            venc_lido_fmt = formatar_para_aammdd(venc_lido)
+            if venc_esperado and venc_lido_fmt != venc_esperado:
+                st.session_state.erro_ativo = "datav02"
+                st.session_state.detalhes_erro = {"solicitado": venc_esperado, "lido": venc_lido_fmt}
+                tocar_som_erro()
+                st.rerun()
+
+            # 5. VERIFICAÇÃO DA DATA DE FABRICAÇÃO / CRIAÇÃO DO PALLET
+            fab_esperado = formatar_para_aammdd(r_escolhido[3] if len(r_escolhido) > 3 else "")
+            fab_lido_fmt = formatar_para_aammdd(fab_lido)
+            if fab_esperado and fab_lido_fmt != fab_esperado:
+                st.session_state.erro_ativo = "datafab03"
+                st.session_state.detalhes_erro = {"solicitado": fab_esperado, "lido": fab_lido_fmt}
+                tocar_som_erro()
+                st.rerun()
+
+            # 6. VERIFICAÇÃO RIGOROSA DO LOTE
             lote_esperado_bruto = r_escolhido[10] if len(r_escolhido) > 10 else ""
             lote_esperado_formatado = formatar_lote_rigoroso(lote_esperado_bruto)
-            
             lote_lido_formatado = formatar_lote_lido_rigoroso(lote_lido_bruto)
             
             if lote_esperado_formatado:
