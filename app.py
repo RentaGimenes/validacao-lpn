@@ -657,8 +657,9 @@ else:
                     st.rerun()
 
             # Se todas as validações passarem, avança para a etapa de confirmação visual
+            num_pedido_escolhido = info_pedido["num_pedido"]
             st.session_state.dados_conferencia = {
-                "num_pedido": num_pedido_gh = num_pedido_escolhido := info_pedido["num_pedido"],
+                "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
                 "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
