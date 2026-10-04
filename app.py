@@ -541,7 +541,6 @@ else:
     with col_acao:
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
-            # AVISO VERMELHO PERFEITAMENTE CENTRALIZADO
             st.markdown("""
             <div style="display: flex; justify-content: center; width: 100%;">
                 <div style="background-color: #2c1515; border: 1px dashed #ff4b4b; padding: 6px 12px; border-radius: 4px; margin-bottom: 12px; text-align: center; max-width: 320px;">
@@ -654,7 +653,7 @@ else:
                 data_venc_lido_obj = converter_para_data_obj(venc_lido)
                 if data_venc_plan_obj and data_venc_lido_obj and data_venc_lido_obj != data_venc_plan_obj:
                     st.session_state.erro_ativo = "datav02"
-                    st.session_state.detalhes_erro = {"solicitado": str(data_venc_plan_obj), "lido": str(data_venc_lido_obj)}
+                    st.session_state.detalhes_erro = {"solicitado": data_venc_plan_obj.strftime("%d/%m/%Y"), "lido": data_venc_lido_obj.strftime("%d/%m/%Y")}
                     tocar_som_erro()
                     st.rerun()
 
@@ -664,19 +663,19 @@ else:
                 data_fab_lido_obj = converter_para_data_obj(fab_lido)
                 if data_fab_plan_obj and data_fab_lido_obj and data_fab_lido_obj != data_fab_plan_obj:
                     st.session_state.erro_ativo = "datafab03"
-                    st.session_state.detalhes_erro = {"solicitado": str(data_fab_plan_obj), "lido": str(data_fab_lido_obj)}
+                    st.session_state.detalhes_erro = {"solicitado": data_fab_plan_obj.strftime("%d/%m/%Y"), "lido": data_fab_lido_obj.strftime("%d/%m/%Y")}
                     tocar_som_erro()
                     st.rerun()
 
-            num_pedido_escolhido = info_pedido["num_pedido"]
+            # Se todas as validações passaram, avança para a etapa visual
+            st.session_state.etapa_validacao = True
             st.session_state.dados_conferencia = {
-                "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
+                "num_pedido": num_pedido_escolhido,
                 "lpn": lpn_lida,
                 "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
-            st.session_state.etapa_validacao = True
             st.session_state.erro_ativo = None
             st.rerun()
