@@ -882,6 +882,16 @@ with aba_painel:
       executar_validacao()
 
   with col_img:
+    # Rodapé fixo ou exibição do Sonic na parte inferior da tela de validação ou painel principal
+    st.markdown(
+        """
+        <div style="position: fixed; bottom: 10px; right: 20px; z-index: 9999;">
+            <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z2dHFhNDl3bDFqZmh2ZzR1Z2F1Y21wMG12YnZsdGJ3dzJ2aDZjayZlcD12MV9internal_gif_by_gif_id&ct=g/giphy.gif" width="60px" style="opacity: 0.85;">
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     erro = st.session_state.get("erro_ativo")
     det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
 
