@@ -17,8 +17,6 @@ st.set_page_config(
 count = st_autorefresh(interval=180000, key="datarefresh")
 
 # --- CONEXÃO COM O GOOGLE SHEETS VIA STREAMLIT SECRETS ---
-
-
 @st.cache_resource
 def init_connection():
     scope = [
@@ -181,6 +179,9 @@ if "etapa_validacao" not in st.session_state:
 if "lpns_validadas_por_pedido" not in st.session_state:
     st.session_state.lpns_validadas_por_pedido = {}
 
+if "erro_ativo" not in st.session_state:
+    st.session_state.erro_ativo = None
+
 registos = []
 dados_validos = []
 try:
@@ -254,6 +255,15 @@ with aba_painel:
         st.markdown(f"📦 **LPN Atual:** `{d['lpn']}`")
         st.markdown(f"🏷 **Material:** `{d['descricao']}`")
 
+        # Exibição de imagens menores para o operador conferir a descrição e ordem
+        col_conf1, col_conf2 = st.columns(2)
+        with col_conf1:
+            if os.path.exists("POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A SU.png"):
+                st.image("POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A SU.png", width=220, caption="Ref. Descrição")
+        with col_conf2:
+            if os.path.exists("POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA CORRESPONDENTE AO PEDIDO.png"):
+                st.image("POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA CORRESPONDENTE AO PEDIDO.png", width=220, caption="Ref. Ordem")
+
         resp_desc_str = st.radio(
             "📌 A descrição está correta?",
             ["Selecione...", "Sim", "Não"],
@@ -286,6 +296,7 @@ with aba_painel:
                         f" {len(st.session_state.lpns_validadas_por_pedido[num_ped])}"
                     )
                     st.session_state.etapa_validacao = False
+                    st.session_state.erro_ativo = None
                     if "dados_conferencia" in st.session_state:
                         del st.session_state.dados_conferencia
                     
@@ -296,7 +307,7 @@ with aba_painel:
                 except Exception as e:
                     st.error(f"Erro: {e}")
             else:
-                st.error("⚠️ Selecione 'Sim' em ambas as confirmações!")
+                st.error("⚠️️ Selecione 'Sim' em ambas as confirmações!")
         st.markdown("---")
 
     col_form, col_img = st.columns(2)
@@ -328,7 +339,6 @@ with aba_painel:
             "📌 Selecione o Número do Pedido", opcoes_pedidos
         )
 
-        # --- NÚCLEO DE VALIDAÇÃO DIRETA (SEM TRAVAS DE FOCO) ---
         def executar_validacao():
             bc1_val = st.session_state.get("input_bc1", "").strip()
             bc2_val = st.session_state.get("input_bc2", "").strip()
@@ -359,9 +369,11 @@ with aba_painel:
             )
             if len(lpns_ja_lidas) >= total_necessario:
                 st.error("❌ Limite de LPNs atingido para este pedido!")
+                st.session_state.erro_ativo = "limite"
                 return
             elif lpn_lida in lpns_ja_lidas:
                 st.error("❌ Esta LPN já foi validada neste pedido!")
+                st.session_state.erro_ativo = "lpn_duplicada"
                 return
 
             mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
@@ -369,18 +381,22 @@ with aba_painel:
                 r_escolhido[10] if len(r_escolhido) > 10 else ""
             )
             data_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
-
-            erros_divergencia = []
+            dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
             if not mat_lido or mat_lido != mat_planilha:
-                erros_divergencia.append(
-                    f"Material divergente (Lido: {mat_lido} | Planilha: {mat_planilha})"
-                )
+                st.error(f"❌ Material divergente (Lido: {mat_lido} | Planilha: {mat_planilha})")
+                st.session_state.erro_ativo = "material"
+                return
+
+            if dun_planilha and dun_lido and dun_lido != dun_planilha:
+                st.error(f"❌ DUN divergente (Lido: {dun_lido} | Planilha: {dun_planilha})")
+                st.session_state.erro_ativo = "dun"
+                return
 
             if lote_planilha and lote_lido and lote_lido != lote_planilha:
-                erros_divergencia.append(
-                    f"Lote divergente (Lido: {lote_lido} | Planilha: {lote_planilha})"
-                )
+                st.error(f"❌ Lote divergente (Lido: {lote_lido} | Planilha: {lote_planilha})")
+                st.session_state.erro_ativo = "lote"
+                return
 
             if data_planilha_raw and venc_lido:
                 data_obj_planilha = converter_para_data_obj(data_planilha_raw)
@@ -388,27 +404,22 @@ with aba_painel:
 
                 if data_obj_planilha and data_obj_lida:
                     if data_obj_lida != data_obj_planilha:
-                        erros_divergencia.append(
-                            f"Data/Validade divergente (Lida: {venc_lido} | Planilha: {data_planilha_raw})"
-                        )
+                        st.error(f"❌ Data/Validade divergente (Lida: {venc_lido} | Planilha: {data_planilha_raw})")
+                        st.session_state.erro_ativo = "validade"
+                        return
 
-            if erros_divergencia:
-                st.error("❌ Erro de divergência encontrado:")
-                for erro in erros_divergencia:
-                    st.warning(f"• {erro}")
-            else:
-                st.session_state.dados_conferencia = {
-                    "linha": linha_encontrada,
-                    "num_pedido": num_pedido_escolhido,
-                    "responsavel": nome_responsavel.strip(),
-                    "lpn": lpn_lida,
-                    "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
-                }
-                st.session_state.etapa_validacao = True
-                st.rerun()
+            # Se passou em tudo, limpa o erro ativo e vai para a confirmação visual
+            st.session_state.erro_ativo = None
+            st.session_state.dados_conferencia = {
+                "linha": linha_encontrada,
+                "num_pedido": num_pedido_escolhido,
+                "responsavel": nome_responsavel.strip(),
+                "lpn": lpn_lida,
+                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
+            }
+            st.session_state.etapa_validacao = True
+            st.rerun()
 
-        # Removidos os travamentos de 'disabled' e os 'on_change' conflitantes. 
-        # Agora o operador digita/bipa livremente em qualquer campo e clica direto no botão de validação.
         bc1 = st.text_input(
             "1º Código de Barras (LPN)",
             placeholder="Ex: (00)378911505103650406",
@@ -448,18 +459,65 @@ with aba_painel:
                 "Finalizar Pedido Completo", type="secondary", use_container_width=True
             )
 
+    # --- COLUNA LATERAL DINÂMICA (GUIA OU ERRO ESPECÍFICO) ---
     with col_img:
-        st.subheader("💡 Guia de Códigos de Barras")
-        if os.path.exists("etiqueta_exemplo.jpg"):
-            st.image(
-                "etiqueta_exemplo.jpg", caption="Etiqueta de Referência", width=280
-            )
-        elif os.path.exists("etiqueta_exemplo.png"):
-            st.image(
-                "etiqueta_exemplo.png", caption="Etiqueta de Referência", width=280
-            )
+        erro = st.session_state.get("erro_ativo")
+
+        if erro == "material":
+            st.markdown("### 🚫 Erro no Material")
+            st.caption("Incompatível com o solicitado.")
+            img_nome = "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png"
+            if os.path.exists(img_nome):
+                st.image(img_nome, width=280)
+            else:
+                st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+
+        elif erro == "lote":
+            st.markdown("### 🚫 Erro de Lote")
+            st.caption("Imcompatível com a data de vencimento.")
+            img_nome = "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png"
+            if os.path.exists(img_nome):
+                st.image(img_nome, width=280)
+            else:
+                st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+
+        elif erro == "validade":
+            st.markdown("### 🚫 Erro de Validade/Fabricação")
+            st.caption("Data de fabricação não está de acordo com o solicitado.")
+            img_nome = "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png"
+            if os.path.exists(img_nome):
+                st.image(img_nome, width=280)
+            else:
+                st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+
+        elif erro == "dun":
+            st.markdown("### 🚫 Erro de DUN")
+            st.caption("DUN não está correspondente à DUN do material solicitado.")
+            img_nome = "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png"
+            if os.path.exists(img_nome):
+                st.image(img_nome, width=280)
+            else:
+                st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+
+        elif erro == "limite" or erro == "lpn_duplicada":
+            st.markdown("### 🚫 Erro de Quantidade / LPN")
+            st.caption("Esta LPN já foi lida ou o limite total foi atingido.")
+            if os.path.exists("ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png"):
+                st.image("ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png", width=280)
+
         else:
-            st.warning("⚠️ Imagem `etiqueta_exemplo.jpg` não encontrada.")
+            # Estado padrão: Mostra o Guia de Códigos de Barras normal
+            st.subheader("💡 Guia de Códigos de Barras")
+            if os.path.exists("etiqueta_exemplo.jpg"):
+                st.image(
+                    "etiqueta_exemplo.jpg", caption="Etiqueta de Referência", width=280
+                )
+            elif os.path.exists("etiqueta_exemplo.png"):
+                st.image(
+                    "etiqueta_exemplo.png", caption="Etiqueta de Referência", width=280
+                )
+            else:
+                st.warning("⚠️ Imagem `etiqueta_exemplo.jpg` não encontrada.")
 
     if btn_finalizar_pedido:
         if pedido_selecionado != "Selecione o pedido...":
@@ -485,6 +543,7 @@ with aba_painel:
                 if num_ped in st.session_state.lpns_validadas_por_pedido:
                     del st.session_state.lpns_validadas_por_pedido[num_ped]
 
+                st.session_state.erro_ativo = None
                 st.balloons()
                 st.success("🎉 Pedido concluído com sucesso!")
                 st.rerun()
