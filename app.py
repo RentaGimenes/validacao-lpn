@@ -200,7 +200,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# Conexão com a planilha (Removido o cache_resource problemático para evitar erro de sessão expirada)
+# Conexão com a planilha
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_dict = dict(st.secrets["gcp_service_account"])
@@ -615,10 +615,15 @@ else:
                             desc_completa_c = rc[2] if len(rc) > 2 else ""
                             desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
                             
-                            # Quantidades e valores específicos
+                            # Quantidade de LPNs Inteiras
                             lpn_inteira_c = rc[4] if len(rc) > 4 else "0"
-                            quebras_c = rc[6] if len(rc) > 6 else "0"
-                            valor_cada_c = rc[5] if len(rc) > 5 else "0"  # Coluna de valor unitário/de cada uma (índice 5)
+                            
+                            # Lista de quebras e contagem da quantidade de LPNs de quebra
+                            lista_quebras_c = obter_lista_quebras(rc)
+                            qtd_lpns_quebra_c = len(lista_quebras_c)
+                            
+                            # Valores das quebras formatados separados por vírgula (ex: 36, 18)
+                            valores_quebras_str_c = ", ".join(map(str, lista_quebras_c)) if lista_quebras_c else "0"
                             
                             responsavel_c = rc[11] if len(rc) > 11 else ""
                             data_conclusao_c = rc[13] if len(rc) > 13 else ""
@@ -630,8 +635,8 @@ else:
 <b>Material:</b> {cod_material_c}<br>
 <b>Descrição:</b> {desc_resumida_c}<br>
 <b>LPN Inteira:</b> {lpn_inteira_c}<br>
-<b>Quebras:</b> {quebras_c}<br>
-<b>Valor de cada:</b> {valor_cada_c}<br>
+<b>Qtd LPNs Quebra:</b> {qtd_lpns_quebra_c}<br>
+<b>Qtds das Quebras:</b> {valores_quebras_str_c}<br>
 <b>Responsável:</b> {responsavel_c}<br>
 <b>Data:</b> {data_conclusao_c}
 </div>""", unsafe_allow_html=True)
