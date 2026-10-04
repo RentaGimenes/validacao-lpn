@@ -144,21 +144,12 @@ st.markdown("""
         justify-content: flex-start;
         width: 100%;
         text-align: center;
-        margin-top: -35px;
+        margin-top: -10px;
     }
     .container-coluna-meio img {
         display: block;
         margin-left: auto;
         margin-right: auto;
-    }
-    .container-coluna-direita {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        text-align: center;
-        margin-top: -10px;
     }
     .container-botao-imagem {
         display: flex;
@@ -358,7 +349,6 @@ if st.session_state.etapa_validacao:
     st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Organiza em 3 colunas (Esquerda: Descrição, Centro: Botão quadrado, Direita: Ordem)
     col_conf1, col_centro, col_conf2 = st.columns([2, 1.5, 2], gap="medium")
     
     with col_conf1:
@@ -378,7 +368,6 @@ if st.session_state.etapa_validacao:
     with col_centro:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         
-        # Botão centralizado para confirmar a LPN
         if st.button("✔ Confirmar\nesta LPN", key="btn_confirmar_etapa_visual"):
             if resp_ordem == "Sim" and resp_desc == "Sim":
                 try:
@@ -399,7 +388,6 @@ if st.session_state.etapa_validacao:
                         if num_ped in st.session_state.lpns_validadas_por_pedido: del st.session_state.lpns_validadas_por_pedido[num_ped]
                         if st.session_state.pedido_selecionado_idx == num_ped: st.session_state.pedido_selecionado_idx = None
                         
-                        # Limpa os campos após finalizar com sucesso o pedido completo
                         st.session_state.val_bc1 = ""
                         st.session_state.val_bc2 = ""
                         st.session_state.val_bc3 = ""
@@ -412,7 +400,6 @@ if st.session_state.etapa_validacao:
                         st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
                         st.rerun()
                     else:
-                        # Limpa os campos para a leitura da próxima LPN do mesmo pedido
                         st.session_state.val_bc1 = ""
                         st.session_state.val_bc2 = ""
                         st.session_state.val_bc3 = ""
@@ -478,7 +465,6 @@ else:
     if dados_validos:
         pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and str(r[13]).strip())]
         
-        # Filtra os pedidos concluídos nas últimas 24h
         fuso_horario_BR = pytz.timezone("America/Sao_Paulo")
         agora_br = datetime.now(fuso_horario_BR)
         pedidos_concluidos_24h = []
@@ -500,9 +486,6 @@ else:
                 else:
                     pedidos_concluidos_24h.append(r)
 
-        # ==========================================
-        # ABAS PARA SEPARAR PENDENTES E CONCLUÍDOS
-        # ==========================================
         aba_pendentes, aba_concluidos = st.tabs(["⏳ Pedidos Pendentes", "✅ Pedidos Concluídos"])
 
         with aba_pendentes:
@@ -599,15 +582,38 @@ else:
     st.markdown("---")
 
     # ==========================================
-    # FORMULÁRIO DE LEITURA E VALIDAÇÃO DOS CÓDIGOS (POSIÇÃO INVERTIDA)
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO (ESTRUTURA PEDIDA)
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
-    # Ordem ajustada: Coluna Esquerda agora abriga a Ação/Aviso/Botão, e a Direita abriga a Guia/Imagem de Exemplo
-    col_acao, col_form, col_img = st.columns([1.1, 1.2, 1.4], gap="large")
+    # Divisão EXATA em 3 colunas: Esquerda (Campos), Meio (Aviso e Botão), Direita (Modelo LPN Exemplo)
+    col_esq, col_meio, col_dir = st.columns([1.2, 1.2, 1.4], gap="large")
     
-    with col_acao:
-        st.markdown('<div class="container-coluna-direita">', unsafe_allow_html=True)
+    with col_esq:
+        # ESQUERDA: Campos para bipar (com limpeza controlada pelo session_state)
+        nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
+        st.session_state.val_nome = nome_responsavel
+        
+        bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
+        st.session_state.val_bc1 = bc1
+        bc2 = st.text_input("2º Código de Barras", value=st.session_state.val_bc2, key="input_bc2_field")
+        st.session_state.val_bc2 = bc2
+        bc3 = st.text_input("3º Código de Barras", value=st.session_state.val_bc3, key="input_bc3_field")
+        st.session_state.val_bc3 = bc3
+
+        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
+        if idx_sel_atual and idx_sel_atual in mapa_pedidos:
+            p_info = mapa_pedidos[idx_sel_atual]
+            lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(p_info["num_pedido"], [])
+            tot_esperado_pedido = p_info["total_esperado"]
+            qtd_lidas = len(lidas_atualmente)
+            porcentagem_calc = min(int((qtd_lidas / tot_esperado_pedido) * 100), 100)
+            st.markdown(f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs ({porcentagem_calc}%)")
+            st.progress(porcentagem_calc / 100.0)
+
+    with col_meio:
+        # MEIO: Aviso de selecionar pedido, status e botão de validação centralizados
+        st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
 
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
@@ -632,35 +638,12 @@ else:
             """, unsafe_allow_html=True)
 
         st.markdown('<div class="container-botao-imagem">', unsafe_allow_html=True)
-        
-        # Botão principal para iniciar a validação dos códigos bipados
         btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
-
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with col_form:
-        nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
-        st.session_state.val_nome = nome_responsavel
-        
-        bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
-        st.session_state.val_bc1 = bc1
-        bc2 = st.text_input("2º Código de Barras", value=st.session_state.val_bc2, key="input_bc2_field")
-        st.session_state.val_bc2 = bc2
-        bc3 = st.text_input("3º Código de Barras", value=st.session_state.val_bc3, key="input_bc3_field")
-        st.session_state.val_bc3 = bc3
-
-        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
-        if idx_sel_atual and idx_sel_atual in mapa_pedidos:
-            p_info = mapa_pedidos[idx_sel_atual]
-            lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(p_info["num_pedido"], [])
-            tot_esperado_pedido = p_info["total_esperado"]
-            qtd_lidas = len(lidas_atualmente)
-            porcentagem_calc = min(int((qtd_lidas / tot_esperado_pedido) * 100), 100)
-            st.markdown(f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs ({porcentagem_calc}%)")
-            st.progress(porcentagem_calc / 100.0)
-
-    with col_img:
+    with col_dir:
+        # DIREITA: Imagem / Modelo da LPN de exemplo e alertas de erro caso ocorram
         st.markdown('<div id="ancora-validacao"></div>', unsafe_allow_html=True)
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
         
