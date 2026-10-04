@@ -125,8 +125,8 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ESTILO EXCLUSIVO APENAS PARA O BOTÃO DE VALIDAÇÃO (COLUNA 3 DA SEÇÃO INFERIOR) */
-    div[data-testid="column"]:nth-of-type(3) div.stButton > button {
+    /* ESTILO EXCLUSIVO E GARANTIDO PARA O BOTÃO DE VALIDAÇÃO */
+    div.div-botao-validar button {
         background-color: #0b1410 !important;
         color: #2ecc71 !important;
         font-size: 16px !important;
@@ -139,7 +139,7 @@ st.markdown("""
         display: block !important;
         text-align: center !important;
     }
-    div[data-testid="column"]:nth-of-type(3) div.stButton > button:hover {
+    div.div-botao-validar button:hover {
         background-color: #13241b !important;
         color: #2ecc71 !important;
         border-color: #2ecc71 !important;
@@ -571,8 +571,10 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # BOTÃO EXCLUSIVO DE VALIDAÇÃO (ESTILO RETANGULAR LARGO COM BORDA E TEXTO VERDE)
+        # BOTÃO ENVOLVIDO NA DIV COM A CLASSE EXCLUSIVA
+        st.markdown('<div class="div-botao-validar">', unsafe_allow_html=True)
         btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_largo")
+        st.markdown('</div>', unsafe_allow_html=True)
 
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
