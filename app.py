@@ -440,17 +440,17 @@ with aba_painel:
 
         bc1 = st.text_input(
             "1º Código de Barras (LPN)",
-            placeholder="Ex: (00)378911505103650406",
+            placeholder="AGUARDANDO ENTRADA",
             key="input_bc1",
         )
         bc2 = st.text_input(
             "2º Código de Barras",
-            placeholder="Ex: (90)65684949...",
+            placeholder="AGUARDANDO ENTRADA",
             key="input_bc2",
         )
         bc3 = st.text_input(
             "3º Código de Barras",
-            placeholder="Ex: (02)77891150103763...",
+            placeholder="AGUARDANDO ENTRADA",
             key="input_bc3",
         )
 
