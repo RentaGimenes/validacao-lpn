@@ -29,7 +29,7 @@ IMAGENS = {
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
     "validacao_qtd": "validação da quantidade.PNG",
     "lpn_duplicada": "lpnduplicada.PNG",
-    "sonic_gif": "sonicgif/SONICGIF.gif",
+    "sonic_gif": "SONICGIF.gif",
     "att_gif": "att.gif",
     "validar_btn": "validar.png",
 }
