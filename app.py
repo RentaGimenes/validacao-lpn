@@ -11,7 +11,9 @@ from streamlit_autorefresh import st_autorefresh
 # --- CONFIGURAÇÃO DOS NOMES DAS IMAGENS ---
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
-    "conf_desc": "descricao material.png",
+    "conf_desc": (
+        "descricao material.png"
+    ),  # Nome exato corrigido com o espaço correto
     "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
     "lote06": "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png",
@@ -381,6 +383,8 @@ with aba_painel:
       img_desc = IMAGENS["conf_desc"]
       if os.path.exists(img_desc):
         st.image(img_desc, width=420)
+      else:
+        st.warning(f"⚠ Imagem `{img_desc}` não encontrada.")
 
     with col_conf2:
       resp_ordem_str = st.radio(
@@ -392,6 +396,8 @@ with aba_painel:
       img_ordem = IMAGENS["conf_ordem"]
       if os.path.exists(img_ordem):
         st.image(img_ordem, width=420)
+      else:
+        st.warning(f"⚠ Imagem `{img_ordem}` não encontrada.")
 
     if st.button("Confirmar esta LPN", type="primary", use_container_width=True):
       if resp_ordem_str == "Sim" and resp_desc_str == "Sim":
