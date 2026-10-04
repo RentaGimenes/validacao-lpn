@@ -10,7 +10,7 @@ from streamlit_autorefresh import st_autorefresh
 
 # --- CONFIGURAÇÃO DOS NOMES DAS IMAGENS ---
 IMAGENS = {
-    "guia05": "GUIA DE CODIGO DE LPN.JPG",  # Imagem de exemplo de LPN
+    "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": (
         "POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A"
         " SU.png"
@@ -19,27 +19,20 @@ IMAGENS = {
         "POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA"
         " CORRESPONDENTE AO PEDIDO.png"
     ),
-    "material04": (
-        "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png"
-    ),  # Correspondente a material04
-    "lote06": (
-        "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png"
-    ),  # Correspondente a lote06
-    "datav02": (
-        "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png"
-    ),  # Correspondente a datav02 (data de vencimento)
-    "dun03": (
-        "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png"
-    ),  # Correspondente a dun03
+    "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
+    "lote06": "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png",
+    "datav02": "DATA DE VENCIMENTO NAO ESTA COMPATIVEL.png",
+    "datafab03": "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png",
+    "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
 }
 
-# Configurando a página do app (visual limpo e moderno)
+# Configurando a página do app
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
 
 # Atualiza a página sozinho a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado ajustando os cards e tamanhos de fonte
+# CSS personalizado
 st.markdown(
     """
     <style>
@@ -114,7 +107,6 @@ st.markdown(
 )
 
 
-# Função para tocar o som de erro
 def tocar_som_erro():
   sound_html = """
         <audio autoplay>
@@ -124,7 +116,6 @@ def tocar_som_erro():
   st.markdown(sound_html, unsafe_allow_html=True)
 
 
-# Conectando com o Google Sheets usando os secrets do Streamlit
 @st.cache_resource
 def init_connection():
   scope = [
@@ -150,7 +141,6 @@ except Exception as e:
   st.stop()
 
 
-# --- FUNÇÕES PARA LIMPAR E TRATAR OS DADOS ---
 def limpar_texto(texto):
   if not texto:
     return ""
@@ -237,17 +227,17 @@ def processar_codigo_3(barcode):
   try:
     limpo = barcode.replace("(", "").replace(")", "")
 
-    # Extrai o DUN (padrão antes do 17)
+    # Extrai o DUN
     match_dun = re.search(r"02(\d+?)(?=17|$)", limpo)
     dun = match_dun.group(1) if match_dun else limpo[2:16]
 
-    # Extrai a Data de Vencimento (identificada pelo prefixo 17 + 6 dígitos)
+    # Extrai a Data de Vencimento (após o identificador 17)
     match_venc = re.search(r"17(\d{6})", limpo)
     vencimento = (
         formatar_data_aammdd(match_venc.group(1)) if match_venc else ""
     )
 
-    # Extrai a Data de Fabricação (identificada pelo prefixo 11 + 6 dígitos)
+    # Extrai a Data de Fabricação (após o identificador 11)
     match_fab = re.search(r"11(\d{6})", limpo)
     fabricacao = formatar_data_aammdd(match_fab.group(1)) if match_fab else ""
 
@@ -277,7 +267,6 @@ def obter_quantidade_total_lpns(r):
   return total if total > 0 else 1
 
 
-# --- MONTAGEM DA TELA DO APP ---
 st.markdown("## 📦 Validação das informações das Lpn")
 
 if "etapa_validacao" not in st.session_state:
@@ -508,7 +497,14 @@ with aba_painel:
       lote_planilha = limpar_texto(
           r_escolhido[10] if len(r_escolhido) > 10 else ""
       )
-      data_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
+      data_vencimento_planilha_raw = (
+          r_escolhido[9] if len(r_escolhido) > 9 else ""
+      )
+      # Se houver coluna específica para Data de Fabricação na planilha (ex: coluna 15, ajuste se necessário), adicione aqui.
+      data_fabricacao_planilha_raw = (
+          r_escolhido[14] if len(r_escolhido) > 14 else ""
+      )
+
       dun_planilha = limpar_texto(
           r_escolhido[8] if len(r_escolhido) > 8 else ""
       )
@@ -540,17 +536,34 @@ with aba_painel:
         tocar_som_erro()
         return
 
-      # Validação da Data de Vencimento (datav02) comparando com o venc_lido extraído via '17'
-      if data_planilha_raw and venc_lido:
-        data_obj_planilha = converter_para_data_obj(data_planilha_raw)
+      # Validação separada da Data de Vencimento
+      if data_vencimento_planilha_raw and venc_lido:
+        data_obj_planilha = converter_para_data_obj(data_vencimento_planilha_raw)
         data_obj_lida = converter_para_data_obj(venc_lido)
 
         if data_obj_planilha and data_obj_lida:
           if data_obj_lida != data_obj_planilha:
             st.session_state.erro_ativo = "datav02"
             st.session_state.detalhes_erro = {
-                "solicitado": str(data_planilha_raw),
+                "solicitado": str(data_vencimento_planilha_raw),
                 "lido": str(venc_lido),
+            }
+            tocar_som_erro()
+            return
+
+      # Validação separada da Data de Fabricação
+      if data_fabricacao_planilha_raw and fab_lido:
+        data_fab_obj_planilha = converter_para_data_obj(
+            data_fabricacao_planilha_raw
+        )
+        data_fab_obj_lida = converter_para_data_obj(fab_lido)
+
+        if data_fab_obj_planilha and data_fab_obj_lida:
+          if data_fab_obj_lida != data_fab_obj_planilha:
+            st.session_state.erro_ativo = "datafab03"
+            st.session_state.detalhes_erro = {
+                "solicitado": str(data_fabricacao_planilha_raw),
+                "lido": str(fab_lido),
             }
             tocar_som_erro()
             return
@@ -614,7 +627,6 @@ with aba_painel:
           "Finalizar Pedido Completo", type="secondary", use_container_width=True
       )
 
-  # Lado direito: alertas visuais
   with col_img:
     erro = st.session_state.get("erro_ativo")
     det = st.session_state.get(
@@ -671,7 +683,31 @@ with aba_painel:
 
     elif erro == "datav02":
       st.markdown(
-          '<div class="alerta-piscar">🚫 Erro de Validade/Fabricação</div>',
+          '<div class="alerta-piscar">🚫 Erro de Data de Validade</div>',
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          '<div class="alerta-sub">Data de vencimento não está compatível.</div>',
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          f"""
+                <div class="alerta-comparacao">
+                    <b>SOLICITADO:</b> {det['solicitado']}<br>
+                    <b>Gerado na LPN:</b> {det['lido']}
+                </div>
+            """,
+          unsafe_allow_html=True,
+      )
+      img_nome = IMAGENS["datav02"]
+      if os.path.exists(img_nome):
+        st.image(img_nome, width=450)
+      else:
+        st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+
+    elif erro == "datafab03":
+      st.markdown(
+          '<div class="alerta-piscar">🚫 Erro de Data de Fabricação</div>',
           unsafe_allow_html=True,
       )
       st.markdown(
@@ -688,7 +724,7 @@ with aba_painel:
             """,
           unsafe_allow_html=True,
       )
-      img_nome = IMAGENS["datav02"]
+      img_nome = IMAGENS["datafab03"]
       if os.path.exists(img_nome):
         st.image(img_nome, width=450)
       else:
@@ -838,7 +874,6 @@ with aba_concluidos:
   else:
     st.info("Nenhum dado encontrado.")
 
-# Rodapé com o Sonic correndo
 st.markdown("---")
 st.markdown(
     """
