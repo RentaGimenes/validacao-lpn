@@ -1,4 +1,3 @@
-base64
 from datetime import datetime, timedelta
 import os
 import re
@@ -15,27 +14,17 @@ IMAGENS = {
     "conf_desc": "descricao material.png",
     "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
-    "lote06": "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png"
-    if "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png"
-    else "lote06.png",
+    "lote06": (
+        "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png"
+        if "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png"
+        else "lote06.png"
+    ),
     "datav02": "DATA DE VENCIMENTO NAO ESTA COMPATIVEL.png",
     "datafab03": "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png",
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
     "validacao_qtd": "validação da quantidade.PNG",
     "sonic_gif": "SONICGIF.gif",
 }
-
-
-# Função auxiliar para carregar imagens/GIFs locais em Base64 com segurança
-def carregar_imagem_base64(caminho):
-  if os.path.exists(caminho):
-    import base64
-
-    with open(caminho, "rb") as f:
-      dados = f.read()
-    return base64.b64encode(dados).decode("utf-8")
-  return None
-
 
 # Configuro a página do app aqui
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
@@ -487,27 +476,23 @@ with aba_painel:
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # AVISO AUMENTADO E COM GIF CARREGADO VIA BASE64 COM SEGURANÇA
-    sonic_b64 = carregar_imagem_base64(IMAGENS["sonic_gif"])
-    img_tag = (
-        f'<img src="data:image/gif;base64,{sonic_b64}" width="50"'
-        ' style="margin-left: 15px;">'
-        if sonic_b64
-        else ""
-    )
-
-    st.markdown(
-        f"""
-        <div style="background-color: #1e1e1e; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
-            <span style="color: #f1c40f; font-size: 14px; font-weight: bold; line-height: 1.5;">
-                ⚠️ LPNS MERAMENTE ILUSTRATIVAS<br>
-                SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
-            </span>
-            {img_tag}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # AVISO AUMENTADO E COM O GIF EXIBIDO COM st.image()
+    col_aviso_txt, col_aviso_img = st.columns([4, 1])
+    with col_aviso_txt:
+      st.markdown(
+          """
+            <div style="background-color: #1e1e1e; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                <span style="color: #f1c40f; font-size: 16px; font-weight: bold; line-height: 1.6;">
+                    ⚠️ LPNS MERAMENTE ILUSTRATIVAS<br>
+                    SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
+                </span>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+    with col_aviso_img:
+      if os.path.exists(IMAGENS["sonic_gif"]):
+        st.image(IMAGENS["sonic_gif"], width=80)
 
     st.markdown(
         f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>',
@@ -1123,12 +1108,3 @@ with aba_concluidos:
     st.info("Nenhum dado encontrado.")
 
 st.markdown("---")
-st.markdown(
-    """
-    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 10px;">
-        <span style="font-size: 11px; color: #777777;">Validação de LPN a todo vapor</span>
-        <img src="https://i.pinimg.com/originals/84/90/f0/8490f0cab98f44a6e905a72cb61b72aa.gif" width="40" style="border-radius: 2px;">
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
