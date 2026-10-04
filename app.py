@@ -300,7 +300,8 @@ def processar_codigo_2(barcode):
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
         lote = ""
-        match_lote = re.search(r'10(\d+?)(?=17|$)', limpo)
+        # Correção aplicada aqui para capturar corretamente após o identificador '10'
+        match_lote = re.search(r'10([A-Za-z0-9]+)', limpo)
         if match_lote:
             lote = match_lote.group(1).strip()
         else:
@@ -607,9 +608,7 @@ else:
                             desc_completa_c = rc[2] if len(rc) > 2 else ""
                             desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
                             
-                            # Quantidade total de LPNs do pedido concluído
                             qtd_lpns_total_c = obter_quantidade_total_lpns(rc)
-                            
                             responsavel_c = rc[11] if len(rc) > 11 else ""
                             data_conclusao_c = rc[13] if len(rc) > 13 else ""
                             
@@ -747,7 +746,6 @@ else:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Lógica central rigorosa de validação de todos os campos
         def executar_validacao_logica():
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -775,14 +773,12 @@ else:
             total_necessario = info_pedido["total_esperado"]
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
 
-            # 1. VERIFICAÇÃO DE LPN DUPLICADA
             if lpn_lida in lpns_ja_lidas:
                 st.session_state.erro_ativo = "lpn_duplicada"
                 st.session_state.detalhes_erro = {"solicitado": "", "lido": f"LPN já validada anteriormente: {lpn_lida}"}
                 tocar_som_erro()
                 st.rerun()
 
-            # 2. VERIFICAÇÃO DE CÓDIGO DO MATERIAL
             mat_esperado = limpar_texto(r_escolhido[7]) if len(r_escolhido) > 7 else ""
             if mat_esperado and mat_lido != mat_esperado:
                 st.session_state.erro_ativo = "material04"
@@ -790,7 +786,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 3. VERIFICAÇÃO DO DUN
             dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
             if dun_esperado and dun_lido != dun_esperado:
                 st.session_state.erro_ativo = "dun03"
@@ -798,7 +793,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 4. VERIFICAÇÃO DA DATA DE VENCIMENTO
             venc_esperado = formatar_para_aammdd(r_escolhido[9] if len(r_escolhido) > 9 else "")
             venc_lido_fmt = formatar_para_aammdd(venc_lido)
             if venc_esperado and venc_lido_fmt != venc_esperado:
@@ -807,7 +801,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 5. VERIFICAÇÃO DA DATA DE FABRICAÇÃO / CRIAÇÃO DO PALLET
             fab_esperado = formatar_para_aammdd(r_escolhido[3] if len(r_escolhido) > 3 else "")
             fab_lido_fmt = formatar_para_aammdd(fab_lido)
             if fab_esperado and fab_lido_fmt != fab_esperado:
@@ -816,7 +809,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 6. VERIFICAÇÃO RIGOROSA DO LOTE
             lote_esperado_bruto = r_escolhido[10] if len(r_escolhido) > 10 else ""
             lote_esperado_formatado = formatar_lote_rigoroso(lote_esperado_bruto)
             lote_lido_formatado = formatar_lote_lido_rigoroso(lote_lido_bruto)
