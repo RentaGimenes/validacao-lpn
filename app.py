@@ -604,9 +604,12 @@ else:
                         try:
                             linha_pedido_c = rc[1] if len(rc) > 1 else ""
                             cod_material_c = rc[7] if len(rc) > 7 else ""
-                            dun_material_c = rc[8] if len(rc) > 8 else ""
                             desc_completa_c = rc[2] if len(rc) > 2 else ""
                             desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
+                            
+                            # Quantidade total de LPNs do pedido concluído
+                            qtd_lpns_total_c = obter_quantidade_total_lpns(rc)
+                            
                             responsavel_c = rc[11] if len(rc) > 11 else ""
                             data_conclusao_c = rc[13] if len(rc) > 13 else ""
                             
@@ -614,10 +617,10 @@ else:
                                 st.markdown(f"""<div class="card-pedido-concluido">
 <span style="color: #2ecc71; font-weight: bold;">✔ CONCLUÍDO</span><br>
 <b>Linha:</b> {linha_pedido_c}<br>
-<b>Cód Mat:</b> {cod_material_c}<br>
-<b>DUN:</b> {dun_material_c}<br>
-<b>Desc:</b> {desc_resumida_c}<br>
-<b>Resp:</b> {responsavel_c}<br>
+<b>Material:</b> {cod_material_c}<br>
+<b>Descrição:</b> {desc_resumida_c}<br>
+<b>Qtd LPNs:</b> {qtd_lpns_total_c}<br>
+<b>Responsável:</b> {responsavel_c}<br>
 <b>Data:</b> {data_conclusao_c}
 </div>""", unsafe_allow_html=True)
                         except Exception:
