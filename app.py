@@ -133,7 +133,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Centralização perfeita e alinhamento da coluna da direita */
+    /* Coluna do meio deslocada levemente para a direita */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -141,6 +141,7 @@ st.markdown("""
         justify-content: center;
         width: 100%;
         text-align: center;
+        margin-left: 40px;
     }
     .container-coluna-meio img {
         display: block;
