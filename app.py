@@ -229,15 +229,31 @@ def limpar_texto(texto):
 def formatar_lote_rigoroso(lote_str):
     """
     Garante o formato de lote solicitado: 
-    Adiciona 6 zeros à esquerda de um valor composto por 4 dígitos do ano + 3 dígitos do calendário juliano.
-    Exemplo: Se o valor lido/calculado for '2026150', formata para '0000002026150'.
+    Adiciona 7 zeros à esquerda de um valor composto por 4 dígitos do ano + 3 dígitos do calendário juliano.
     """
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
     if not digitos:
         return ""
-    # Retorna com 6 zeros à esquerda baseando-se estritamente nos dígitos encontrados
-    return "000000" + digitos
+    # Retorna com 7 zeros à esquerda baseando-se estritamente nos dígitos encontrados
+    return "0000000" + digitos
+
+def formatar_lote_lido_rigoroso(lote_str):
+    """
+    Extrai o lote da segunda leitura:
+    - Pega os dígitos.
+    - Adiciona 7 zeros iniciais + 4 dígitos do ano + 3 dígitos julianos.
+    - Ignora os 6 últimos dígitos subsequentes.
+    """
+    if not lote_str: return ""
+    digitos = re.sub(r'\D', '', str(lote_str))
+    if len(digitos) >= 11:
+        # Pega os 11 caracteres principais (ano + juliano ou o miolo útil) após os identificadores
+        base = digitos[:11]
+        return "0000000" + base
+    if not digitos:
+        return ""
+    return "0000000" + digitos
 
 def converter_para_data_obj(data_str):
     if not data_str: return None
@@ -590,7 +606,7 @@ else:
                         except Exception:
                             continue
             else:
-                st.success("🎉 Todos os pedidos pendentes já foram validados e concluídos!")
+                st.success("🎉 Todos los pedidos pendentes já foram validados e concluídos!")
 
         with aba_concluidos:
             if pedidos_concluidos_24h:
@@ -722,7 +738,7 @@ else:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Lógica central executada ao clicar em "INICIAR VALIDAÇÃO" (Conferindo apenas o lote rigoroso)
+        # Lógica central executada ao clicar em "INICIAR VALIDAÇÃO" (Conferindo apenas o lote rigoroso com 7 zeros e ignorando o final)
         def executar_validacao_logica():
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -740,7 +756,7 @@ else:
                 st.stop()
                 
             lpn_lida = processar_codigo_1(bc1_val)
-            _, _, lote_lido = processar_codigo_2(bc2_val)
+            _, _, lote_lido_bruto = processar_codigo_2(bc2_val)
             
             info_pedido = mapa_pedidos[idx_sel]
             linha_encontrada = info_pedido["linha"]
@@ -755,13 +771,11 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # VALIDAÇÃO EXCLUSIVA E RIGOROSA DO LOTE
-            # A planilha traz o valor (ano + 3 dígitos julianos), aplicamos a formatação de 6 zeros à esquerda
+            # VALIDAÇÃO EXCLUSIVA E RIGOROSA DO LOTE (7 ZEROS + ANO + JULIANO, IGNORANDO O FINAL NO LIDO)
             lote_esperado_bruto = r_escolhido[10] if len(r_escolhido) > 10 else ""
             lote_esperado_formatado = formatar_lote_rigoroso(lote_esperado_bruto)
             
-            # O lote lido pelo código de barras também passa pelo mesmo padrão rigoroso de formatação
-            lote_lido_formatado = formatar_lote_rigoroso(lote_lido)
+            lote_lido_formatado = formatar_lote_lido_rigoroso(lote_lido_bruto)
             
             if lote_esperado_formatado:
                 if not lote_lido_formatado or lote_lido_formatado != lote_esperado_formatado:
