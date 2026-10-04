@@ -1,4 +1,3 @@
-
 # ==========================================
 # IMPORTAÇÕES DE BIBLIOTECAS
 # ==========================================
@@ -58,24 +57,24 @@ st.markdown("""
     }
     .alerta-piscar {
         color: #ff4b4b;
-        font-size: 26px;
+        font-size: 24px;
         font-weight: bold;
         animation: piscar 1s infinite;
     }
     .alerta-sub {
         color: #ff6b6b;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: bold;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
     }
     .alerta-comparacao {
         background-color: #2c1515;
         border-left: 4px solid #ff4b4b;
         padding: 8px 12px;
         border-radius: 4px;
-        font-size: 14px;
+        font-size: 13px;
         color: #ffffff;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         margin-top: 5px;
     }
     
@@ -125,11 +124,10 @@ st.markdown("""
     div.stButton > button {
         background-color: #111a16 !important;
         color: #2ecc71 !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         font-weight: bold !important;
-        height: 60px !important;
+        height: 65px !important;
         width: 100% !important;
-        max-width: 220px !important;
         border-radius: 12px !important;
         border: 2px solid #2ecc71 !important;
         box-shadow: 0px 0px 10px rgba(46, 204, 113, 0.3) !important;
@@ -364,7 +362,6 @@ if st.session_state.etapa_validacao:
                         st.session_state.etapa_validacao = False
                         st.session_state.erro_ativo = None
                         st.session_state.dados_conferencia = {}
-                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
                         st.cache_data.clear()
                         st.balloons()
                         st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
@@ -374,7 +371,6 @@ if st.session_state.etapa_validacao:
                         st.session_state.etapa_validacao = False
                         st.session_state.erro_ativo = None
                         st.session_state.dados_conferencia = {}
-                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
                         st.rerun()
                 except Exception as e:
                     st.error(f"Erro: {e}")
@@ -489,11 +485,12 @@ else:
 
     st.markdown("---")
 
-    # Layout de 3 Colunas: Esquerda (Inputs), Meio (Modelo de LPN alinhado), Direita (Alerta e Botão Único)
-    col_form, col_img, col_acao = st.columns([1.2, 1.2, 1.3], gap="large")
+    # SEÇÃO INFERIOR: LAYOUT DE 3 COLUNAS AJUSTADO
+    st.subheader("📝 Validar e Dar Baixa na LPN")
+    
+    col_form, col_img, col_acao = st.columns([1.1, 1.2, 1.2], gap="large")
     
     with col_form:
-        st.subheader("📝 Validar e Dar Baixa na LPN")
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
         st.session_state.val_nome = nome_responsavel
         
@@ -515,58 +512,54 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
-        st.markdown("<div style='height: 48px;'></div>", unsafe_allow_html=True)
-        
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
         if erro == "material04":
             st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Incompatível com o solicitado.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["material04"]): st.image(IMAGENS["material04"], width=330)
+            if os.path.exists(IMAGENS["material04"]): st.image(IMAGENS["material04"], width=310)
         elif erro == "lote06":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Imcompatível com a data de vencimento.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["lote06"]): st.image(IMAGENS["lote06"], width=330)
+            if os.path.exists(IMAGENS["lote06"]): st.image(IMAGENS["lote06"], width=310)
         elif erro == "datav02":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Data de Validade</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Data de vencimento não está compatível.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["datav02"]): st.image(IMAGENS["datav02"], width=330)
+            if os.path.exists(IMAGENS["datav02"]): st.image(IMAGENS["datav02"], width=310)
         elif erro == "datafab03":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Data de Fabricação</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Data de fabricação não está de acordo.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["datafab03"]): st.image(IMAGENS["datafab03"], width=330)
+            if os.path.exists(IMAGENS["datafab03"]): st.image(IMAGENS["datafab03"], width=310)
         elif erro == "dun03":
             st.markdown('<div class="alerta-piscar">🚫 Erro de DUN</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">DUN não corresponde ao solicitado.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=330)
+            if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=310)
         elif erro == "validacao_qtd":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Quantidade / Quebra</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Quantidade lida não confere com as quebras pendentes.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao">{det['solicitado']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["validacao_qtd"]): st.image(IMAGENS["validacao_qtd"], width=330)
+            if os.path.exists(IMAGENS["validacao_qtd"]): st.image(IMAGENS["validacao_qtd"], width=310)
         elif erro == "lpn_duplicada":
             st.markdown('<div class="alerta-piscar">🚫 LPN Duplicada</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Esta LPN já foi validada neste pedido.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao">{det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=330)
+            if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=310)
         elif erro == "limite":
             st.markdown('<div class="alerta-piscar">🚫 Limite Excedido</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validas.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
             if os.path.exists(IMAGENS["guia05"]):
-                st.image(IMAGENS["guia05"], width=330)
+                st.image(IMAGENS["guia05"], width=310)
             elif os.path.exists("image_51919d.png"):
-                st.image("image_51919d.png", width=330)
+                st.image("image_51919d.png", width=310)
 
     with col_acao:
-        st.markdown("<div style='height: 48px;'></div>", unsafe_allow_html=True)
-        
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
             st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 14px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
