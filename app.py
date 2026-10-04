@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 import re
+import base64
 from google.oauth2.service_account import Credentials
 import gspread
 import pandas as pd
@@ -476,25 +477,35 @@ with aba_painel:
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # AVISO COM O GIF DO SONIC INTEGRADO DENTRO DA CAIXA AMARELA
-    col_aviso_txt, col_aviso_img = st.columns([5, 1])
-    with col_aviso_txt:
-      st.markdown(
-          """
-            <div style="background-color: #1e1e1e; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px; height: 100%; display: flex; align-items: center;">
-                <span style="color: #f1c40f; font-size: 15px; font-weight: bold; line-height: 1.5;">
-                    ⚠️ LPNS MERAMENTE ILUSTRATIVAS<br>
-                    SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
-                </span>
-            </div>
-            """,
-          unsafe_allow_html=True,
+    # AVISO COM O GIF DO SONIC EMBUTIDO EM BASE64 DENTRO DA CAIXA AMARELA
+    sonic_path = IMAGENS["sonic_gif"]
+    sonic_html = ""
+
+    if os.path.exists(sonic_path):
+      with open(sonic_path, "rb") as f:
+        data_bytes = f.read()
+        encoded = base64.b64encode(data_bytes).decode()
+        sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="75" style="margin-left: 15px; vertical-align: middle;">'
+    else:
+      sonic_html = (
+          '<span style="color: #ff4b4b; font-size: 12px;">(GIF não'
+          " encontrado)</span>"
       )
-    with col_aviso_img:
-      if os.path.exists(IMAGENS["sonic_gif"]):
-        st.image(IMAGENS["sonic_gif"], width=75)
-      else:
-        st.warning("GIF não encontrado")
+
+    st.markdown(
+        f"""
+        <div style="background-color: #1e1e1e; border: 2px solid #f1c40f; padding: 16px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="color: #f1c40f; font-size: 15px; font-weight: bold; line-height: 1.5;">
+                ⚠️ LPNs MERAMENTE ILUSTRATIVAS<br>
+                SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
+            </div>
+            <div>
+                {sonic_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>',
@@ -648,7 +659,7 @@ with aba_painel:
       idx_sel = st.session_state.get("pedido_selecionado_idx")
       if not idx_sel or idx_sel not in mapa_pedidos:
         st.warning(
-            "⚠️ Selecione um pedido clicando no cartão correspondente no painel"
+            "⚠️️ Selecione um pedido clicando no cartão correspondente no painel"
             " acima."
         )
         return
