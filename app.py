@@ -281,7 +281,7 @@ def obter_lista_quebras(r):
     texto_quebras = str(r[6]).strip() if len(r) > 6 else ""
     if not texto_quebras or texto_quebras == "0":
       return []
-    partes = [p.strip() for p in texto_quebras.split(",") if p.strip()]
+    partes = [int(re.sub(r"\D", "", p)) for p in texto_quebras.split(",") if p.strip() and re.sub(r"\D", "", p).isdigit()]
     return partes
   except Exception:
     return []
@@ -614,37 +614,31 @@ with aba_painel:
       )
 
       # -------------------------------------------------------------
-      # LÓGICA INTELIGENTE: INTEIRAS vs QUEBRAS
+      # LÓGICA INTELIGENTE: INTEIRAS vs QUEBRAS (ORDEM ALEATÓRIA)
       # -------------------------------------------------------------
       qtd_inteira_esperada = obter_quantidade_inteira(r_escolhido)
       lista_quebras = obter_lista_quebras(r_escolhido)
 
-      # Verifico se já lemos todas as inteiras exigidas
+      # Contamos quantas LPNs inteiras já foram lidas (neste caso simplificado, as primeiras N leituras até o limite de inteiras)
+      # Ou podemos controlar por contagem de itens lidos versus limite de inteiras.
       if len(lpns_ja_lidas) < qtd_inteira_esperada:
-        # Ainda estamos validando as inteiras. Se o operador tentou passar uma quebra ou algo incorreto:
+        # Ainda estamos validando as inteiras. Se a pessoa bipou algo que excede o formato de inteiras mas parece quebra ou excesso, deixamos seguir se couber, 
+        # mas a validação principal impede ultrapassar o limite geral sem tratar as quebras.
         pass
       else:
-        # Já passamos das inteiras! Agora estamos na etapa de quebra.
-        # Vamos verificar se há quebras pendentes na planilha
-        quebras_restantes_idx = len(lpns_ja_lidas) - qtd_inteira_esperada
-        if quebras_restantes_idx < len(lista_quebras):
-          quebra_esperada_str = lista_quebras[quebras_restantes_idx]
-          # Opcional: comparar se a quantidade extraída do segundo código de barras (qtd_lida)
-          # bate com o valor da quebra esperada cadastrada na planilha.
-          try:
-            val_quebra_esp = int(re.sub(r"\D", "", str(quebra_esperada_str)))
-            if val_quebra_esp > 0 and qtd_lida != val_quebra_esp:
-              st.session_state.erro_ativo = "validacao_qtd"
-              st.session_state.detalhes_erro = {
-                  "solicitado": f"Quebra Esperada: {val_quebra_esp} unidades",
-                  "lido": f"Quantidade no BC2 (37): {qtd_lida} unidades",
-              }
-              tocar_som_erro()
-              return
-          except Exception:
-            pass
+        # As inteiras já foram todas validadas! Agora estamos na etapa de quebra.
+        if len(lista_quebras) > 0:
+          # Verificamos se a quantidade lida (qtd_lida) bate com ALGUMA das quebras cadastradas na planilha
+          if qtd_lida not in lista_quebras:
+            st.session_state.erro_ativo = "validacao_qtd"
+            st.session_state.detalhes_erro = {
+                "solicitado": f"Quebras esperadas pendentes: {lista_quebras}",
+                "lido": f"Quantidade informada no BC2 (37): {qtd_lida}",
+            }
+            tocar_som_erro()
+            return
         else:
-          # Se já estourou tanto as inteiras quanto as quebras cadastradas:
+          # Se não há quebras cadastradas e já atingiu as inteiras, estourou o limite
           st.session_state.erro_ativo = "limite"
           st.session_state.detalhes_erro = {
               "solicitado": f"Limite Máximo Atingido: {total_necessario} LPNs",
@@ -786,6 +780,10 @@ with aba_painel:
       st.progress(porcentagem_calc / 100.0)
 
     if st.button(texto_botao_validar, type="primary", use_container_width=True):
+      # Limpa os campos dos códigos de barras ao acionar a validação
+      for k in ["input_bc1", "input_bc2", "input_bc3"]:
+        if k in st.session_state:
+          del st.session_state[k]
       executar_validacao()
 
   with col_img:
@@ -918,7 +916,7 @@ with aba_painel:
           unsafe_allow_html=True,
       )
       st.markdown(
-          '<div class="alerta-sub">As LPNs inteiras já foram validadas. Verifique a quantidade fracionada (quebra).</div>',
+          '<div class="alerta-sub">LPN\'s inteiras desse pedido já foram validadas.</div>',
           unsafe_allow_html=True,
       )
       st.markdown(
@@ -1003,7 +1001,7 @@ with aba_concluidos:
                                 <b>Venc:</b> {data_vencimento}<br>
                                 <b>Lote:</b> {lote}<br>
                                 <b>LPN Inteira:</b> {lpn_inteira}<br>
-                                <b>Quebra:</b> {quebra_txt}<br>
+                                <b>Quebras:</b> {quebra_txt}<br>
                                 <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
                                 <b>Resp:</b> {responsavel}<br>
                                 <span style="font-size: 11px; color: #aaaaaa;">🕒 {data_str}</span>
