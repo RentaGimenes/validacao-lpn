@@ -133,7 +133,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Centralizado e puxado para cima (subido) para alinhar perfeitamente */
+    /* Centralizado e puxado para cima para alinhar com os inputs */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -141,12 +141,12 @@ st.markdown("""
         justify-content: flex-start;
         width: 100%;
         text-align: center;
-        margin-top: -30px;
+        margin-top: -35px;
     }
     .container-coluna-meio img {
         display: block;
         margin-left: auto;
-        margin-right: -20px;
+        margin-right: auto;
     }
     .container-coluna-direita {
         display: flex;
@@ -454,7 +454,9 @@ else:
 
     mapa_pedidos = {}
     if dados_validos:
-        pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and r[13].strip())]
+        # Filtra pedidos pendentes (coluna 14 vazia)
+        pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and str(r[13]).strip())]
+        
         if pedidos_pendentes:
             num_colunas = 6
             linhas_cards = [pedidos_pendentes[i:i + num_colunas] for i in range(0, len(pedidos_pendentes), num_colunas)]
@@ -543,6 +545,8 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
+        # Âncora HTML invisível para forçar a descida automática (scroll) até o bloco de validação ao bipar/clicar
+        st.markdown('<div id="ancora-validacao"></div>', unsafe_allow_html=True)
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
         
         erro = st.session_state.get("erro_ativo")
@@ -732,8 +736,18 @@ else:
                 "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolh_id := r_escolhido) > 2 else "N/D",
+                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
             st.rerun()
+
+    # Script JavaScript injetado para forçar o scroll automático direto para a seção de validação assim que houver interação/bip
+    st.markdown("""
+        <script>
+            const element = document.getElementById('ancora-validacao');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        </script>
+    """, unsafe_allow_html=True)
