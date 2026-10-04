@@ -34,7 +34,16 @@ st.markdown("""
         color: #ff6b6b;
         font-size: 16px;
         font-weight: bold;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
+    }
+    .alerta-comparacao {
+        background-color: #2c1515;
+        border-left: 4px solid #ff4b4b;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        color: #ffffff;
+        margin-bottom: 12px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -205,6 +214,9 @@ if "lpns_validadas_por_pedido" not in st.session_state:
 
 if "erro_ativo" not in st.session_state:
     st.session_state.erro_ativo = None
+
+if "detalhes_erro" not in st.session_state:
+    st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
 
 registos = []
 dados_validos = []
@@ -391,12 +403,18 @@ with aba_painel:
                 num_pedido_escolhido, []
             )
             if len(lpns_ja_lidas) >= total_necessario:
-                st.error("❌ Limite de LPNs atingido para este pedido!")
                 st.session_state.erro_ativo = "limite"
+                st.session_state.detalhes_erro = {
+                    "solicitado": f"Limite Máximo: {total_necessario} LPNs",
+                    "lido": f"Tentativa excedida com a LPN: {lpn_lida}"
+                }
                 return
             elif lpn_lida in lpns_ja_lidas:
-                st.error("❌ Esta LPN já foi validada neste pedido!")
                 st.session_state.erro_ativo = "lpn_duplicada"
+                st.session_state.detalhes_erro = {
+                    "solicitado": "LPN ainda não lida neste pedido",
+                    "lido": f"LPN já validada anteriormente: {lpn_lida}"
+                }
                 return
 
             mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
@@ -408,14 +426,26 @@ with aba_painel:
 
             if not mat_lido or mat_lido != mat_planilha:
                 st.session_state.erro_ativo = "material"
+                st.session_state.detalhes_erro = {
+                    "solicitado": mat_planilha or "(Vazio na planilha)",
+                    "lido": mat_lido or "(Não identificado)"
+                }
                 return
 
             if dun_planilha and dun_lido and dun_lido != dun_planilha:
                 st.session_state.erro_ativo = "dun"
+                st.session_state.detalhes_erro = {
+                    "solicitado": dun_planilha,
+                    "lido": dun_lido
+                }
                 return
 
             if lote_planilha and lote_lido and lote_lido != lote_planilha:
                 st.session_state.erro_ativo = "lote"
+                st.session_state.detalhes_erro = {
+                    "solicitado": lote_planilha,
+                    "lido": lote_lido
+                }
                 return
 
             if data_planilha_raw and venc_lido:
@@ -425,6 +455,10 @@ with aba_painel:
                 if data_obj_planilha and data_obj_lida:
                     if data_obj_lida != data_obj_planilha:
                         st.session_state.erro_ativo = "validade"
+                        st.session_state.detalhes_erro = {
+                            "solicitado": str(data_planilha_raw),
+                            "lido": str(venc_lido)
+                        }
                         return
 
             st.session_state.erro_ativo = None
@@ -480,6 +514,15 @@ with aba_painel:
     # Lado direito: exibe alertas visuais ou a imagem de exemplo da LPN
     with col_img:
         erro = st.session_state.get("erro_ativo")
+        det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
+
+        if erro:
+            st.markdown(f"""
+                <div class="alerta-comparacao">
+                    <b>SOLICITADO:</b> {det['solicitado']}<br>
+                    <b>Gerado na LPN:</b> {det['lido']}
+                </div>
+            """, unsafe_allow_html=True)
 
         if erro == "material":
             st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
@@ -557,6 +600,7 @@ with aba_painel:
                     del st.session_state.lpns_validadas_por_pedido[num_ped]
 
                 st.session_state.erro_ativo = None
+                st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
                 st.balloons()
                 st.success("🎉 Pedido concluído com sucesso!")
                 st.rerun()
