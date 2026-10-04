@@ -1,7 +1,3 @@
-Entendido! Fiz os dois ajustes solicitados no código:
- * Validação visual sem seleção prévia: Removi a marcação automática nas opções de rádio ("Sim" / "Não"), exigindo que o operador clique manualmente em ambas as confirmações para garantir a checagem.
- * Mensagem dinâmica no botão de confirmação: Agora, quando o pedido possui mais de uma LPN e ainda restam itens para validar, o botão exibe "✔ Validar próxima LPN" (mantendo a mensagem de conclusão apenas quando for a última LPN do pedido).
-Aqui está o código atualizado e completo:
 # ==========================================
 # IMPORTAÇÕES DE BIBLIOTECAS
 # ==========================================
@@ -416,7 +412,6 @@ if st.session_state.etapa_validacao:
     with col_centro:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         
-        # Determina o texto do botão dinamicamente se restarem LPNs
         num_ped_atual = d["num_pedido"]
         lpns_ja_lidas_atual = st.session_state.lpns_validadas_por_pedido.get(num_ped_atual, [])
         total_nec_atual = d["total_esperado"]
@@ -620,7 +615,11 @@ else:
                             desc_completa_c = rc[2] if len(rc) > 2 else ""
                             desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
                             
-                            qtd_lpns_total_c = obter_quantidade_total_lpns(rc)
+                            # Quantidades e valores específicos
+                            lpn_inteira_c = rc[4] if len(rc) > 4 else "0"
+                            quebras_c = rc[6] if len(rc) > 6 else "0"
+                            valor_cada_c = rc[5] if len(rc) > 5 else "0"  # Coluna de valor unitário/de cada uma (índice 5)
+                            
                             responsavel_c = rc[11] if len(rc) > 11 else ""
                             data_conclusao_c = rc[13] if len(rc) > 13 else ""
                             
@@ -630,7 +629,9 @@ else:
 <b>Linha:</b> {linha_pedido_c}<br>
 <b>Material:</b> {cod_material_c}<br>
 <b>Descrição:</b> {desc_resumida_c}<br>
-<b>Qtd LPNs:</b> {qtd_lpns_total_c}<br>
+<b>LPN Inteira:</b> {lpn_inteira_c}<br>
+<b>Quebras:</b> {quebras_c}<br>
+<b>Valor de cada:</b> {valor_cada_c}<br>
 <b>Responsável:</b> {responsavel_c}<br>
 <b>Data:</b> {data_conclusao_c}
 </div>""", unsafe_allow_html=True)
@@ -858,4 +859,3 @@ else:
             }
         </script>
     """, unsafe_allow_html=True)
-
