@@ -20,9 +20,6 @@ st.set_page_config(
     page_title="Validar e Dar Baixa na LPN"
 )
 
-# Atualização automática opcional (ex: a cada 60 segundos)
-# st_autorefresh(interval=60000, key="datarefresh")
-
 # ==========================================
 # CSS PERSONALIZADO (Botão Verde e Estilos)
 # ==========================================
@@ -49,13 +46,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# CONEXÃO COM O GOOGLE SHEETS (Opcional/Exemplo)
+# FUNÇÕES DE APOIO E CONEXÃO
 # ==========================================
 @st.cache_resource
-pytz_sp = pytz.timezone('America/Sao_Paulo')
+def obter_fuso_horario():
+    return pytz.timezone('America/Sao_Paulo')
+
+pytz_sp = obter_fuso_horario()
 
 def conectar_google_sheets():
-    # Ajuste aqui para carregar as credenciais do seu secret ou arquivo JSON
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     try:
         if "gcp_service_account" in st.secrets:
@@ -64,7 +63,6 @@ def conectar_google_sheets():
             client = gspread.authorize(creds)
             return client
     except Exception as e:
-        # Se preferir gerenciar de outra forma, trate o erro aqui
         pass
     return None
 
@@ -121,13 +119,5 @@ with col_action:
         elif not lpn_1:
             st.error("O 1º Código de Barras (LPN) é obrigatório!")
         else:
-            # Data/Hora atual no fuso correto
-            agora = datetime.now(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
-            
+            agora = datetime.now(pytz_sp).strftime('%d/%m/%Y %H:%M:%S')
             st.success(f"LPN validada com sucesso por {nome} em {agora}!")
-            
-            # Exemplo de lógica para registrar na planilha (caso queira adicionar):
-            # client = conectar_google_sheets()
-            # if client:
-            #     sheet = client.open("NomeDaSuaPlanilha").worksheet("Página1")
-            #     sheet.append_row([nome, lpn_1, lpn_2, lpn_3, agora])
