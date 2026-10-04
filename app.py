@@ -41,7 +41,6 @@ count = st_autorefresh(interval=180000, key="datarefresh")
 # ==========================================
 st.markdown("""
     <style>
-    /* Sobe todos os elementos zerando margens superiores do container principal e do header */
     .block-container {
         padding-top: 0rem !important;
         padding-bottom: 6rem !important;
@@ -51,7 +50,6 @@ st.markdown("""
         display: none;
     }
     
-    /* Animaçãozinha pro alerta de erro piscar na tela */
     @keyframes piscar {
         0% { opacity: 1; }
         50% { opacity: 0.3; }
@@ -80,7 +78,6 @@ st.markdown("""
         margin-top: 5px;
     }
     
-    /* Estilos dos cards de pedidos */
     .card-pedido {
         background-color: #1e1e1e;
         border: 2px solid #f1c40f;
@@ -114,10 +111,18 @@ st.markdown("""
         font-weight: bold;
         color: #f1c40f;
     }
+    
+    /* Estilo para a caixinha de seleção idêntica à referência */
+    .box-pergunta {
+        background-color: #1a1a1a;
+        border: 1px solid #444;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Toca um som de alerta quando der erro na leitura
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -126,9 +131,6 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# ==========================================
-# CONEXÃO COM O GOOGLE SHEETS
-# ==========================================
 @st.cache_resource
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -149,9 +151,6 @@ except Exception as e:
     st.error(f"Erro ao conectar com o Google Sheets: {e}")
     st.stop()
 
-# ==========================================
-# FUNÇÕES DE TRATAMENTO DE TEXTO E CÓDIGOS
-# ==========================================
 def limpar_texto(texto):
     if not texto: return ""
     return str(texto).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
@@ -256,10 +255,8 @@ def obter_quantidade_total_lpns(r):
     total = obter_quantidade_inteira(r) + len(obter_lista_quebras(r))
     return total if total > 0 else 1
 
-# Título principal com margem superior zerada
 st.markdown("<h2 style='margin-top: 0px; padding-top: 0px;'>📦 Validação das informações das Lpn</h2>", unsafe_allow_html=True)
 
-# Inicializa as variáveis na sessão pra não resetar sozinho
 if "etapa_validacao" not in st.session_state:
     st.session_state.etapa_validacao = False
     st.session_state.dados_conferencia = {}
@@ -276,7 +273,6 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
-# Puxa os dados da planilha do Google
 registos, dados_validos = [], []
 try:
     registos = sheet.get_all_values()
@@ -287,9 +283,6 @@ try:
 except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
-# ==========================================
-# ROTEAMENTO DE TELA (COM OU SEM ABAS)
-# ==========================================
 if st.session_state.etapa_validacao:
     st.subheader("🔍 Confirmação Visual Obrigatória")
     d = st.session_state.dados_conferencia
@@ -318,13 +311,17 @@ if st.session_state.etapa_validacao:
     col_conf1, col_conf2, col_btn_quadrado = st.columns([2, 2, 1])
     
     with col_conf1:
+        st.markdown('<div class="box-pergunta">', unsafe_allow_html=True)
         st.markdown("📌 **A descrição está correta?**")
         resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed")
+        st.markdown('</div>', unsafe_allow_html=True)
         if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
         
     with col_conf2:
+        st.markdown('<div class="box-pergunta">', unsafe_allow_html=True)
         st.markdown("📌 **Você verificou a ordem?**")
         resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed")
+        st.markdown('</div>', unsafe_allow_html=True)
         if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
 
     with col_btn_quadrado:
@@ -492,7 +489,6 @@ else:
 
     st.markdown("---")
 
-    # Formulário de entrada dos códigos de barras
     col_form, col_img = st.columns(2)
     with col_form:
         st.subheader("📝 Validar e Dar Baixa na LPN")
