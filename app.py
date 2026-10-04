@@ -329,7 +329,6 @@ if "detalhes_erro" not in st.session_state:
 if "pedido_selecionado_idx" not in st.session_state:
   st.session_state.pedido_selecionado_idx = None
 
-# Controle para limpar os inputs de forma segura
 if "limpar_inputs" not in st.session_state:
   st.session_state.limpar_inputs = False
 
@@ -468,7 +467,6 @@ with aba_painel:
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # AVISO ADICIONADO AQUI COM O TEXTO E O GIF DO SONIC
     st.markdown(
         f"""
         <div style="background-color: #1e1e1e; border: 1px solid #444; padding: 10px; border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
@@ -594,8 +592,19 @@ with aba_painel:
           f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha:"
           f" {linha_s} - Mat: {mat_s})"
       )
+    else:
+      # AVISO SOLICITADO CASO NENHUM PEDIDO ESTEJA SELECIONADO
+      st.markdown(
+          """
+            <div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 10px; border-radius: 6px; margin-bottom: 10px; text-align: center;">
+                <span style="color: #ff4b4b; font-size: 14px; font-weight: bold;">
+                    ⚠️ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN
+                </span>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
 
-    # Se a flag de limpeza estiver ativa, limpamos os valores do state antes de criar os inputs
     if st.session_state.get("limpar_inputs", False):
       st.session_state["input_bc1"] = ""
       st.session_state["input_bc2"] = ""
@@ -637,9 +646,6 @@ with aba_painel:
           num_pedido_escolhido, []
       )
 
-      # -------------------------------------------------------------
-      # LÓGICA INTELIGENTE: INTEIRAS vs QUEBRAS (ORDEM ALEATÓRIA)
-      # -------------------------------------------------------------
       qtd_inteira_esperada = obter_quantidade_inteira(r_escolhido)
       lista_quebras = obter_lista_quebras(r_escolhido)
 
