@@ -300,10 +300,10 @@ def processar_codigo_2(barcode):
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
         lote = ""
-        # Correção aplicada aqui para capturar corretamente após o identificador '10'
-        match_lote = re.search(r'10([A-Za-z0-9]+)', limpo)
-        if match_lote:
-            lote = match_lote.group(1).strip()
+        # Pula os últimos 6 dígitos e pega os 7 anteriores a eles
+        digitos_lote = re.sub(r'\D', '', limpo)
+        if len(digitos_lote) >= 13:
+            lote = digitos_lote[-13:-6]
         else:
             parts = limpo.split()
             if len(parts) > 1:
