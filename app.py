@@ -645,7 +645,7 @@ with aba_painel:
       if lpn_lida in lpns_ja_lidas:
         st.session_state.erro_ativo = "lpn_duplicada"
         st.session_state.detalhes_erro = {
-            "solicitado": "LPN ainda não lida neste pedido",
+            "solicitado": "",
             "lido": f"LPN já validada anteriormente: {lpn_lida}",
         }
         tocar_som_erro()
@@ -910,7 +910,28 @@ with aba_painel:
       else:
         st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
 
-    elif erro == "limite" or erro == "lpn_duplicada" or erro == "validacao_qtd":
+    elif erro == "lpn_duplicada":
+      st.markdown(
+          '<div class="alerta-piscar">🚫 LPN Duplicada</div>',
+          unsafe_allow_html=True,
+      )
+      st.markdown(
+          f"""
+                <div class="alerta-comparacao">
+                    <b>{det['lido']}</b>
+                </div>
+            """,
+          unsafe_allow_html=True,
+      )
+      img_qtd = IMAGENS["validacao_qtd"]
+      if os.path.exists(img_qtd):
+        st.image(img_qtd, width=450)
+      else:
+        img_fallback = IMAGENS["material04"]
+        if os.path.exists(img_fallback):
+          st.image(img_fallback, width=450)
+
+    elif erro == "limite" or erro == "validacao_qtd":
       st.markdown(
           '<div class="alerta-piscar">🚫 Validação de Quantidade / LPN</div>',
           unsafe_allow_html=True,
