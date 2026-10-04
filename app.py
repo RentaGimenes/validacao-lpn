@@ -16,6 +16,29 @@ st.set_page_config(
 # --- AUTO-REFRESH A CADA 3 MINUTOS ---
 count = st_autorefresh(interval=180000, key="datarefresh")
 
+# --- CSS PERSONALIZADO PARA O EFEITO PISCANTE E ALERTA ---
+st.markdown("""
+    <style>
+    @keyframes piscar {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+    .alerta-piscar {
+        color: #ff4b4b;
+        font-size: 26px;
+        font-weight: bold;
+        animation: piscar 1s infinite;
+    }
+    .alerta-sub {
+        color: #ff6b6b;
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- CONEXÃO COM O GOOGLE SHEETS VIA STREAMLIT SECRETS ---
 @st.cache_resource
 def init_connection():
@@ -255,14 +278,13 @@ with aba_painel:
         st.markdown(f"📦 **LPN Atual:** `{d['lpn']}`")
         st.markdown(f"🏷 **Material:** `{d['descricao']}`")
 
-        # Exibição de imagens menores para o operador conferir a descrição e ordem
         col_conf1, col_conf2 = st.columns(2)
         with col_conf1:
             if os.path.exists("POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A SU.png"):
-                st.image("POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A SU.png", width=220, caption="Ref. Descrição")
+                st.image("POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A SU.png", width=420, caption="Ref. Descrição")
         with col_conf2:
             if os.path.exists("POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA CORRESPONDENTE AO PEDIDO.png"):
-                st.image("POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA CORRESPONDENTE AO PEDIDO.png", width=220, caption="Ref. Ordem")
+                st.image("POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA CORRESPONDENTE AO PEDIDO.png", width=420, caption="Ref. Ordem")
 
         resp_desc_str = st.radio(
             "📌 A descrição está correta?",
@@ -307,7 +329,7 @@ with aba_painel:
                 except Exception as e:
                     st.error(f"Erro: {e}")
             else:
-                st.error("⚠️️ Selecione 'Sim' em ambas as confirmações!")
+                st.error("⚠ Selecione 'Sim' em ambas as confirmações!")
         st.markdown("---")
 
     col_form, col_img = st.columns(2)
@@ -384,17 +406,14 @@ with aba_painel:
             dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
             if not mat_lido or mat_lido != mat_planilha:
-                st.error(f"❌ Material divergente (Lido: {mat_lido} | Planilha: {mat_planilha})")
                 st.session_state.erro_ativo = "material"
                 return
 
             if dun_planilha and dun_lido and dun_lido != dun_planilha:
-                st.error(f"❌ DUN divergente (Lido: {dun_lido} | Planilha: {dun_planilha})")
                 st.session_state.erro_ativo = "dun"
                 return
 
             if lote_planilha and lote_lido and lote_lido != lote_planilha:
-                st.error(f"❌ Lote divergente (Lido: {lote_lido} | Planilha: {lote_planilha})")
                 st.session_state.erro_ativo = "lote"
                 return
 
@@ -404,11 +423,9 @@ with aba_painel:
 
                 if data_obj_planilha and data_obj_lida:
                     if data_obj_lida != data_obj_planilha:
-                        st.error(f"❌ Data/Validade divergente (Lida: {venc_lido} | Planilha: {data_planilha_raw})")
                         st.session_state.erro_ativo = "validade"
                         return
 
-            # Se passou em tudo, limpa o erro ativo e vai para a confirmação visual
             st.session_state.erro_ativo = None
             st.session_state.dados_conferencia = {
                 "linha": linha_encontrada,
@@ -459,62 +476,62 @@ with aba_painel:
                 "Finalizar Pedido Completo", type="secondary", use_container_width=True
             )
 
-    # --- COLUNA LATERAL DINÂMICA (GUIA OU ERRO ESPECÍFICO) ---
+    # --- COLUNA LATERAL DINÂMICA (COM TAMANHO AMPLIADO E ALERTA PISCANTE) ---
     with col_img:
         erro = st.session_state.get("erro_ativo")
 
         if erro == "material":
-            st.markdown("### 🚫 Erro no Material")
-            st.caption("Incompatível com o solicitado.")
+            st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Incompatível com o solicitado.</div>', unsafe_allow_html=True)
             img_nome = "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png"
             if os.path.exists(img_nome):
-                st.image(img_nome, width=280)
+                st.image(img_nome, width=450)
             else:
                 st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
 
         elif erro == "lote":
-            st.markdown("### 🚫 Erro de Lote")
-            st.caption("Imcompatível com a data de vencimento.")
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Imcompatível com a data de vencimento.</div>', unsafe_allow_html=True)
             img_nome = "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png"
             if os.path.exists(img_nome):
-                st.image(img_nome, width=280)
+                st.image(img_nome, width=450)
             else:
-                st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+                st.warning(f"⚠️️ Imagem `{img_nome}` não encontrada.")
 
         elif erro == "validade":
-            st.markdown("### 🚫 Erro de Validade/Fabricação")
-            st.caption("Data de fabricação não está de acordo com o solicitado.")
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Validade/Fabricação</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Data de fabricação não está de acordo com o solicitado.</div>', unsafe_allow_html=True)
             img_nome = "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png"
             if os.path.exists(img_nome):
-                st.image(img_nome, width=280)
+                st.image(img_nome, width=450)
             else:
                 st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
 
         elif erro == "dun":
-            st.markdown("### 🚫 Erro de DUN")
-            st.caption("DUN não está correspondente à DUN do material solicitado.")
+            st.markdown('<div class="alerta-piscar">🚫 Erro de DUN</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">DUN não está correspondente à DUN do material solicitado.</div>', unsafe_allow_html=True)
             img_nome = "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png"
             if os.path.exists(img_nome):
-                st.image(img_nome, width=280)
+                st.image(img_nome, width=450)
             else:
                 st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
 
         elif erro == "limite" or erro == "lpn_duplicada":
-            st.markdown("### 🚫 Erro de Quantidade / LPN")
-            st.caption("Esta LPN já foi lida ou o limite total foi atingido.")
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Quantidade / LPN</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Esta LPN já foi lida ou o limite total foi atingido.</div>', unsafe_allow_html=True)
             if os.path.exists("ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png"):
-                st.image("ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png", width=280)
+                st.image("ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png", width=450)
 
         else:
-            # Estado padrão: Mostra o Guia de Códigos de Barras normal
+            # Estado padrão: Guia de Códigos de Barras normal no tamanho ajustado
             st.subheader("💡 Guia de Códigos de Barras")
             if os.path.exists("etiqueta_exemplo.jpg"):
                 st.image(
-                    "etiqueta_exemplo.jpg", caption="Etiqueta de Referência", width=280
+                    "etiqueta_exemplo.jpg", caption="Etiqueta de Referência", width=450
                 )
             elif os.path.exists("etiqueta_exemplo.png"):
                 st.image(
-                    "etiqueta_exemplo.png", caption="Etiqueta de Referência", width=280
+                    "etiqueta_exemplo.png", caption="Etiqueta de Referência", width=450
                 )
             else:
                 st.warning("⚠️ Imagem `etiqueta_exemplo.jpg` não encontrada.")
