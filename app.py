@@ -335,6 +335,11 @@ with aba_painel:
           try:
             linha_pedido = r[1] if len(r) > 1 else ""
             cod_material = r[7] if len(r) > 7 else ""
+            
+            # Pegando a descrição (coluna 2) e abreviando para os primeiros 22 caracteres
+            desc_completa = r[2] if len(r) > 2 else ""
+            desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
+
             data_palete = r[3] if len(r) > 3 else ""
             data_vencimento = r[9] if len(r) > 9 else ""
             lote = r[10] if len(r) > 10 else ""
@@ -363,6 +368,7 @@ with aba_painel:
                   <div class="card-pedido" style="border: 2px solid {borda_cor}; {destaque_sel}">
                       <b>Linha:</b> {linha_pedido}<br>
                       <b>Cód Mat:</b> {cod_material}<br>
+                      <b>Desc:</b> {desc_resumida}<br>
                       <b>Data Palete:</b> {data_palete}<br>
                       <b>Venc:</b> {data_vencimento}<br>
                       <b>Lote:</b> {lote}<br>
@@ -861,6 +867,10 @@ with aba_concluidos:
         for i, (r, data_str) in enumerate(bloco):
           linha_pedido = r[1] if len(r) > 1 else ""
           cod_material = r[7] if len(r) > 7 else ""
+          
+          desc_completa_c = r[2] if len(r) > 2 else ""
+          desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
+
           data_palete = r[3] if len(r) > 3 else ""
           data_vencimento = r[9] if len(r) > 9 else ""
           lote = r[10] if len(r) > 10 else ""
@@ -874,6 +884,7 @@ with aba_concluidos:
                             <div class="card-concluido">
                                 <b>Linha:</b> {linha_pedido}<br>
                                 <b>Cód Mat:</b> {cod_material}<br>
+                                <b>Desc:</b> {desc_resumida_c}<br>
                                 <b>Data Palete:</b> {data_palete}<br>
                                 <b>Venc:</b> {data_vencimento}<br>
                                 <b>Lote:</b> {lote}<br>
