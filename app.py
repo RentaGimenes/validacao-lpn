@@ -129,13 +129,17 @@ st.markdown("""
     div[data-testid="column"]:nth-of-type(3) div.stButton > button {
         background-color: #112216 !important;
         color: #2ecc71 !important;
-        font-size: 18px !important;
+        font-size: 16px !important;
         font-weight: bold !important;
-        height: 70px !important;
-        width: 100% !important;
-        border-radius: 4px !important;
+        height: 130px !important;
+        width: 130px !important;
+        border-radius: 12px !important;
         border: 2px solid #2ecc71 !important;
-        box-shadow: none !important;
+        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 auto !important;
     }
     div[data-testid="column"]:nth-of-type(3) div.stButton > button:hover {
         background-color: #1b3823 !important;
@@ -543,8 +547,8 @@ else:
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
             st.markdown("""
             <div style="display: flex; justify-content: center; width: 100%;">
-                <div style="background-color: #2c1515; border: 1px dashed #ff4b4b; padding: 6px 12px; border-radius: 4px; margin-bottom: 12px; text-align: center; max-width: 320px;">
-                    <span style="color: #ff4b4b; font-size: 11px; font-weight: bold;">⚠ Para iniciar, por favor selecione um pedido.</span>
+                <div style="background-color: rgba(60, 20, 20, 0.6); border: 2px dashed #ff4b4b; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
+                    <span style="color: #ff4b4b; font-size: 18px; font-weight: bold;">⚠ Para iniciar, por favor selecione um pedido.</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -554,23 +558,23 @@ else:
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
             st.markdown(f"""
             <div style="display: flex; justify-content: center; width: 100%;">
-                <div style="background-color: #152c1a; border: 1px solid #52b788; padding: 6px 12px; border-radius: 4px; margin-bottom: 12px; text-align: center; max-width: 320px;">
-                    <span style="color: #52b788; font-size: 12px; font-weight: bold;">🎯 Pedido Selecionado:</span><br>
-                    <span style="color: #ffffff; font-size: 11px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span>
+                <div style="background-color: #152c1a; border: 1px solid #52b788; padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
+                    <span style="color: #52b788; font-size: 14px; font-weight: bold;">🎯 Pedido Selecionado:</span><br>
+                    <span style="color: #ffffff; font-size: 13px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-        texto_botao_validar = "VALIDAR LPN"
+        texto_botao_validar = "VALIDAR\nLPN"
         idx_sel_atual_btn = st.session_state.get("pedido_selecionado_idx")
         if idx_sel_atual_btn and idx_sel_atual_btn in mapa_pedidos:
             p_info_btn = mapa_pedidos[idx_sel_atual_btn]
             lidas_atualmente_btn = st.session_state.lpns_validadas_por_pedido.get(p_info_btn["num_pedido"], [])
             if len(lidas_atualmente_btn) > 0:
-                texto_botao_validar = "VALIDAR PRÓXIMA LPN"
+                texto_botao_validar = "VALIDAR\nPRÓXIMA\nLPN"
 
         # BOTÃO EXCLUSIVO DE VALIDAÇÃO COM FORMATO DE QUADRADO VERDE
-        btn_validar_clicado = st.button(texto_botao_validar, use_container_width=True)
+        btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_quadrado")
 
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
