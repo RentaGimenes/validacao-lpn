@@ -16,7 +16,7 @@ st.set_page_config(
 # Atualiza a página sozinho a cada 3 minutos pra não deixar o painel desatualizado
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado ajustando o card para ter metade da largura atual
+# CSS personalizado ajustando os cards (amarelo para pendentes e verde para concluídos)
 st.markdown("""
     <style>
     @keyframes piscar {
@@ -52,6 +52,20 @@ st.markdown("""
         padding: 6px 8px;
         border-radius: 6px;
         font-size: 14px;
+        color: #ffffff;
+        margin-bottom: 8px;
+        text-align: center;
+        max-width: 220px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.3;
+    }
+    .card-concluido {
+        background-color: #1e1e1e;
+        border: 2px solid #2ecc71;
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 13px;
         color: #ffffff;
         margin-bottom: 8px;
         text-align: center;
@@ -643,7 +657,7 @@ with aba_painel:
             )
 
             if len(lpns_lidas_pedido) < total_necessario:
-                st.error("⚠️ Faltam LPNs a serem validadas.")
+                st.error("⚠️️ Faltam LPNs a serem validadas.")
                 tocar_som_erro()
             else:
                 fuso_horario = pytz.timezone("America/Sao_Paulo")
@@ -687,19 +701,31 @@ with aba_concluidos:
                 continue
 
         if concluidos_recentes:
-            for r, data_str in concluidos_recentes:
-                idx_linha = registos.index(r) + 1
-                lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
-                material = r[7] if len(r) > 7 else "N/D"
-                responsavel = r[11] if len(r) > 11 else "N/D"
-                st.markdown(
-                    f"""
-                        <div style="background-color: #1e1e1e; border: 1px solid #333333; padding: 10px 14px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; color: #ffffff;">
-                            <b>📦 LPNs:</b> {lpn_col_b} &nbsp;|&nbsp; <b>Mat:</b> {material} &nbsp;|&nbsp; <b>👤 Resp:</b> {responsavel} &nbsp;|&nbsp; <b>🕒</b> {data_str}
-                        </div>
-                        """,
-                    unsafe_allow_html=True,
-                )
+            num_colunas = 6
+            linhas_cards_conc = [
+                concluidos_recentes[i : i + num_colunas]
+                for i in range(0, len(concluidos_recentes), num_colunas)
+            ]
+            for bloco in linhas_cards_conc:
+                cols = st.columns(num_colunas)
+                for i, (r, data_str) in enumerate(bloco):
+                    idx_linha = registos.index(r) + 1
+                    lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
+                    material = r[7] if len(r) > 7 else "N/D"
+                    responsavel = r[11] if len(r) > 11 else "N/D"
+                    
+                    with cols[i]:
+                        st.markdown(
+                            f"""
+                            <div class="card-concluido">
+                                <b style="color: #2ecc71;">Ref: {lpn_col_b}</b><br>
+                                <b>Mat:</b> {material}<br>
+                                <b>Resp:</b> {responsavel}<br>
+                                <span style="font-size: 11px; color: #aaaaaa;">🕒 {data_str}</span>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
         else:
             st.info("Nenhum pedido concluído nas últimas 24 horas.")
     else:
