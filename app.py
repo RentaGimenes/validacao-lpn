@@ -18,6 +18,7 @@ st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wi
 # ==========================================
 # MAPEAMENTO DE IMAGENS E ARQUIVOS
 # ==========================================
+# Aqui a gente mapeia os nomes das imagens para facilitar na hora de exibir
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
@@ -34,11 +35,11 @@ IMAGENS = {
     "validar_btn": "validar.png",
 }
 
-# Atualiza a página a cada 3 minutos
+# Atualiza a página automaticamente a cada 3 minutos para pegar dados novos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
 # ==========================================
-# ESTILOS VISUAIS (CSS)
+# ESTILOS VISUAIS (CSS CUSTOMIZADO)
 # ==========================================
 st.markdown("""
     <style>
@@ -133,7 +134,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* CENTRALIZAÇÃO ABSOLUTA DA COLUNA DO MEIO */
+    /* Centralização das colunas */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -142,15 +143,11 @@ st.markdown("""
         width: 100%;
         text-align: center;
     }
-    
-    /* Força imagens geradas pelo Streamlit a centralizarem dentro da coluna do meio */
     .container-coluna-meio img {
         display: block;
         margin-left: auto;
         margin-right: auto;
     }
-
-    /* CENTRALIZAÇÃO ABSOLUTA DA COLUNA DA DIREITA */
     .container-coluna-direita {
         display: flex;
         flex-direction: column;
@@ -159,14 +156,12 @@ st.markdown("""
         width: 100%;
         text-align: center;
     }
-
     .container-botao-imagem {
         display: flex;
         justify-content: center;
         align-items: center;
         width: 100%;
     }
-
     .btn-neon-img {
         display: block;
         border-radius: 16px;
@@ -184,6 +179,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Função simples para tocar som de erro na tela quando algo der errado
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -192,6 +188,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
+# Conexão com o Google Sheets usando os secrets do Streamlit
 @st.cache_resource
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -210,6 +207,9 @@ except Exception as e:
     st.error(f"Erro ao conectar com o Google Sheets: {e}")
     st.stop()
 
+# ==========================================
+# FUNÇÕES AUXILIARES DE TRATAMENTO
+# ==========================================
 def limpar_texto(texto):
     if not texto: return ""
     return str(texto).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
@@ -285,9 +285,12 @@ def obter_quantidade_total_lpns(r):
     total = obter_quantidade_inteira(r) + len(obter_lista_quebras(r))
     return total if total > 0 else 1
 
+# ==========================================
+# TÍTULO PRINCIPAL
+# ==========================================
 st.markdown("<h2 style='margin-top: 0px; padding-top: 0px;'>📦 Validação das informações das Lpn</h2>", unsafe_allow_html=True)
 
-# Inicializa estados
+# Inicializa os estados da sessão
 if "etapa_validacao" not in st.session_state:
     st.session_state.etapa_validacao = False
     st.session_state.dados_conferencia = {}
@@ -304,6 +307,7 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
+# Puxa os dados da planilha do Google
 registos, dados_validos = [], []
 try:
     registos = sheet.get_all_values()
@@ -314,7 +318,9 @@ try:
 except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
-# Etapa de confirmação visual
+# ==========================================
+# FLUXO 1: ETAPA DE CONFIRMAÇÃO VISUAL
+# ==========================================
 if st.session_state.etapa_validacao:
     st.subheader("🔍 Confirmação Visual Obrigatória")
     d = st.session_state.dados_conferencia
@@ -399,7 +405,9 @@ if st.session_state.etapa_validacao:
     st.markdown("---")
 
 else:
-    # SEÇÃO "PEDIDOS DE LPN"
+    # ==========================================
+    # FLUXO 2: PAINEL PRINCIPAL DE PEDIDOS E VALIDAÇÃO
+    # ==========================================
     st.subheader("📋 PEDIDOS DE LPN")
 
     col_tit_painel, col_btn_att = st.columns([5, 1.5])
@@ -503,7 +511,9 @@ else:
 
     st.markdown("---")
 
-    # SEÇÃO INFERIOR: 3 COLUNAS
+    # ==========================================
+    # SEÇÃO INFERIOR: FORMULÁRIO E VALIDAÇÃO DE CÓDIGOS
+    # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
     col_form, col_img, col_acao = st.columns([1.1, 1.2, 1.2], gap="large")
@@ -530,7 +540,6 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
-        # Coluna do meio centralizada com o seletor CSS forçando a centralização da imagem da LPN
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
         
         erro = st.session_state.get("erro_ativo")
@@ -583,7 +592,6 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_acao:
-        # Coluna da direita com aviso e botão perfeitamente centralizados
         st.markdown('<div class="container-coluna-direita">', unsafe_allow_html=True)
 
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
@@ -641,6 +649,7 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # Processamento das regras de validação ao clicar no botão
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -676,75 +685,51 @@ else:
 
             qtd_inteira_esperada = obter_quantidade_inteira(r_escolhido)
             lista_quebras = obter_lista_quebras(r_escolhido)
-            if len(lpns_ja_lidas) >= qtd_inteira_esperada:
-                if len(lista_quebras) > 0:
-                    if qtd_lida not in lista_quebras:
-                        st.session_state.erro_ativo = "validacao_qtd"
-                        st.session_state.detalhes_erro = {"solicitado": f"Quebras esperadas pendentes: {lista_quebras}", "lido": ""}
-                        tocar_som_erro()
-                        st.rerun()
-                else:
-                    st.session_state.erro_ativo = "limite"
-                    st.session_state.detalhes_erro = {"solicitado": f"Limite Máximo Atingido: {total_necessario} LPNs", "lido": f"Tentativa excedida com a LPN: {lpn_lida}"}
-                    tocar_som_erro()
-                    st.rerun()
-
-            mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
-            lote_planilha = limpar_texto(r_escolhido[10] if len(r_escolhido) > 10 else "")
-            data_vencimento_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
-            data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
-            dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
-
-            # 1. Validação de Material
-            if not mat_lido or mat_lido != mat_planilha:
+            
+            # Validação do material
+            mat_esperado = limpar_texto(r_escolhido[7]) if len(r_escolhido) > 7 else ""
+            if mat_lido and mat_esperado and mat_lido != mat_esperado:
                 st.session_state.erro_ativo = "material04"
-                st.session_state.detalhes_erro = {"solicitado": mat_planilha or "(Vazio)", "lido": mat_lido or "(Não identificado)"}
+                st.session_state.detalhes_erro = {"solicitado": mat_esperado, "lido": mat_lido}
                 tocar_som_erro()
                 st.rerun()
 
-            # 2. Validação de DUN
-            if dun_planilha and dun_lido and dun_lido != dun_planilha:
+            # Validação do DUN
+            dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
+            if dun_lido and dun_esperado and dun_lido != dun_esperado:
                 st.session_state.erro_ativo = "dun03"
-                st.session_state.detalhes_erro = {"solicitado": dun_planilha, "lido": dun_lido}
+                st.session_state.detalhes_erro = {"solicitado": dun_esperado, "lido": dun_lido}
                 tocar_som_erro()
                 st.rerun()
 
-            # 3. Validação de Lote
-            if lote_planilha and lote_lido and lote_lido != lote_planilha:
-                st.session_state.erro_ativo = "lote06"
-                st.session_state.detalhes_erro = {"solicitado": lote_planilha, "lido": lote_lido}
-                tocar_som_erro()
-                st.rerun()
-
-            # 4. Validação de Data de Vencimento
-            if data_vencimento_planilha_raw and venc_lido:
-                data_venc_plan_obj = converter_para_data_obj(data_vencimento_planilha_raw)
-                data_venc_lido_obj = converter_para_data_obj(venc_lido)
-                if data_venc_plan_obj and data_venc_lido_obj and data_venc_lido_obj != data_venc_plan_obj:
+            # Validação de Data de Vencimento
+            venc_esperado_str = r_escolhido[9] if len(r_escolhido) > 9 else ""
+            data_venc_obj = converter_para_data_obj(venc_esperado_str)
+            if venc_lido and data_venc_obj:
+                data_lida_venc = converter_para_data_obj(venc_lido)
+                if data_lida_venc and data_lida_venc != data_venc_obj:
                     st.session_state.erro_ativo = "datav02"
-                    st.session_state.detalhes_erro = {"solicitado": data_venc_plan_obj.strftime("%d/%m/%Y"), "lido": data_venc_lido_obj.strftime("%d/%m/%Y")}
+                    st.session_state.detalhes_erro = {"solicitado": data_venc_obj.strftime("%d/%m/%Y"), "lido": data_lida_venc.strftime("%d/%m/%Y")}
                     tocar_som_erro()
                     st.rerun()
 
-            # 5. Validação de Data de Fabricação
-            if data_fabricacao_planilha_raw and fab_lido:
-                data_fab_plan_obj = converter_para_data_obj(data_fabricacao_planilha_raw)
-                data_fab_lido_obj = converter_para_data_obj(fab_lido)
-                if data_fab_plan_obj and data_fab_lido_obj and data_fab_lido_obj != data_fab_plan_obj:
-                    st.session_state.erro_ativo = "datafab03"
-                    st.session_state.detalhes_erro = {"solicitado": data_fab_plan_obj.strftime("%d/%m/%Y"), "lido": data_fab_lido_obj.strftime("%d/%m/%Y")}
-                    tocar_som_erro()
-                    st.rerun()
+            # Validação de Lote
+            lote_esperado = limpar_texto(r_escolhido[10]) if len(r_escolhido) > 10 else ""
+            if lote_lido and lote_esperado and lote_lido != lote_esperado:
+                st.session_state.erro_ativo = "lote06"
+                st.session_state.detalhes_erro = {"solicitado": lote_esperado, "lido": lote_lido}
+                tocar_som_erro()
+                st.rerun()
 
-            # Se todas as validações passaram, avança para a etapa visual
+            # Passou pelas validações básicas, ativa a tela de confirmação visual
+            st.session_state.erro_ativo = None
             st.session_state.etapa_validacao = True
             st.session_state.dados_conferencia = {
-                "linha": linha_encontrada,
                 "num_pedido": num_pedido_escolhido,
+                "linha": linha_encontrada,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
+                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
-            st.session_state.erro_ativo = None
             st.rerun()
