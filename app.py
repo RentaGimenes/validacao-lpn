@@ -436,7 +436,6 @@ else:
                             destaque_sel = "border: 2px solid #00bfff; background-color: #16222b;" if is_selecionado else ""
                             tag_prioridade_html = '<span style="color: #ff4b4b; font-weight: bold;">🔴 URGENTE / PRIORIDADE</span><br>' if e_prioridade else ''
                             
-                            # CARD CLICÁVEL COM BOTÃO INVISÍVEL PARA SELECIONAR SEM TER BOTÃO VERDE FEIO DENTRO
                             st.markdown(f"""<div class="{classe_card}" style="{destaque_sel}">
 {tag_prioridade_html}
 <b>Linha:</b> {linha_pedido}<br>
@@ -534,7 +533,6 @@ else:
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
             if os.path.exists(IMAGENS["guia05"]):
-                # AUMENTADO O TAMANHO DA IMAGEM GUIA CONFORME PEDIDO (largura 450px)
                 st.image(IMAGENS["guia05"], width=450)
             elif os.path.exists("image_51919d.png"):
                 st.image("image_51919d.png", width=450)
@@ -542,13 +540,26 @@ else:
     with col_acao:
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
-            # AVISO VERMELHO DIMINUÍDO CONFORME PEDIDO
-            st.markdown("""<div style="background-color: #2c1515; border: 1px dashed #ff4b4b; padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 12px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+            # AVISO VERMELHO DIMINUÍDO E CENTRALIZADO
+            st.markdown("""
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="background-color: #2c1515; border: 1px dashed #ff4b4b; padding: 6px 12px; border-radius: 4px; margin-bottom: 12px; text-align: center; max-width: 320px;">
+                    <span style="color: #ff4b4b; font-size: 11px; font-weight: bold;">⚠ SELECIONE UM PEDIDO ACIMA</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             p_sel = mapa_pedidos[idx_sel_atual]
             mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
-            st.markdown(f"""<div style="background-color: #152c1a; border: 1px solid #52b788; padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; text-align: center;"><span style="color: #52b788; font-size: 13px; font-weight: bold;">🎯 Pedido Selecionado:</span><br><span style="color: #ffffff; font-size: 12px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span></div>""", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="background-color: #152c1a; border: 1px solid #52b788; padding: 6px 12px; border-radius: 4px; margin-bottom: 12px; text-align: center; max-width: 320px;">
+                    <span style="color: #52b788; font-size: 12px; font-weight: bold;">🎯 Pedido Selecionado:</span><br>
+                    <span style="color: #ffffff; font-size: 11px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
         texto_botao_validar = "VALIDAR LPN"
         idx_sel_atual_btn = st.session_state.get("pedido_selecionado_idx")
@@ -558,7 +569,7 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # SÓ E UNICAMENTE ESTE BOTÃO É O VERDE DA TELA INTEIRA, COM FORMATO QUADRADO
+        # BOTÃO DE VALIDAÇÃO QUADRADO E ÚNICO VERDE DA TELA
         btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_custom", use_container_width=True)
 
         if btn_validar_clicado:
@@ -656,7 +667,6 @@ else:
                     tocar_som_erro()
                     st.rerun()
 
-            # Se todas as validações passarem, avança para a etapa de confirmação visual
             num_pedido_escolhido = info_pedido["num_pedido"]
             st.session_state.dados_conferencia = {
                 "num_pedido": num_pedido_escolhido,
