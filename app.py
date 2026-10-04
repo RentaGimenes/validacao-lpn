@@ -125,24 +125,22 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* BOTÃO DE VALIDAÇÃO (ESTILO QUADRADO VERDE) */
+    /* ESTILO EXCLUSIVO APENAS PARA O BOTÃO DE VALIDAÇÃO (COLUNA 3 DA SEÇÃO INFERIOR) */
     div[data-testid="column"]:nth-of-type(3) div.stButton > button {
-        background-color: #112216 !important;
+        background-color: #0b1410 !important;
         color: #2ecc71 !important;
         font-size: 16px !important;
         font-weight: bold !important;
-        height: 130px !important;
-        width: 130px !important;
-        border-radius: 12px !important;
-        border: 2px solid #2ecc71 !important;
-        box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        margin: 0 auto !important;
+        height: 55px !important;
+        width: 100% !important;
+        border-radius: 8px !important;
+        border: 1px solid #2ecc71 !important;
+        box-shadow: none !important;
+        display: block !important;
+        text-align: center !important;
     }
     div[data-testid="column"]:nth-of-type(3) div.stButton > button:hover {
-        background-color: #1b3823 !important;
+        background-color: #13241b !important;
         color: #2ecc71 !important;
         border-color: #2ecc71 !important;
     }
@@ -323,7 +321,7 @@ if st.session_state.etapa_validacao:
 
     with col_btn_quadrado:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("Confirmar\nesta\nLPN", key="btn_confirmar_etapa_visual"):
+        if st.button("Confirmar esta LPN", key="btn_confirmar_etapa_visual"):
             if resp_ordem == "Sim" and resp_desc == "Sim":
                 try:
                     linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
@@ -565,16 +563,16 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        texto_botao_validar = "VALIDAR\nLPN"
+        texto_botao_validar = "VALIDAR LPN"
         idx_sel_atual_btn = st.session_state.get("pedido_selecionado_idx")
         if idx_sel_atual_btn and idx_sel_atual_btn in mapa_pedidos:
             p_info_btn = mapa_pedidos[idx_sel_atual_btn]
             lidas_atualmente_btn = st.session_state.lpns_validadas_por_pedido.get(p_info_btn["num_pedido"], [])
             if len(lidas_atualmente_btn) > 0:
-                texto_botao_validar = "VALIDAR\nPRÓXIMA\nLPN"
+                texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # BOTÃO EXCLUSIVO DE VALIDAÇÃO COM FORMATO DE QUADRADO VERDE
-        btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_quadrado")
+        # BOTÃO EXCLUSIVO DE VALIDAÇÃO (ESTILO RETANGULAR LARGO COM BORDA E TEXTO VERDE)
+        btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_largo")
 
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
