@@ -16,7 +16,7 @@ st.set_page_config(
 # Atualiza a página sozinho a cada 3 minutos pra não deixar o painel desatualizado
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado para o efeito de alerta piscando e cards com fonte maior e borda amarela
+# CSS personalizado ajustando o card em formato de quadrado compacto, com fonte maior e borda amarela
 st.markdown("""
     <style>
     @keyframes piscar {
@@ -49,14 +49,14 @@ st.markdown("""
     .card-pedido {
         background-color: #1e1e1e;
         border: 2px solid #f1c40f;
-        padding: 4px 8px;
+        padding: 8px 10px;
         border-radius: 6px;
-        font-size: 14px;
+        font-size: 15px;
         color: #ffffff;
-        margin-bottom: 4px;
+        margin-bottom: 8px;
         text-align: center;
         width: 100%;
-        line-height: 1.3;
+        line-height: 1.4;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -284,7 +284,9 @@ with aba_painel:
                             st.markdown(
                                 f"""
                                     <div class="card-pedido">
-                                        <b style="color: #f1c40f;">Ped. {idx_p}</b> | <b>Ref:</b> {lpn_col_b} | <b>Mat:</b> {material} | <span style="color: #f1c40f;"><b>{qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+                                        <b style="color: #f1c40f;">Ped. {idx_p}</b><br>
+                                        <b>Ref:</b> {lpn_col_b} | <b>Mat:</b> {material}<br>
+                                        <span style="color: #f1c40f;"><b>{qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
                                     </div>
                                     """,
                                 unsafe_allow_html=True,
