@@ -8,16 +8,19 @@ import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# Definição dos nomes das imagens que uso na tela
+# Definição dos nomes das imagens que uso na tela (com a nova imagem de quantidade)
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
     "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
-    "lote06": "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png",
+    "lote06": "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png"
+    if "LOTE IMCOMPATIVEL COM LA DATA DE VENCIMENTO.png"
+    else "lote06.png",
     "datav02": "DATA DE VENCIMENTO NAO ESTA COMPATIVEL.png",
     "datafab03": "DATA DE FABRICAÇÃO NAO ESTA DE ACORDO COM O SOLICITADO.png",
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
+    "validacao_qtd": "validação da quantidade.PNG",
 }
 
 # Configuro a página do app aqui
@@ -228,9 +231,20 @@ def processar_codigo_1(barcode):
 def processar_codigo_2(barcode):
   try:
     limpo = barcode.replace("(", "").replace(")", "")
+
+    # Extraio o material logo após o 90 até encontrar o 37 ou fim
     match_mat = re.search(r"90(\d+?)(?=37|$)", limpo)
     mat = match_mat.group(1) if match_mat else limpo[2:10]
 
+    # Extraio a quantidade do bloco (37)
+    match_qtd = re.search(r"37(\d+)", limpo)
+    if match_qtd:
+      bloco_qtd = match_qtd.group(1)
+      quantidade = int(bloco_qtd.lstrip("0") or "0")
+    else:
+      quantidade = 0
+
+    # Extraio o lote do bloco (10)
     match_lote = re.search(r"10(\d+)", limpo)
     if match_lote:
       bloco_lote = match_lote.group(1)
@@ -238,9 +252,9 @@ def processar_codigo_2(barcode):
     else:
       lote = ""
 
-    return limpar_texto(mat), limpar_texto(lote)[:7]
+    return limpar_texto(mat), quantidade, limpar_texto(lote)[:7]
   except Exception:
-    return "", ""
+    return "", 0, ""
 
 
 def processar_codigo_3(barcode):
@@ -605,7 +619,7 @@ with aba_painel:
         return
 
       lpn_lida = processar_codigo_1(bc1_val)
-      mat_lido, lote_lido = processar_codigo_2(bc2_val)
+      mat_lido, qtd_lida, lote_lido = processar_codigo_2(bc2_val)
       dun_lido, venc_lido, fab_lido = processar_codigo_3(bc3_val)
 
       info_pedido = mapa_pedidos[idx_sel]
@@ -614,7 +628,7 @@ with aba_painel:
       r_escolhido = info_pedido["registro"]
       total_necessario = info_pedido["total_esperado"]
 
-      # Valido se já passou do limite de LPNs permitidas para este pedido
+      # Valido se já passou do limite de LPNs permitidas para este pedido ou se é duplicada
       lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
           num_pedido_escolhido, []
       )
@@ -642,6 +656,10 @@ with aba_painel:
       data_vencimento_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
       data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
       dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
+
+      # Exemplo de validação de quantidade extraída se necessário (opcional/ajustável conforme regra de negócio)
+      # Aqui podes validar se oqtd_lida bate com alguma regra específica da planilha, se houver.
+      # Por enquanto, mantemos a extração funcionando perfeitamente e integrada.
 
       # Faço as comparações para ver se bate com a planilha
       if not mat_lido or mat_lido != mat_planilha:
@@ -717,6 +735,7 @@ with aba_painel:
           "num_pedido": num_pedido_escolhido,
           "responsavel": nome_responsavel.strip(),
           "lpn": lpn_lida,
+          "quantidade_extraida": qtd_lida,
           "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
           "total_esperado": total_necessario,
       }
@@ -903,9 +922,14 @@ with aba_painel:
             """,
           unsafe_allow_html=True,
       )
-      img_fallback = IMAGENS["material04"]
-      if os.path.exists(img_fallback):
-        st.image(img_fallback, width=450)
+      # Usando a nova imagem de validação de quantidade para este cenário de limite/quantidade
+      img_qtd = IMAGENS["validacao_qtd"]
+      if os.path.exists(img_qtd):
+        st.image(img_qtd, width=450)
+      else:
+        img_fallback = IMAGENS["material04"]
+        if os.path.exists(img_fallback):
+          st.image(img_fallback, width=450)
 
     else:
       st.subheader("💡 Exemplo de LPN")
