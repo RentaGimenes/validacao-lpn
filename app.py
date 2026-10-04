@@ -67,20 +67,29 @@ st.markdown("---")
 # ==========================================
 st.subheader("📝 Validar e Dar Baixa na LPN")
 
-# Dividindo a tela em duas colunas: Formulário à esquerda e Etiqueta/Alerta/Botão à direita
+# Dividindo a tela em duas colunas corretas (Esquerda: Formulário e Alerta | Direita: Etiqueta e Botão)
 col_form, col_etiqueta = st.columns([1, 1])
 
 with col_form:
     # Campo para digitar o nome do operador
     nome = st.text_input("Nome", placeholder="Digite seu nome...")
     
-    # Campos de código de barras (agora sem o alerta vermelho em cima deles)
+    # Alerta vermelho posicionado logo abaixo do campo de nome (como na sua estrutura original)
+    if not st.session_state.pedido_selecionado:
+        st.markdown(
+            "<div style='padding: 8px; background-color: #511; color: #ff9999; border: 1px solid #aa3333; text-align: center; border-radius: 4px; margin-bottom: 10px;'>"
+            "⚠️ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN"
+            "</div>", 
+            unsafe_allow_html=True
+        )
+    
+    # Campos de código de barras
     cb1 = st.text_input("1º Código de Barras (LPN)")
     cb2 = st.text_input("2º Código de Barras")
     cb3 = st.text_input("3º Código de Barras")
 
 with col_etiqueta:
-    # Exibição simulada do layout da etiqueta
+    # Exibição simulada do layout da etiqueta na coluna da direita
     st.markdown("""
         <div style='border: 2px solid #ccc; padding: 15px; border-radius: 8px; background-color: #fff; color: #000; text-align: center;'>
             <b>XX(SKU DA SUA LPN AQUI)XX</b><br><br>
@@ -97,16 +106,7 @@ with col_etiqueta:
     
     st.write("") # Espaçamento
     
-    # ALERTA MOVIDO PARA O LUGAR INDICADO (LOGO ACIMA DO BOTÃO)
-    if not st.session_state.pedido_selecionado:
-        st.markdown(
-            "<div style='padding: 8px; background-color: #511; color: #ff9999; border: 1px solid #aa3333; text-align: center; border-radius: 4px; margin-bottom: 10px;'>"
-            "⚠️ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN"
-            "</div>", 
-            unsafe_allow_html=True
-        )
-    
-    # BOTÃO DE VALIDAÇÃO
+    # BOTÃO DE VALIDAÇÃO RETORNADO PARA O LADO DIREITO (LOGO ABAIXO DA ETIQUETA)
     botao_liberado = st.session_state.pedido_selecionado and bool(nome.strip())
     
     if st.button("VALIDAR LPN", use_container_width=True, disabled=not botao_liberado):
