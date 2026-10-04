@@ -200,8 +200,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# Conexão com a planilha e cache de leitura para evitar erro 429
-@st.cache_resource
+# Conexão com a planilha (Removido o cache_resource problemático para evitar erro de sessão expirada)
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_dict = dict(st.secrets["gcp_service_account"])
