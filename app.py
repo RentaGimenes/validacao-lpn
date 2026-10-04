@@ -61,12 +61,16 @@ st.markdown("""
         font-size: 24px;
         font-weight: bold;
         animation: piscar 1s infinite;
+        text-align: center;
+        width: 100%;
     }
     .alerta-sub {
         color: #ff6b6b;
         font-size: 15px;
         font-weight: bold;
         margin-bottom: 10px;
+        text-align: center;
+        width: 100%;
     }
     .alerta-comparacao {
         background-color: #2c1515;
@@ -77,6 +81,9 @@ st.markdown("""
         color: #ffffff;
         margin-bottom: 10px;
         margin-top: 5px;
+        text-align: left;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .card-pedido {
@@ -126,7 +133,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* COLUNA DO MEIO: Ajustada com margem à esquerda para empurrar a LPN mais para a direita */
+    /* CENTRALIZAÇÃO ABSOLUTA DA COLUNA DO MEIO */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -134,10 +141,16 @@ st.markdown("""
         justify-content: center;
         width: 100%;
         text-align: center;
-        margin-left: 35px; 
+    }
+    
+    /* Força imagens geradas pelo Streamlit a centralizarem dentro da coluna do meio */
+    .container-coluna-meio img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
     }
 
-    /* COLUNA DA DIREITA: Garante alinhamento central absoluto para todos os elementos internos */
+    /* CENTRALIZAÇÃO ABSOLUTA DA COLUNA DA DIREITA */
     .container-coluna-direita {
         display: flex;
         flex-direction: column;
@@ -162,6 +175,7 @@ st.markdown("""
         border: 2px solid #00ff66;
         box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4);
         transition: all 0.2s ease-in-out;
+        margin: 0 auto;
     }
     .btn-neon-img:hover {
         box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6);
@@ -516,7 +530,7 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
-        # Coluna do meio com o modelo da LPN levemente deslocado à direita
+        # Coluna do meio centralizada com o seletor CSS forçando a centralização da imagem da LPN
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
         
         erro = st.session_state.get("erro_ativo")
