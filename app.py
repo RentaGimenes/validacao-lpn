@@ -125,7 +125,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* BOTÃO DE VALIDAÇÃO (ÚNICO COM ESTILO QUADRADO VERDE ISOLADO PELA CLASSE DO STREAMLIT) */
+    /* BOTÃO DE VALIDAÇÃO (ESTILO QUADRADO VERDE) */
     div[data-testid="column"]:nth-of-type(3) div.stButton > button {
         background-color: #112216 !important;
         color: #2ecc71 !important;
@@ -544,7 +544,7 @@ else:
             st.markdown("""
             <div style="display: flex; justify-content: center; width: 100%;">
                 <div style="background-color: #2c1515; border: 1px dashed #ff4b4b; padding: 6px 12px; border-radius: 4px; margin-bottom: 12px; text-align: center; max-width: 320px;">
-                    <span style="color: #ff4b4b; font-size: 11px; font-weight: bold;">⚠ SELECIONE UM PEDIDO ACIMA</span>
+                    <span style="color: #ff4b4b; font-size: 11px; font-weight: bold;">⚠ Para iniciar, por favor selecione um pedido.</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -569,7 +569,7 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # BOTÃO EXCLUSIVO DE VALIDAÇÃO (QUADRADO VERDE)
+        # BOTÃO EXCLUSIVO DE VALIDAÇÃO COM FORMATO DE QUADRADO VERDE
         btn_validar_clicado = st.button(texto_botao_validar, use_container_width=True)
 
         if btn_validar_clicado:
@@ -582,7 +582,7 @@ else:
                 st.stop()
             idx_sel = st.session_state.get("pedido_selecionado_idx")
             if not idx_sel or idx_sel not in mapa_pedidos:
-                st.warning("⚠ Selecione um pedido no painel acima.")
+                st.warning("⚠ Para iniciar, por favor selecione um pedido.")
                 st.stop()
             if not bc1_val or not bc2_val or not bc3_val:
                 st.warning("⚠ Preencha os 3 códigos de barras.")
