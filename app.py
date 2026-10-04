@@ -63,18 +63,18 @@ with col_pedido:
 st.markdown("---")
 
 # ==========================================
-# SEÇÃO DE VALIDAÇÃO E BAIXA NA LPN
+# SEÇÃO DE VALIDAÇÃO E BAIXA NA LPN (LAYOUT ORIGINAL)
 # ==========================================
 st.subheader("📝 Validar e Dar Baixa na LPN")
 
-# Dividindo a tela em duas colunas corretas (Esquerda: Formulário e Alerta | Direita: Etiqueta e Botão)
+# Dividindo a tela nas duas colunas originais
 col_form, col_etiqueta = st.columns([1, 1])
 
 with col_form:
-    # Campo para digitar o nome do operador
+    # Campo Nome
     nome = st.text_input("Nome", placeholder="Digite seu nome...")
     
-    # Alerta vermelho posicionado logo abaixo do campo de nome (como na sua estrutura original)
+    # Alerta vermelho exatamente na posição original (abaixo do nome)
     if not st.session_state.pedido_selecionado:
         st.markdown(
             "<div style='padding: 8px; background-color: #511; color: #ff9999; border: 1px solid #aa3333; text-align: center; border-radius: 4px; margin-bottom: 10px;'>"
@@ -89,7 +89,7 @@ with col_form:
     cb3 = st.text_input("3º Código de Barras")
 
 with col_etiqueta:
-    # Exibição simulada do layout da etiqueta na coluna da direita
+    # Exibição da etiqueta
     st.markdown("""
         <div style='border: 2px solid #ccc; padding: 15px; border-radius: 8px; background-color: #fff; color: #000; text-align: center;'>
             <b>XX(SKU DA SUA LPN AQUI)XX</b><br><br>
@@ -106,7 +106,7 @@ with col_etiqueta:
     
     st.write("") # Espaçamento
     
-    # BOTÃO DE VALIDAÇÃO RETORNADO PARA O LADO DIREITO (LOGO ABAIXO DA ETIQUETA)
+    # BOTÃO "VALIDAR LPN" EXATAMENTE NO LUGAR ORIGINAL (LOGO ABAIXO DA ETIQUETA)
     botao_liberado = st.session_state.pedido_selecionado and bool(nome.strip())
     
     if st.button("VALIDAR LPN", use_container_width=True, disabled=not botao_liberado):
@@ -115,5 +115,4 @@ with col_etiqueta:
         elif not nome.strip():
             st.warning("Por favor, digite seu nome antes de validar.")
         else:
-            # Lógica de salvamento / baixa bem-sucedida
             st.success("LPN validada e baixa realizada com sucesso!")
