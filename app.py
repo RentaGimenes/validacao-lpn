@@ -80,7 +80,7 @@ st.markdown("""
     
     .card-pedido {
         background-color: #1e1e1e;
-        border: 2px solid #f1c40f;
+        border: 1px solid #444;
         padding: 10px;
         border-radius: 6px;
         font-size: 13px;
@@ -88,10 +88,15 @@ st.markdown("""
         margin-bottom: 8px;
         text-align: left;
         line-height: 1.4;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .card-pedido:hover {
+        border-color: #00bfff;
     }
     .card-pedido-prioridade {
         background-color: #2b1616;
-        border: 2px solid #ff4b4b;
+        border: 1px solid #ff4b4b;
         padding: 10px;
         border-radius: 6px;
         font-size: 13px;
@@ -99,8 +104,8 @@ st.markdown("""
         margin-bottom: 8px;
         text-align: left;
         line-height: 1.4;
-        box-shadow: 0 0 8px rgba(255, 75, 75, 0.6);
     }
+    
     .texto-destaque-lpn {
         font-size: 20px !important;
         font-weight: bold;
@@ -120,25 +125,21 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ESTILO DO BOTÃO DE VALIDAÇÃO EM FORMATO QUADRADINHO COM REFERÊNCIA */
-    div.stButton > button {
-        background-color: #111a16 !important;
+    /* BOTÃO DE VALIDAÇÃO ESTICADO/QUADRADO, ÚNICO VERDE DA TELA */
+    div.stButton > button#btn_validar_lpn_custom {
+        background-color: #112216 !important;
         color: #2ecc71 !important;
-        font-size: 16px !important;
+        font-size: 18px !important;
         font-weight: bold !important;
-        height: 65px !important;
+        height: 70px !important;
         width: 100% !important;
-        border-radius: 12px !important;
+        border-radius: 4px !important;
         border: 2px solid #2ecc71 !important;
-        box-shadow: 0px 0px 10px rgba(46, 204, 113, 0.3) !important;
-        transition: 0.3s;
-        display: block;
-        margin: 0 auto;
+        box-shadow: none !important;
     }
-    div.stButton > button:hover {
-        background-color: #1b2e23 !important;
+    div.stButton > button#btn_validar_lpn_custom:hover {
+        background-color: #1b3823 !important;
         color: #2ecc71 !important;
-        box-shadow: 0px 0px 15px rgba(46, 204, 113, 0.6) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -155,10 +156,8 @@ def tocar_som_erro():
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_dict = dict(st.secrets["gcp_service_account"])
-    
     if "private_key" in creds_dict:
         creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     client = gspread.authorize(creds)
     return client
@@ -178,31 +177,25 @@ def limpar_texto(texto):
 def converter_para_data_obj(data_str):
     if not data_str: return None
     data_str = str(data_str).strip()
-    
     if re.match(r'^\d{4}-\d{2}-\d{2}$', data_str):
         try: return datetime.strptime(data_str, "%Y-%m-%d").date()
         except Exception: pass
-        
     if re.match(r'^\d{2}\.\d{2}\.\d{2}$', data_str):
         try:
             partes = data_str.split('.')
             return datetime(int("20" + partes[0]), int(partes[1]), int(partes[2])).date()
         except Exception: pass
-
     if len(data_str) == 6 and data_str.isdigit():
         try:
             return datetime(int("20" + data_str[0:2]), int(data_str[2:4]), int(data_str[4:6])).date()
         except Exception: pass
-
     digitos = re.sub(r'\D', '', data_str)
     for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d", "%Y/%m/%d", "%d%m%Y"):
         try: return datetime.strptime(data_str, fmt).date()
         except Exception: continue
-
     if len(digitos) == 8:
         try: return datetime(int(digitos[4:8]), int(digitos[2:4]), int(digitos[0:2])).date()
         except Exception: pass
-
     return None
 
 def processar_codigo_1(barcode):
@@ -213,13 +206,10 @@ def processar_codigo_2(barcode):
         limpo = barcode.replace("(", "").replace(")", "")
         match_mat = re.search(r'90(\d+?)(?=37|$)', limpo)
         mat = match_mat.group(1) if match_mat else limpo[2:10]
-        
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
-        
         match_lote = re.search(r'10(\d+)', limpo)
         lote = match_lote.group(1).lstrip('0') or match_lote.group(1) if match_lote else ""
-        
         return limpar_texto(mat), quantidade, limpar_texto(lote)[:7]
     except Exception:
         return "", 0, ""
@@ -228,18 +218,11 @@ def processar_codigo_3(barcode):
     try:
         limpo = barcode.replace("(", "").replace(")", "")
         match_dun = re.search(r'(?:^|\D)02(\d{14})', limpo)
-        if match_dun:
-            dun = match_dun.group(1)
-        else:
-            match_dun_alt = re.search(r'02(\d+?)(?=17|11|$)', limpo)
-            dun = match_dun_alt.group(1) if match_dun_alt else limpo[2:16]
-            
+        dun = match_dun.group(1) if match_dun else (re.search(r'02(\d+?)(?=17|11|$)', limpo).group(1) if re.search(r'02(\d+?)(?=17|11|$)', limpo) else limpo[2:16])
         match_venc = re.search(r'17(\d{6})', limpo)
         vencimento = match_venc.group(1) if match_venc else ""
-        
         matches_fab = re.findall(r'11(\d{6})', limpo)
         fabricacao = matches_fab[-1] if matches_fab else ""
-        
         return limpar_texto(dun), limpar_texto(vencimento), limpar_texto(fabricacao)
     except Exception:
         return "", "", ""
@@ -323,23 +306,19 @@ if st.session_state.etapa_validacao:
         st.markdown('<div class="box-pergunta-container">', unsafe_allow_html=True)
         st.markdown("📌 **A descrição está correta?**")
         resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed")
-        
-        if os.path.exists(IMAGENS["conf_desc"]): 
-            st.image(IMAGENS["conf_desc"], width=420)
+        if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
         st.markdown('</div>', unsafe_allow_html=True)
         
     with col_conf2:
         st.markdown('<div class="box-pergunta-container">', unsafe_allow_html=True)
         st.markdown("📌 **Você verificou a ordem?**")
         resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed")
-        
-        if os.path.exists(IMAGENS["conf_ordem"]): 
-            st.image(IMAGENS["conf_ordem"], width=420)
+        if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_btn_quadrado:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("Confirmar\nesta\nLPN", type="primary"):
+        if st.button("Confirmar\nesta\nLPN", key="btn_confirmar_etapa_visual"):
             if resp_ordem == "Sim" and resp_desc == "Sim":
                 try:
                     linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
@@ -404,7 +383,6 @@ else:
                     font-size: 11px;
                     font-weight: bold;
                     padding: 6px 12px;
-                    box-shadow: 0 0 6px rgba(0, 191, 255, 0.4);
                     cursor: pointer;
                     display: inline-flex;
                     align-items: center;
@@ -455,9 +433,10 @@ else:
                         with cols[i]:
                             is_selecionado = (st.session_state.pedido_selecionado_idx == idx_p)
                             classe_card = "card-pedido" if (is_selecionado or not e_prioridade) else "card-pedido-prioridade"
-                            destaque_sel = "border: 2px solid #2ecc71; box-shadow: 0 0 10px #2ecc71;" if is_selecionado else ""
+                            destaque_sel = "border: 2px solid #00bfff; background-color: #16222b;" if is_selecionado else ""
                             tag_prioridade_html = '<span style="color: #ff4b4b; font-weight: bold;">🔴 URGENTE / PRIORIDADE</span><br>' if e_prioridade else ''
                             
+                            # CARD CLICÁVEL COM BOTÃO INVISÍVEL PARA SELECIONAR SEM TER BOTÃO VERDE FEIO DENTRO
                             st.markdown(f"""<div class="{classe_card}" style="{destaque_sel}">
 {tag_prioridade_html}
 <b>Linha:</b> {linha_pedido}<br>
@@ -469,11 +448,11 @@ else:
 <b>LPN Inteira:</b> {lpn_inteira}<br>
 <b>Quebra:</b> {quebra_txt}<br>
 <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
-<span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+<span style="color: #00bfff;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
 </div>""", unsafe_allow_html=True)
                             
-                            label_botao = "✅ Selecionado" if is_selecionado else f"Selecionar Pedido {idx_p}"
-                            if st.button(label_botao, key=f"btn_sel_{idx_p}", use_container_width=True):
+                            label_botao_card = "✔ Selecionado" if is_selecionado else f"Selecionar Pedido {idx_p}"
+                            if st.button(label_botao_card, key=f"btn_sel_{idx_p}", use_container_width=True):
                                 st.session_state.pedido_selecionado_idx = idx_p
                                 st.rerun()
                     except Exception:
@@ -485,7 +464,7 @@ else:
 
     st.markdown("---")
 
-    # SEÇÃO INFERIOR: LAYOUT DE 3 COLUNAS AJUSTADO
+    # SEÇÃO INFERIOR: 3 COLUNAS
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
     col_form, col_img, col_acao = st.columns([1.1, 1.2, 1.2], gap="large")
@@ -555,19 +534,21 @@ else:
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
             if os.path.exists(IMAGENS["guia05"]):
-                st.image(IMAGENS["guia05"], width=310)
+                # AUMENTADO O TAMANHO DA IMAGEM GUIA CONFORME PEDIDO (largura 450px)
+                st.image(IMAGENS["guia05"], width=450)
             elif os.path.exists("image_51919d.png"):
-                st.image("image_51919d.png", width=310)
+                st.image("image_51919d.png", width=450)
 
     with col_acao:
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
-            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 14px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+            # AVISO VERMELHO DIMINUÍDO CONFORME PEDIDO
+            st.markdown("""<div style="background-color: #2c1515; border: 1px dashed #ff4b4b; padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 12px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
         else:
             p_sel = mapa_pedidos[idx_sel_atual]
             mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
-            st.markdown(f"""<div style="background-color: #152c1a; border: 2px solid #52b788; padding: 14px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><span style="color: #52b788; font-size: 14px; font-weight: bold;">🎯 Pedido Selecionado:</span><br><span style="color: #ffffff; font-size: 13px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span></div>""", unsafe_allow_html=True)
+            st.markdown(f"""<div style="background-color: #152c1a; border: 1px solid #52b788; padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; text-align: center;"><span style="color: #52b788; font-size: 13px; font-weight: bold;">🎯 Pedido Selecionado:</span><br><span style="color: #ffffff; font-size: 12px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span></div>""", unsafe_allow_html=True)
 
         texto_botao_validar = "VALIDAR LPN"
         idx_sel_atual_btn = st.session_state.get("pedido_selecionado_idx")
@@ -577,7 +558,7 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # BOTÃO ÚNICO COM O ESTILO QUADRADINHO CUSTOMIZADO
+        # SÓ E UNICAMENTE ESTE BOTÃO É O VERDE DA TELA INTEIRA, COM FORMATO QUADRADO
         btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_custom", use_container_width=True)
 
         if btn_validar_clicado:
@@ -677,7 +658,7 @@ else:
 
             # Se todas as validações passarem, avança para a etapa de confirmação visual
             st.session_state.dados_conferencia = {
-                "num_pedido": num_pedido_escolhido,
+                "num_pedido": num_pedido_gh = num_pedido_escolhido := info_pedido["num_pedido"],
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
                 "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
