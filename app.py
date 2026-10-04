@@ -769,7 +769,7 @@ else:
                     tocar_som_erro()
                     st.rerun()
 
-            # 4. Validação de Lote / Data de Criação (se houver divergência no lote comparado com a planilha)
+            # 4. Validação de Lote / Data de Criação
             lote_esperado = limpar_texto(r_escolhido[10]) if len(r_escolhido) > 10 else ""
             if lote_lido and lote_esperado and lote_lido != lote_esperado:
                 st.session_state.erro_ativo = "lote06"
@@ -778,19 +778,9 @@ else:
                 st.rerun()
 
             # 5. Validação de Data de Fabricação
-            # Se a planilha possuir uma coluna ou se houver regra específica de fabricação, validamos aqui. 
-            # Caso a string venha preenchida e difira, disparamos o erro correspondente:
-            # (Adicionado suporte robusto para checar data de fabricação se informada no código ou planilha)
-
-            # 6. Validação de Quantidade / Quebra
-            # Verifica se a quantidade lida bate com o esperado por item/quebra se aplicável
-            inteiro_esp = obter_quantidade_inteira(r_escolhido)
-            lista_q = obter_lista_quebras(r_escolhido)
-            if qtd_lida > 0:
-                # Se a quantidade lida não estiver nem no inteiro esperado e nem nas quebras cadastradas:
-                if qtd_lida != inteiro_esp and qtd_lida not in lista_q and len(lista_q) == 0 and inteiro_esp > 0 and qtd_lida != 1:
-                    # Exemplo de checagem flexível de quantidade caso diverge totalmente
-                    pass
+            if fab_lido:
+                # Caso haja divergência de fabricação se a regra exigir
+                pass
 
             # Passou em todas as validações sem erros, abre a tela de confirmação visual
             st.session_state.erro_ativo = None
