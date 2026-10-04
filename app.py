@@ -16,7 +16,7 @@ st.set_page_config(
 # Atualiza a página sozinho a cada 3 minutos pra não deixar o painel desatualizado
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado para o efeito de alerta piscando na tela quando der erro
+# CSS personalizado para o efeito de alerta piscando e cards com fonte maior e borda amarela
 st.markdown("""
     <style>
     @keyframes piscar {
@@ -46,10 +46,22 @@ st.markdown("""
         margin-bottom: 12px;
         margin-top: 5px;
     }
+    .card-pedido {
+        background-color: #1e1e1e;
+        border: 2px solid #f1c40f;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #ffffff;
+        margin-bottom: 4px;
+        text-align: center;
+        width: 100%;
+        line-height: 1.3;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Função para tocar o som de erro (Opção 28 - Glitch curto)
+# Função para tocar o som de erro
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -271,11 +283,8 @@ with aba_painel:
                         with cols[i]:
                             st.markdown(
                                 f"""
-                                    <div style="background-color: #1e1e1e; border: 1px solid #333333; padding: 6px; border-radius: 6px; font-size: 10px; color: #ffffff; margin-bottom: 4px; text-align: center; width: 100%;">
-                                        <b style="color: #f1c40f;">Ped. {idx_p}</b><br>
-                                        <b>Ref:</b> {lpn_col_b}<br>
-                                        <b>Mat:</b> {material}<br>
-                                        <span style="color: #f1c40f;"><b>{qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+                                    <div class="card-pedido">
+                                        <b style="color: #f1c40f;">Ped. {idx_p}</b> | <b>Ref:</b> {lpn_col_b} | <b>Mat:</b> {material} | <span style="color: #f1c40f;"><b>{qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
                                     </div>
                                     """,
                                 unsafe_allow_html=True,
@@ -343,7 +352,6 @@ with aba_painel:
                     if "dados_conferencia" in st.session_state:
                         del st.session_state.dados_conferencia
                     
-                    # Limpa os campos de código de barras SOMENTE após sucesso na validação
                     for k in ["input_bc1", "input_bc2", "input_bc3"]:
                         if k in st.session_state:
                             del st.session_state[k]
@@ -504,6 +512,8 @@ with aba_painel:
             key="input_bc3",
         )
 
+        # Lógica para definir o texto do botão (Validar LPN ou Validar Próxima LPN)
+        texto_botao_validar = "Validar LPN"
         if pedido_selecionado != "Selecione o pedido...":
             p_info = mapa_pedidos[pedido_selecionado]
             lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(
@@ -511,6 +521,11 @@ with aba_painel:
             )
             tot_esperado_pedido = p_info["total_esperado"]
             qtd_lidas = len(lidas_atualmente)
+            
+            # Se já validou alguma, muda para "Validar Próxima LPN"
+            if qtd_lidas > 0:
+                texto_botao_validar = "Validar Próxima LPN"
+
             porcentagem_calc = min(int((qtd_lidas / tot_esperado_pedido) * 100), 100)
             st.markdown(
                 f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs"
@@ -520,14 +535,14 @@ with aba_painel:
 
         col_btn1, col_btn2 = st.columns(2)
         with col_btn1:
-            if st.button("Validar Próxima LPN", type="primary", use_container_width=True):
+            if st.button(texto_botao_validar, type="primary", use_container_width=True):
                 executar_validacao()
         with col_btn2:
             btn_finalizar_pedido = st.button(
                 "Finalizar Pedido Completo", type="secondary", use_container_width=True
             )
 
-    # Lado direito: alertas visuais com ordem corrigida (Alerta -> Texto Descritivo -> Comparação -> Imagem)
+    # Lado direito: alertas visuais com ordem corrigida
     with col_img:
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
@@ -641,7 +656,6 @@ with aba_painel:
                 st.session_state.erro_ativo = None
                 st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
                 
-                # Limpa os campos após finalizar com sucesso o pedido inteiro
                 for k in ["input_bc1", "input_bc2", "input_bc3"]:
                     if k in st.session_state:
                         del st.session_state[k]
