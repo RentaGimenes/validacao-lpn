@@ -120,7 +120,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Estilo exclusivo e preciso apenas para o botão de Validar LPN (Retangular deitado) */
+    /* Estilo exclusivo para o botão de Validar LPN (Verde Customizado) */
     div.stButton > button[kind="secondary"].botao-validar-custom,
     div.stButton > button.botao-validar-custom {
         background-color: #1b2421 !important;
@@ -505,13 +505,13 @@ else:
         st.session_state.val_nome = nome_responsavel
         
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
-        if idx_sel_atual and idx_sel_atual in mapa_pedidos:
+        if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
+            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+        else:
             p_sel = mapa_pedidos[idx_sel_atual]
             mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
             st.markdown(f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})")
-        else:
-            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
 
         bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
         st.session_state.val_bc1 = bc1
@@ -572,8 +572,9 @@ else:
             st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validadas.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
+            # Espaçamento para descer a imagem e alinhar com os campos de código de barras
+            st.markdown("<br><br>", unsafe_allow_html=True)
             if os.path.exists(IMAGENS["guia05"]):
-                # Largura ajustada para 330px, alinhando exatamente à altura do 3º campo de código de barras
                 st.image(IMAGENS["guia05"], width=330)
 
     with col_acao:
@@ -587,7 +588,7 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
 
-        # Aplicada a classe customizada estritamente a este botão e com chave única
+        # Aplicada a classe customizada estritamente a este botão com chave única
         if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", type="secondary", use_container_width=True):
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
