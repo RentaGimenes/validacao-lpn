@@ -331,26 +331,27 @@ except Exception as e:
 # CONTEÚDO DA ABA PRINCIPAL
 # ==========================================
 with aba_painel:
-    # Linha com o título do painel e o botão de atualizar pedidos lado a lado
-    col_tit_painel, col_btn_att = st.columns([5, 1.2])
+    # Linha com o título do painel e o botão compacto de atualizar pedidos
+    col_tit_painel, col_btn_att = st.columns([5, 1.5])
     with col_tit_painel:
         st.subheader("📋 Painel de Solicitações Pendentes")
     
     with col_btn_att:
-        # Prepara o GIF do anel para dentro do botão personalizado
+        # Prepara o GIF do anel bem menor para ficar na altura do texto
         gif_html = ""
         if os.path.exists(IMAGENS["att_gif"]):
             with open(IMAGENS["att_gif"], "rb") as f:
                 encoded_att = base64.b64encode(f.read()).decode()
-                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="38px" style="display: block; margin: 0 auto 2px auto;">'
+                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="18px" style="display: inline-block; vertical-align: middle; margin-right: 4px;">'
         else:
-            gif_html = '<span style="font-size: 22px; display: block; text-align: center; margin-bottom: 2px;">🟡</span>'
+            gif_html = '<span style="font-size: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">🟡</span>'
 
         html_botao_custom = f"""
-        <div style="background-color: #000000; border: 2px solid #00bfff; border-radius: 12px; padding: 6px 10px; text-align: center; box-shadow: 0 0 10px rgba(0, 191, 255, 0.4); cursor: pointer;">
+        <div style="float: right; margin-top: 4px; background-color: #000000; border: 1.5px solid #00bfff; border-radius: 8px; padding: 3px 8px; text-align: center; box-shadow: 0 0 6px rgba(0, 191, 255, 0.4); cursor: pointer; display: inline-flex; align-items: center;">
             {gif_html}
-            <span style="color: #00bfff; font-size: 10px; font-weight: bold; font-family: sans-serif; display: block; letter-spacing: 0.5px;">ATUALIZAR PEDIDOS</span>
+            <span style="color: #00bfff; font-size: 9px; font-weight: bold; font-family: sans-serif; letter-spacing: 0.3px; line-height: 1;">ATUALIZAR PEDIDOS</span>
         </div>
+        <div style="clear: both;"></div>
         """
         
         # Botão invisível do Streamlit que captura o clique
@@ -358,7 +359,7 @@ with aba_painel:
             st.cache_data.clear()
             st.rerun()
             
-        # Aplica o visual customizado por cima do botão do Streamlit
+        # Aplica o visual customizado compacto por cima do botão do Streamlit
         st.markdown(f"""
         <style>
         div[data-testid="column"] button[key="btn_atualizar_customizado"] p {{
@@ -372,7 +373,7 @@ with aba_painel:
             min-height: 0px !important;
         }}
         </style>
-        <div style="margin-top: -50px; pointer-events: none;">
+        <div style="margin-top: -46px; pointer-events: none;">
             {html_botao_custom}
         </div>
         """, unsafe_allow_html=True)
