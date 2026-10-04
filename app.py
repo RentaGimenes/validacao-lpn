@@ -125,8 +125,8 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ESTILO EXCLUSIVO E GARANTIDO PARA O BOTÃO DE VALIDAÇÃO */
-    div.div-botao-validar button {
+    /* ESTILO GLOBAL DE BOTÕES DO STREAMLIT */
+    div.stButton > button {
         background-color: #0b1410 !important;
         color: #2ecc71 !important;
         font-size: 16px !important;
@@ -136,10 +136,8 @@ st.markdown("""
         border-radius: 8px !important;
         border: 1px solid #2ecc71 !important;
         box-shadow: none !important;
-        display: block !important;
-        text-align: center !important;
     }
-    div.div-botao-validar button:hover {
+    div.stButton > button:hover {
         background-color: #13241b !important;
         color: #2ecc71 !important;
         border-color: #2ecc71 !important;
@@ -571,10 +569,7 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # BOTÃO ENVOLVIDO NA DIV COM A CLASSE EXCLUSIVA
-        st.markdown('<div class="div-botao-validar">', unsafe_allow_html=True)
         btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_largo")
-        st.markdown('</div>', unsafe_allow_html=True)
 
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
