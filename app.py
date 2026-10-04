@@ -1,3 +1,4 @@
+
 # ==========================================
 # IMPORTAÇÕES DE BIBLIOTECAS
 # ==========================================
@@ -640,26 +641,56 @@ else:
             data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
             dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
+            # 1. Validação de Material
             if not mat_lido or mat_lido != mat_planilha:
                 st.session_state.erro_ativo = "material04"
                 st.session_state.detalhes_erro = {"solicitado": mat_planilha or "(Vazio)", "lido": mat_lido or "(Não identificado)"}
                 tocar_som_erro()
                 st.rerun()
+
+            # 2. Validação de DUN
             if dun_planilha and dun_lido and dun_lido != dun_planilha:
                 st.session_state.erro_ativo = "dun03"
                 st.session_state.detalhes_erro = {"solicitado": dun_planilha, "lido": dun_lido}
                 tocar_som_erro()
                 st.rerun()
-            
-            # Validação bem-sucedida passa para a próxima etapa de confirmação visual
-            st.session_state.erro_ativo = None
-            st.session_state.etapa_validacao = True
+
+            # 3. Validação de Lote
+            if lote_planilha and lote_lido and lote_lido != lote_planilha:
+                st.session_state.erro_ativo = "lote06"
+                st.session_state.detalhes_erro = {"solicitado": lote_planilha, "lido": lote_lido}
+                tocar_som_erro()
+                st.rerun()
+
+            # 4. Validação de Data de Vencimento
+            if data_vencimento_planilha_raw and venc_lido:
+                data_venc_plan_obj = converter_para_data_obj(data_vencimento_planilha_raw)
+                data_venc_lido_obj = converter_para_data_obj(venc_lido)
+                if data_venc_plan_obj and data_venc_lido_obj and data_venc_lido_obj != data_venc_plan_obj:
+                    st.session_state.erro_ativo = "datav02"
+                    st.session_state.detalhes_erro = {"solicitado": str(data_venc_plan_obj), "lido": str(data_venc_lido_obj)}
+                    tocar_som_erro()
+                    st.rerun()
+
+            # 5. Validação de Data de Fabricação
+            if data_fabricacao_planilha_raw and fab_lido:
+                data_fab_plan_obj = converter_para_data_obj(data_fabricacao_planilha_raw)
+                data_fab_lido_obj = converter_para_data_obj(fab_lido)
+                if data_fab_plan_obj and data_fab_lido_obj and data_fab_lido_obj != data_fab_plan_obj:
+                    st.session_state.erro_ativo = "datafab03"
+                    st.session_state.detalhes_erro = {"solicitado": str(data_fab_plan_obj), "lido": str(data_fab_lido_obj)}
+                    tocar_som_erro()
+                    st.rerun()
+
+            # Se todas as validações passarem, avança para a etapa de confirmação visual
             st.session_state.dados_conferencia = {
                 "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
-                "responsavel": nome_responsavel,
+                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
+                "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
+            st.session_state.etapa_validacao = True
+            st.session_state.erro_ativo = None
             st.rerun()
