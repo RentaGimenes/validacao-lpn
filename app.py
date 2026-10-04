@@ -276,15 +276,20 @@ def processar_codigo_2(barcode):
         mat = match_mat.group(1) if match_mat else limpo[2:10]
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
+        
+        # Extração de lote aprimorada para garantir captura correta
         lote = ""
-        match_lote = re.search(r'10(\d+)', limpo)
+        match_lote = re.search(r'10([0-9A-Za-z]+)', limpo)
         if match_lote:
             digitos_lote = match_lote.group(1)
-            if len(digitos_lote) > 6:
-                sem_ultimos_6 = digitos_lote[:-6]
-                lote = sem_ultimos_6[:7].lstrip('0')
-            else:
-                lote = digitos_lote.lstrip('0')
+            # Pega os dígitos do lote considerando eventuais delimitadores ou tamanhos variáveis
+            lote = digitos_lote.strip()
+        else:
+            # Fallback caso venha em outro padrão sem identificador explícito de 10
+            parts = limpo.split()
+            if len(parts) > 1:
+                lote = parts[-1]
+                
         return limpar_texto(mat), quantidade, lote
     except Exception:
         return "", 0, ""
@@ -674,7 +679,6 @@ else:
         
         erro = st.session_state.get("erro_ativo")
         
-        # Se houver erro, divide o espaço central em duas colunas idênticas para os dois botões ficarem lado a lado com o mesmo tamanho
         if erro is not None:
             col_b1, col_b2 = st.columns(2, gap="small")
             with col_b1:
@@ -800,15 +804,18 @@ else:
                     tocar_som_erro()
                     st.rerun()
 
-            # Validação rigorosa do Lote (Coluna K / Índice 10)
+            # VALIDAÇÃO RIGOROSA DO LOTE (Obrigatória e bloqueante em caso de divergência)
             lote_esperado_bruto = r_escolhido[10] if len(r_escolhido) > 10 else ""
             lote_esp_limpo = limpar_lote(lote_esperado_bruto)
             lote_lido_limpo = limpar_lote(lote_lido)
-            if lote_lido_limpo and lote_esp_limpo and lote_lido_limpo != lote_esp_limpo:
-                st.session_state.erro_ativo = "lote06"
-                st.session_state.detalhes_erro = {"solicitado": lote_esperado_bruto.strip(), "lido": lote_lido.strip()}
-                tocar_som_erro()
-                st.rerun()
+            
+            # Se houver lote na planilha, a leitura é obrigatória e deve bater exatamente
+            if lote_esp_limpo:
+                if not lote_lido_limpo or lote_lido_limpo != lote_esp_limpo:
+                    st.session_state.erro_ativo = "lote06"
+                    st.session_state.detalhes_erro = {"solicitado": lote_esperado_bruto.strip(), "lido": lote_lido.strip() if lote_lido else "N/A (Não lido)"}
+                    tocar_som_erro()
+                    st.rerun()
 
             # Validação rigorosa da Data do Palete (Coluna D / Índice 3)
             data_palete_esperada_str = r_escolhido[3] if len(r_escolhido) > 3 else ""
