@@ -120,7 +120,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Estilo exclusivo e preciso apenas para o botão de Validar LPN (Verde Customizado) */
+    /* Estilo exclusivo e preciso apenas para o botão de Validar LPN (Retangular deitado) */
     div.stButton > button[kind="secondary"].botao-validar-custom,
     div.stButton > button.botao-validar-custom {
         background-color: #1b2421 !important;
@@ -510,7 +510,9 @@ else:
             mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
             st.markdown(f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})")
-        
+        else:
+            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+
         bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
         st.session_state.val_bc1 = bc1
         bc2 = st.text_input("2º Código de Barras", value=st.session_state.val_bc2, key="input_bc2_field")
@@ -528,55 +530,51 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
-        # ALERTA MOVIDO PARA A PARTE SUPERIOR DIREITA (conforme solicitado na marcação verde)
-        idx_sel_atual_alerta = st.session_state.get("pedido_selecionado_idx")
-        if not idx_sel_atual_alerta or idx_sel_atual_alerta not in mapa_pedidos:
-            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
-
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
         if erro == "material04":
             st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Incompatível com o solicitado.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["material04"]): st.image(IMAGENS["material04"], width=450)
+            if os.path.exists(IMAGENS["material04"]): st.image(IMAGENS["material04"], width=330)
         elif erro == "lote06":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Imcompatível com a data de vencimento.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["lote06"]): st.image(IMAGENS["lote06"], width=450)
+            if os.path.exists(IMAGENS["lote06"]): st.image(IMAGENS["lote06"], width=330)
         elif erro == "datav02":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Data de Validade</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Data de vencimento não está compatível.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["datav02"]): st.image(IMAGENS["datav02"], width=450)
+            if os.path.exists(IMAGENS["datav02"]): st.image(IMAGENS["datav02"], width=330)
         elif erro == "datafab03":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Data de Fabricação</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Data de fabricação não está de acordo.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["datafab03"]): st.image(IMAGENS["datafab03"], width=450)
+            if os.path.exists(IMAGENS["datafab03"]): st.image(IMAGENS["datafab03"], width=330)
         elif erro == "dun03":
             st.markdown('<div class="alerta-piscar">🚫 Erro de DUN</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">DUN não corresponde ao solicitado.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=450)
+            if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=330)
         elif erro == "validacao_qtd":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Quantidade / Quebra</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Quantidade lida não confere com as quebras pendentes.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao">{det['solicitado']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["validacao_qtd"]): st.image(IMAGENS["validacao_qtd"], width=450)
+            if os.path.exists(IMAGENS["validacao_qtd"]): st.image(IMAGENS["validacao_qtd"], width=330)
         elif erro == "lpn_duplicada":
             st.markdown('<div class="alerta-piscar">🚫 LPN Duplicada</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Esta LPN já foi validada neste pedido.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao">{det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=450)
+            if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=330)
         elif erro == "limite":
             st.markdown('<div class="alerta-piscar">🚫 Limite Excedido</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validadas.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
             if os.path.exists(IMAGENS["guia05"]):
-                st.image(IMAGENS["guia05"], width=460)
+                # Largura ajustada para 330px, alinhando exatamente à altura do 3º campo de código de barras
+                st.image(IMAGENS["guia05"], width=330)
 
     with col_acao:
         st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
@@ -589,33 +587,8 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
 
-        # Aplicada a classe customizada estritamente a este botão (Botão Verde de Validar)
-        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", type="secondary", args=(), kwargs={}):
-            # Atribuindo a classe CSS via seletor para garantir o estilo verde
-            pass
-
-        # Adiciona a classe CSS do botão verde logo após a criação usando component/markdown se necessário ou manipulando state
-        st.markdown("""
-            <script>
-                const buttons = document.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    if (btn.innerText.includes("VALIDAR LPN") || btn.innerText.includes("VALIDAR\nPRÓXIMA LPN") || btn.innerText.includes("PRÓXIMA LPN")) {
-                        btn.classList.add("botao-validar-custom");
-                    }
-                });
-            </script>
-        """, unsafe_allow_html=True)
-
-        # Lógica executada quando o botão é clicado
-        # Como o Streamlit executa o bloco do botão diretamente ao ser clicado, colocamos a lógica logo abaixo:
-        # Nota: para capturar o clique do botão customizado com classe, verificamos o estado ou o próprio retorno do st.button:
-        
-    # Tratamento real da ação de validação abaixo do escopo das colunas ou integrado
-    # Vamos garantir que o st.button capture a ação corretamente:
-    
-    # Redefinimos a chamada do botão de forma limpa garantindo a captura do clique:
-    with col_acao:
-        if st.button(texto_botao_validar + " ", key="btn_acao_real", type="secondary"):
+        # Aplicada a classe customizada estritamente a este botão e com chave única
+        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", type="secondary", use_container_width=True):
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
             bc3_val = st.session_state.get("val_bc3", "").strip()
@@ -685,21 +658,23 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            venc_planilha_obj = converter_para_data_obj(data_vencimento_planilha_raw)
-            venc_lido_obj = converter_para_data_obj(venc_lido)
-            if venc_planilha_obj and venc_lido_obj and venc_lido_obj != venc_planilha_obj:
-                st.session_state.erro_ativo = "datav02"
-                st.session_state.detalhes_erro = {"solicitado": venc_planilha_obj.strftime("%d/%m/%Y"), "lido": venc_lido_obj.strftime("%d/%m/%Y")}
-                tocar_som_erro()
-                st.rerun()
+            if data_vencimento_planilha_raw and venc_lido:
+                data_venc_planilha_obj = converter_para_data_obj(data_vencimento_planilha_raw)
+                data_venc_lido_obj = converter_para_data_obj(venc_lido)
+                if data_venc_planilha_obj and data_venc_lido_obj and data_venc_lido_obj != data_venc_planilha_obj:
+                    st.session_state.erro_ativo = "datav02"
+                    st.session_state.detalhes_erro = {"solicitado": data_venc_planilha_obj.strftime("%d/%m/%Y"), "lido": data_venc_lido_obj.strftime("%d/%m/%Y")}
+                    tocar_som_erro()
+                    st.rerun()
 
-            fab_planilha_obj = converter_para_data_obj(data_fabricacao_planilha_raw)
-            fab_lido_obj = converter_para_data_obj(fab_lido)
-            if fab_planilha_obj and fab_lido_obj and fab_lido_obj != fab_planilha_obj:
-                st.session_state.erro_ativo = "datafab03"
-                st.session_state.detalhes_erro = {"solicitado": fab_planilha_obj.strftime("%d/%m/%Y"), "lido": fab_lido_obj.strftime("%d/%m/%Y")}
-                tocar_som_erro()
-                st.rerun()
+            if data_fabricacao_planilha_raw and fab_lido:
+                data_fab_planilha_obj = converter_para_data_obj(data_fabricacao_planilha_raw)
+                data_fab_lido_obj = converter_para_data_obj(fab_lido)
+                if data_fab_planilha_obj and data_fab_lido_obj and data_fab_lido_obj != data_fab_planilha_obj:
+                    st.session_state.erro_ativo = "datafab03"
+                    st.session_state.detalhes_erro = {"solicitado": data_fab_planilha_obj.strftime("%d/%m/%Y"), "lido": data_fab_lido_obj.strftime("%d/%m/%Y")}
+                    tocar_som_erro()
+                    st.rerun()
 
             st.session_state.erro_ativo = None
             st.session_state.dados_conferencia = {
