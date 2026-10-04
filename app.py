@@ -8,7 +8,7 @@ import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# --- CONFIGURAÇÃO DOS NOMES DAS IMAGENS ---
+# Definição dos nomes das imagens que uso na tela
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
@@ -20,13 +20,13 @@ IMAGENS = {
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
 }
 
-# Configurando a página do app
+# Configuro a página do app aqui
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
 
-# Atualiza a página sozinho a cada 3 minutos
+# Dou um refresh automático a cada 3 minutos para atualizar os dados
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado
+# Meu CSS customizado para deixar com cara de sistema próprio
 st.markdown(
     """
     <style>
@@ -381,8 +381,8 @@ with aba_painel:
 
             total_esperado = obter_quantidade_total_lpns(r)
 
-            # Nova regra: Prioridade apenas se o total de LPNs for superior ou igual a 5
-            e_prioridade = total_esperado >= 5
+            # Deixo em destaque vermelho se tiver mais de 5 pendentes na fila
+            e_prioridade = len(pedidos_pendentes) > 5
 
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
                 idx_p, []
@@ -515,6 +515,7 @@ with aba_painel:
 
           lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
 
+          # Se já leu todas as LPNs necessárias, dou baixa direto lá na planilha
           if len(lpns_lidas_pedido) >= total_necessario:
             fuso_horario = pytz.timezone("America/Sao_Paulo")
             hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
@@ -593,7 +594,7 @@ with aba_painel:
       idx_sel = st.session_state.get("pedido_selecionado_idx")
       if not idx_sel or idx_sel not in mapa_pedidos:
         st.warning(
-            "⚠️ Selecione um pedido clicando no cartão correspondente no painel"
+            "⚠️️ Selecione um pedido clicando no cartão correspondente no painel"
             " acima."
         )
         return
@@ -612,6 +613,7 @@ with aba_painel:
       r_escolhido = info_pedido["registro"]
       total_necessario = info_pedido["total_esperado"]
 
+      # Valido se já passou do limite de LPNs permitidas para este pedido
       lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
           num_pedido_escolhido, []
       )
@@ -640,6 +642,7 @@ with aba_painel:
       data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
       dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
+      # Faço as comparações para ver se bate com a planilha
       if not mat_lido or mat_lido != mat_planilha:
         st.session_state.erro_ativo = "material04"
         st.session_state.detalhes_erro = {
@@ -705,6 +708,7 @@ with aba_painel:
           tocar_som_erro()
           return
 
+      # Deu tudo certo, sigo para a confirmação visual
       st.session_state.erro_ativo = None
       st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
       st.session_state.dados_conferencia = {
