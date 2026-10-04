@@ -350,16 +350,12 @@ with aba_painel:
         r for r in dados_validos if not (len(r) > 13 and r[13].strip())
     ]
     if pedidos_pendentes:
-      total_pendentes = len(pedidos_pendentes)
-      fuso_horario = pytz.timezone("America/Sao_Paulo")
-      agora = datetime.now(fuso_horario)
-
       num_colunas = 6
       linhas_cards = [
           pedidos_pendentes[i : i + num_colunas]
           for i in range(0, len(pedidos_pendentes), num_colunas)
       ]
-      
+
       for bloco in linhas_cards:
         cols = st.columns(num_colunas)
         for i, r in enumerate(bloco):
@@ -382,21 +378,15 @@ with aba_painel:
             lote = r[10] if len(r) > 10 else ""
             lpn_inteira = r[4] if len(r) > 4 else "0"
             quebra_txt = r[6] if len(r) > 6 else "0"
-            
-            horario_str = r[14] if len(r) > 14 else ""
-            dt_criacao = converter_horario_solicitacao(horario_str)
-
-            passou_de_1h30 = False
-            if dt_criacao:
-              tempo_decorrido = agora - dt_criacao
-              if tempo_decorrido > timedelta(hours=1, minutes=30):
-                passou_de_1h30 = True
-
-            is_primeiro = (r == pedidos_pendentes[0])
-            e_prioridade = (is_primeiro and total_pendentes >= 5) or passou_de_1h30
 
             total_esperado = obter_quantidade_total_lpns(r)
-            lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(idx_p, [])
+
+            # Nova regra: Prioridade apenas se o total de LPNs for superior ou igual a 5
+            e_prioridade = total_esperado >= 5
+
+            lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
+                idx_p, []
+            )
             qtd_lidas = len(lpns_ja_lidas)
             porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
 
@@ -409,9 +399,11 @@ with aba_painel:
 
             with cols[i]:
               is_selecionado = st.session_state.pedido_selecionado_idx == idx_p
-              
+
               if is_selecionado:
-                destaque_sel = "border: 2px solid #2ecc71; box-shadow: 0 0 10px #2ecc71;"
+                destaque_sel = (
+                    "border: 2px solid #2ecc71; box-shadow: 0 0 10px #2ecc71;"
+                )
                 classe_card = "card-pedido"
               elif e_prioridade:
                 classe_card = "card-pedido-prioridade"
@@ -420,29 +412,32 @@ with aba_painel:
                 classe_card = "card-pedido"
                 destaque_sel = ""
 
-              tag_prioridade_html = '<span style="color: #ff4b4b; font-weight: bold;">🔴 URGENTE / PRIORIDADE</span><br>' if e_prioridade else ''
-
-              st.markdown(
-                  f"""
-                  <div class="{classe_card}" style="{destaque_sel}">
-                      {tag_prioridade_html}
-                      <b>Linha:</b> {linha_pedido}<br>
-                      <b>Cód Mat:</b> {cod_material}<br>
-                      <b>Desc:</b> {desc_resumida}<br>
-                      <b>Data Palete:</b> {data_palete}<br>
-                      <b>Venc:</b> {data_vencimento}<br>
-                      <b>Lote:</b> {lote}<br>
-                      <b>LPN Inteira:</b> {lpn_inteira}<br>
-                      <b>Quebra:</b> {quebra_txt}<br>
-                      <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
-                      <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
-                  </div>
-                  """,
-                  unsafe_allow_html=True,
+              tag_prioridade_html = (
+                  '<span style="color: #ff4b4b; font-weight: bold;">🔴'
+                  " URGENTE / PRIORIDADE</span><br>"
+                  if e_prioridade
+                  else ""
               )
 
+              conteudo_cartao = f"""
+              <div class="{classe_card}" style="{destaque_sel}">
+                  {tag_prioridade_html}
+                  <b>Linha:</b> {linha_pedido}<br>
+                  <b>Cód Mat:</b> {cod_material}<br>
+                  <b>Desc:</b> {desc_resumida}<br>
+                  <b>Data Palete:</b> {data_palete}<br>
+                  <b>Venc:</b> {data_vencimento}<br>
+                  <b>Lote:</b> {lote}<br>
+                  <b>LPN Inteira:</b> {lpn_inteira}<br>
+                  <b>Quebra:</b> {quebra_txt}<br>
+                  <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
+                  <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+              </div>
+              """
+              st.markdown(conteudo_cartao, unsafe_allow_html=True)
+
               label_botao = (
-                  f"✅ Selecionado"
+                  "✅ Selecionado"
                   if is_selecionado
                   else f"Selecionar Pedido {idx_p}"
               )
@@ -811,7 +806,7 @@ with aba_painel:
       if os.path.exists(img_nome):
         st.image(img_nome, width=450)
       else:
-        st.warning(f"⚠️️ Imagem `{img_nome}` não encontrada.")
+        st.warning(f"⚠ Imagem `{img_nome}` não encontrada.")
 
     elif erro == "datav02":
       st.markdown(
