@@ -12,13 +12,12 @@ import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# Configura a pagina do streamlit pra usar o layout largo
+# Configura a página do Streamlit para usar layout largo
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
 
 # ==========================================
 # MAPEAMENTO DE IMAGENS E ARQUIVOS
 # ==========================================
-# Aqui a gente mapeia os nomes das imagens para facilitar na hora de exibir
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
@@ -35,7 +34,7 @@ IMAGENS = {
     "validar_btn": "validar.png",
 }
 
-# Atualiza a página automaticamente a cada 3 minutos para pegar dados novos
+# Atualiza a página automaticamente a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
 # ==========================================
@@ -125,23 +124,15 @@ st.markdown("""
         font-weight: bold;
         color: #f1c40f;
     }
-    
-    .box-pergunta-container {
-        background-color: #1a1a1a;
-        border: 1px solid #444;
-        padding: 16px;
-        border-radius: 8px;
-        margin-bottom: 15px;
-    }
 
-    /* Centralização das colunas */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
         text-align: center;
+        margin-top: -35px;
     }
     .container-coluna-meio img {
         display: block;
@@ -155,31 +146,40 @@ st.markdown("""
         justify-content: center;
         width: 100%;
         text-align: center;
+        margin-top: -10px;
     }
     .container-botao-imagem {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         align-items: center;
+        justify-content: center;
         width: 100%;
-    }
-    .btn-neon-img {
-        display: block;
-        border-radius: 16px;
-        mix-blend-mode: screen; 
-        background: rgba(0, 255, 100, 0.15);
-        border: 2px solid #00ff66;
-        box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4);
-        transition: all 0.2s ease-in-out;
         margin: 0 auto;
     }
-    .btn-neon-img:hover {
-        box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6);
-        background: rgba(0, 255, 100, 0.25);
+    
+    /* Padronização dos botões (quadrados, modernos e com efeito neon) */
+    div.stButton > button {
+        background: rgba(0, 255, 100, 0.15) !important;
+        border: 2px solid #00ff66 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 0 12px rgba(0, 255, 100, 0.6), inset 0 0 8px rgba(0, 255, 100, 0.4) !important;
+        color: #00ff66 !important;
+        font-weight: bold !important;
+        font-size: 15px !important;
+        transition: all 0.2s ease-in-out !important;
+        width: 100% !important;
+        height: 75px !important;
+    }
+    div.stButton > button:hover {
+        box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6) !important;
+        background: rgba(0, 255, 100, 0.25) !important;
+        border-color: #00ff88 !important;
+        color: #ffffff !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Função simples para tocar som de erro na tela quando algo der errado
+# Toca um som rápido de alerta caso dê erro
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -188,7 +188,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# Conexão com o Google Sheets usando os secrets do Streamlit
+# Conexão com a planilha do Google
 @st.cache_resource
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -208,7 +208,7 @@ except Exception as e:
     st.stop()
 
 # ==========================================
-# FUNÇÕES AUXILIARES DE TRATAMENTO
+# FUNÇÕES DE APOIO E TRATAMENTO
 # ==========================================
 def limpar_texto(texto):
     if not texto: return ""
@@ -286,11 +286,11 @@ def obter_quantidade_total_lpns(r):
     return total if total > 0 else 1
 
 # ==========================================
-# TÍTULO PRINCIPAL
+# CABEÇALHO DO APLICATIVO
 # ==========================================
 st.markdown("<h2 style='margin-top: 0px; padding-top: 0px;'>📦 Validação das informações das Lpn</h2>", unsafe_allow_html=True)
 
-# Inicializa os estados da sessão
+# Inicializa estados essenciais na sessão
 if "etapa_validacao" not in st.session_state:
     st.session_state.etapa_validacao = False
     st.session_state.dados_conferencia = {}
@@ -307,7 +307,7 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
-# Puxa os dados da planilha do Google
+# Puxa os dados atuais do Sheets
 registos, dados_validos = [], []
 try:
     registos = sheet.get_all_values()
@@ -319,7 +319,7 @@ except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
 # ==========================================
-# FLUXO 1: ETAPA DE CONFIRMAÇÃO VISUAL
+# TELA 1: CONFIRMAÇÃO VISUAL OBRIGATÓRIA
 # ==========================================
 if st.session_state.etapa_validacao:
     st.subheader("🔍 Confirmação Visual Obrigatória")
@@ -345,26 +345,30 @@ if st.session_state.etapa_validacao:
     
     st.markdown(f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>', unsafe_allow_html=True)
     st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    col_conf1, col_conf2, col_btn_quadrado = st.columns([2, 2, 1])
+    # Organiza em 3 colunas (Esquerda: Descrição, Centro: Botão quadrado, Direita: Ordem)
+    col_conf1, col_centro, col_conf2 = st.columns([2, 1.5, 2], gap="medium")
     
     with col_conf1:
-        st.markdown('<div class="box-pergunta-container">', unsafe_allow_html=True)
         st.markdown("📌 **A descrição está correta?**")
         resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed")
-        if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        if os.path.exists(IMAGENS["conf_desc"]): 
+            st.image(IMAGENS["conf_desc"], width=420)
         
     with col_conf2:
-        st.markdown('<div class="box-pergunta-container">', unsafe_allow_html=True)
         st.markdown("📌 **Você verificou a ordem?**")
         resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed")
-        if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        if os.path.exists(IMAGENS["conf_ordem"]): 
+            st.image(IMAGENS["conf_ordem"], width=420)
 
-    with col_btn_quadrado:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("Confirmar esta LPN", key="btn_confirmar_etapa_visual"):
+    with col_centro:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        
+        # Botão centralizado para confirmar a LPN
+        if st.button("✔ Confirmar\nesta LPN", key="btn_confirmar_etapa_visual"):
             if resp_ordem == "Sim" and resp_desc == "Sim":
                 try:
                     linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
@@ -401,12 +405,12 @@ if st.session_state.etapa_validacao:
                     st.error(f"Erro: {e}")
             else:
                 st.error("⚠ Você precisa selecionar 'Sim' em ambas as confirmações para prosseguir!")
-                
+
     st.markdown("---")
 
 else:
     # ==========================================
-    # FLUXO 2: PAINEL PRINCIPAL DE PEDIDOS E VALIDAÇÃO
+    # TELA 2: PAINEL DE PEDIDOS E VALIDAÇÃO
     # ==========================================
     st.subheader("📋 PEDIDOS DE LPN")
 
@@ -451,7 +455,8 @@ else:
 
     mapa_pedidos = {}
     if dados_validos:
-        pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and r[13].strip())]
+        pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and str(r[13]).strip())]
+        
         if pedidos_pendentes:
             num_colunas = 6
             linhas_cards = [pedidos_pendentes[i:i + num_colunas] for i in range(0, len(pedidos_pendentes), num_colunas)]
@@ -512,11 +517,11 @@ else:
     st.markdown("---")
 
     # ==========================================
-    # SEÇÃO INFERIOR: FORMULÁRIO E VALIDAÇÃO DE CÓDIGOS
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO DOS CÓDIGOS
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
-    col_form, col_img, col_acao = st.columns([1.1, 1.2, 1.2], gap="large")
+    col_form, col_img, col_acao = st.columns([1.2, 1.4, 1.1], gap="large")
     
     with col_form:
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
@@ -540,6 +545,7 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
+        st.markdown('<div id="ancora-validacao"></div>', unsafe_allow_html=True)
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
         
         erro = st.session_state.get("erro_ativo")
@@ -616,40 +622,15 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        validar_img_base64 = ""
-        if os.path.exists(IMAGENS["validar_btn"]):
-            with open(IMAGENS["validar_btn"], "rb") as f:
-                validar_img_base64 = base64.b64encode(f.read()).decode()
-
         st.markdown('<div class="container-botao-imagem">', unsafe_allow_html=True)
         
-        btn_validar_clicado = False
-        if validar_img_base64:
-            st.markdown(f"""
-            <form action="" method="get">
-                <button type="submit" name="executar_validacao" value="true" style="
-                    background: none;
-                    border: none;
-                    padding: 0;
-                    cursor: pointer;
-                    margin: 0 auto;
-                ">
-                    <img src="data:image/png;base64,{validar_img_base64}" width="240px" class="btn-neon-img">
-                </button>
-            </form>
-            """, unsafe_allow_html=True)
-            
-            if "executar_validacao" in st.query_params:
-                st.query_params.clear()
-                btn_validar_clicado = True
-        else:
-            st.warning("⚠️ Imagem 'validar.png' não encontrada na pasta. Usando botão padrão de texto.")
-            btn_validar_clicado = st.button("VALIDAR LPN", key="btn_validar_lpn_fallback", use_container_width=True)
+        # Botão principal para iniciar a validação dos códigos bipados
+        btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
 
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Processamento das regras de validação ao clicar no botão
+        # Regras executadas ao clicar no botão de iniciar validação
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -683,10 +664,7 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            qtd_inteira_esperada = obter_quantidade_inteira(r_escolhido)
-            lista_quebras = obter_lista_quebras(r_escolhido)
-            
-            # Validação do material
+            # Validações comparando com a planilha
             mat_esperado = limpar_texto(r_escolhido[7]) if len(r_escolhido) > 7 else ""
             if mat_lido and mat_esperado and mat_lido != mat_esperado:
                 st.session_state.erro_ativo = "material04"
@@ -694,7 +672,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # Validação do DUN
             dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
             if dun_lido and dun_esperado and dun_lido != dun_esperado:
                 st.session_state.erro_ativo = "dun03"
@@ -702,7 +679,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # Validação de Data de Vencimento
             venc_esperado_str = r_escolhido[9] if len(r_escolhido) > 9 else ""
             data_venc_obj = converter_para_data_obj(venc_esperado_str)
             if venc_lido and data_venc_obj:
@@ -713,7 +689,6 @@ else:
                     tocar_som_erro()
                     st.rerun()
 
-            # Validação de Lote
             lote_esperado = limpar_texto(r_escolhido[10]) if len(r_escolhido) > 10 else ""
             if lote_lido and lote_esperado and lote_lido != lote_esperado:
                 st.session_state.erro_ativo = "lote06"
@@ -721,7 +696,7 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # Passou pelas validações básicas, ativa a tela de confirmação visual
+            # Passou em tudo, abre a tela de confirmação visual
             st.session_state.erro_ativo = None
             st.session_state.etapa_validacao = True
             st.session_state.dados_conferencia = {
@@ -733,3 +708,13 @@ else:
                 "total_esperado": total_necessario
             }
             st.rerun()
+
+    # Mantém o scroll na posição correta
+    st.markdown("""
+        <script>
+            const element = document.getElementById('ancora-validacao');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        </script>
+    """, unsafe_allow_html=True)
