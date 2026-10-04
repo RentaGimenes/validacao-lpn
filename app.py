@@ -26,7 +26,7 @@ st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wi
 # Atualiza a página sozinho a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado (com suporte à classe de prioridade vermelha)
+# CSS personalizado
 st.markdown(
     """
     <style>
@@ -60,7 +60,7 @@ st.markdown(
     .card-pedido {
         background-color: #1e1e1e;
         border: 2px solid #f1c40f;
-        padding: 8px 10px;
+        padding: 10px;
         border-radius: 6px;
         font-size: 13px;
         color: #ffffff;
@@ -71,7 +71,7 @@ st.markdown(
     .card-pedido-prioridade {
         background-color: #2b1616;
         border: 2px solid #ff4b4b;
-        padding: 8px 10px;
+        padding: 10px;
         border-radius: 6px;
         font-size: 13px;
         color: #ffffff;
@@ -83,7 +83,7 @@ st.markdown(
     .card-concluido {
         background-color: #1e1e1e;
         border: 2px solid #2ecc71;
-        padding: 8px 10px;
+        padding: 10px;
         border-radius: 6px;
         font-size: 13px;
         color: #ffffff;
@@ -291,7 +291,6 @@ def obter_quantidade_total_lpns(r):
   return total if total > 0 else 1
 
 
-# Função auxiliar para converter a string de data/hora da planilha num objeto datetime com fuso
 def converter_horario_solicitacao(data_str):
   if not data_str:
     return None
@@ -302,7 +301,6 @@ def converter_horario_solicitacao(data_str):
     return fuso_horario.localize(dt)
   except Exception:
     try:
-      # Tenta formato alternativo caso venha apenas como data ou outro padrão
       fuso_horario = pytz.timezone("America/Sao_Paulo")
       dt = datetime.strptime(data_str.strip(), "%Y-%m-%d %H:%M:%S")
       return fuso_horario.localize(dt)
@@ -344,7 +342,7 @@ aba_painel, aba_concluidos = st.tabs(
 )
 
 with aba_painel:
-  st.subheader("📋 Painel de Solicitações Pendentes (Clique no cartão para selecionar)")
+  st.subheader("📋 Painel de Solicitações Pendentes")
 
   mapa_pedidos = {}
   if dados_validos:
@@ -385,21 +383,15 @@ with aba_painel:
             lpn_inteira = r[4] if len(r) > 4 else "0"
             quebra_txt = r[6] if len(r) > 6 else "0"
             
-            # Assumindo que a coluna de horário de criação/solicitação está na coluna 15 (índice 14) 
-            # ou ajustado conforme a sua estrutura. Caso o horário venha de outra coluna, ajuste aqui:
             horario_str = r[14] if len(r) > 14 else ""
             dt_criacao = converter_horario_solicitacao(horario_str)
 
-            # Cálculo de tempo de espera se houver horário registado
             passou_de_1h30 = False
             if dt_criacao:
               tempo_decorrido = agora - dt_criacao
               if tempo_decorrido > timedelta(hours=1, minutes=30):
                 passou_de_1h30 = True
 
-            # REGRAS DE PRIORIDADE:
-            # 1. Se este for o primeiro pedido da lista E o total de pendentes for >= 5
-            # OU 2. Se o pedido ultrapassou 1h30 de espera
             is_primeiro = (r == pedidos_pendentes[0])
             e_prioridade = (is_primeiro and total_pendentes >= 5) or passou_de_1h30
 
@@ -418,10 +410,8 @@ with aba_painel:
             with cols[i]:
               is_selecionado = st.session_state.pedido_selecionado_idx == idx_p
               
-              # Define o estilo do card com base na prioridade e seleção
               if is_selecionado:
-                borda_cor = "#2ecc71"
-                destaque_sel = "box-shadow: 0 0 10px #2ecc71; border: 2px solid #2ecc71;"
+                destaque_sel = "border: 2px solid #2ecc71; box-shadow: 0 0 10px #2ecc71;"
                 classe_card = "card-pedido"
               elif e_prioridade:
                 classe_card = "card-pedido-prioridade"
@@ -444,7 +434,7 @@ with aba_painel:
                       <b>Lote:</b> {lote}<br>
                       <b>LPN Inteira:</b> {lpn_inteira}<br>
                       <b>Quebra:</b> {quebra_txt}<br>
-                      <hr style="margin: 4px 0; border-color: #444;">
+                      <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
                       <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
                   </div>
                   """,
@@ -821,7 +811,7 @@ with aba_painel:
       if os.path.exists(img_nome):
         st.image(img_nome, width=450)
       else:
-        st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+        st.warning(f"⚠️️ Imagem `{img_nome}` não encontrada.")
 
     elif erro == "datav02":
       st.markdown(
@@ -983,7 +973,7 @@ with aba_concluidos:
                                 <b>Lote:</b> {lote}<br>
                                 <b>LPN Inteira:</b> {lpn_inteira}<br>
                                 <b>Quebra:</b> {quebra_txt}<br>
-                                <hr style="margin: 4px 0; border-color: #444;">
+                                <hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
                                 <b>Resp:</b> {responsavel}<br>
                                 <span style="font-size: 11px; color: #aaaaaa;">🕒 {data_str}</span>
                             </div>
