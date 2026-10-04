@@ -120,22 +120,23 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* ESTILO DEFINITIVO PARA O BOTÃO VERDE DE VALIDAÇÃO */
+    /* ESTILO DO BOTÃO DE VALIDAÇÃO COM O MODELO DA REFERÊNCIA */
     div.stButton > button {
-        background-color: #28a745 !important;
-        color: white !important;
-        font-size: 18px !important;
+        background-color: #111a16 !important;
+        color: #2ecc71 !important;
+        font-size: 16px !important;
         font-weight: bold !important;
         height: 55px !important;
         width: 100% !important;
-        border-radius: 8px !important;
-        border: none !important;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2) !important;
+        border-radius: 12px !important;
+        border: 2px solid #2ecc71 !important;
+        box-shadow: 0px 0px 10px rgba(46, 204, 113, 0.3) !important;
         transition: 0.3s;
     }
     div.stButton > button:hover {
-        background-color: #218838 !important;
-        color: white !important;
+        background-color: #1b2e23 !important;
+        color: #2ecc71 !important;
+        box-shadow: 0px 0px 15px rgba(46, 204, 113, 0.6) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -171,19 +172,6 @@ except Exception as e:
 def limpar_texto(texto):
     if not texto: return ""
     return str(texto).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
-
-def formatar_data_aammdd(data_str):
-    if not data_str: return data_str
-    data_str = re.sub(r'\D', '', str(data_str))
-    if len(data_str) != 6: return data_str
-    try:
-        ano = "20" + data_str[0:2]
-        mes = data_str[2:4]
-        dia = data_str[4:6]
-        datetime(int(ano), int(mes), int(dia))
-        return f"{dia}/{mes}/{ano}"
-    except Exception:
-        return data_str
 
 def converter_para_data_obj(data_str):
     if not data_str: return None
@@ -392,7 +380,8 @@ if st.session_state.etapa_validacao:
     st.markdown("---")
 
 else:
-    st.subheader("📋 Painel de Solicitações Pendentes e Validação")
+    # SEÇÃO ALTERADA PARA "PEDIDOS DE LPN" CONFORME SOLICITADO
+    st.subheader("📋 PEDIDOS DE LPN")
 
     col_tit_painel, col_btn_att = st.columns([5, 1.5])
     with col_tit_painel:
@@ -496,7 +485,7 @@ else:
 
     st.markdown("---")
 
-    # Layout de 3 Colunas: Esquerda (Inputs), Meio (Modelo de LPN alinhado), Direita (Alerta e Botão Verde)
+    # Layout de 3 Colunas: Esquerda (Inputs), Meio (Modelo de LPN alinhado), Direita (Alerta e Botão)
     col_form, col_img, col_acao = st.columns([1.2, 1.2, 1.3], gap="large")
     
     with col_form:
@@ -522,7 +511,6 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_img:
-        # Espaçamento para alinhar perfeitamente a imagem da LPN com os campos de códigos de barras
         st.markdown("<div style='height: 48px;'></div>", unsafe_allow_html=True)
         
         erro = st.session_state.get("erro_ativo")
@@ -573,7 +561,6 @@ else:
                 st.image("image_51919d.png", width=330)
 
     with col_acao:
-        # Espaçamento para alinhar com o topo
         st.markdown("<div style='height: 48px;'></div>", unsafe_allow_html=True)
         
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
@@ -593,7 +580,7 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR PRÓXIMA LPN"
 
-        # O BOTÃO VERDE ORIGINAL
+        # BOTÃO COM O NOVO ESTILO NEON
         btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_custom", use_container_width=True)
 
         if btn_validar_clicado:
