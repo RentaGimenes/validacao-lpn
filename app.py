@@ -8,7 +8,7 @@ import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# Definição dos nomes das imagens que uso na tela (com a nova imagem de quantidade)
+# Definição dos nomes das imagens que uso na tela
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
     "conf_desc": "descricao material.png",
@@ -26,10 +26,10 @@ IMAGENS = {
 # Configuro a página do app aqui
 st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
 
-# Dou um refresh automático a cada 3 minutos para atualizar os dados
+# Refresh automático a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# Meu CSS customizado para deixar com cara de sistema próprio
+# Meu CSS customizado
 st.markdown(
     """
     <style>
@@ -232,11 +232,9 @@ def processar_codigo_2(barcode):
   try:
     limpo = barcode.replace("(", "").replace(")", "")
 
-    # Extraio o material logo após o 90 até encontrar o 37 ou fim
     match_mat = re.search(r"90(\d+?)(?=37|$)", limpo)
     mat = match_mat.group(1) if match_mat else limpo[2:10]
 
-    # Extraio a quantidade do bloco (37)
     match_qtd = re.search(r"37(\d+)", limpo)
     if match_qtd:
       bloco_qtd = match_qtd.group(1)
@@ -244,7 +242,6 @@ def processar_codigo_2(barcode):
     else:
       quantidade = 0
 
-    # Extraio o lote do bloco (10)
     match_lote = re.search(r"10(\d+)", limpo)
     if match_lote:
       bloco_lote = match_lote.group(1)
@@ -290,7 +287,7 @@ def obter_lista_quebras(r):
     return []
 
 
-def obter_quantidade_total_lpns(r):
+def obter_quantidade_inteira(r):
   try:
     val_inteiros = (
         int(re.sub(r"\D", "", str(r[4])))
@@ -299,27 +296,14 @@ def obter_quantidade_total_lpns(r):
     )
   except Exception:
     val_inteiros = 0
+  return val_inteiros
 
+
+def obter_quantidade_total_lpns(r):
+  val_inteiros = obter_quantidade_inteira(r)
   lista_quebras = obter_lista_quebras(r)
   total = val_inteiros + len(lista_quebras)
   return total if total > 0 else 1
-
-
-def converter_horario_solicitacao(data_str):
-  if not data_str:
-    return None
-  try:
-    fuso_horario = pytz.timezone("America/Sao_Paulo")
-    data_limpa = re.sub(r"\s*\(.*?\)", "", str(data_str)).strip()
-    dt = datetime.strptime(data_limpa, "%d/%m/%Y %H:%M:%S")
-    return fuso_horario.localize(dt)
-  except Exception:
-    try:
-      fuso_horario = pytz.timezone("America/Sao_Paulo")
-      dt = datetime.strptime(data_str.strip(), "%Y-%m-%d %H:%M:%S")
-      return fuso_horario.localize(dt)
-    except Exception:
-      return None
 
 
 st.markdown("## 📦 Validação das informações das Lpn")
@@ -394,8 +378,6 @@ with aba_painel:
             quebra_txt = r[6] if len(r) > 6 else "0"
 
             total_esperado = obter_quantidade_total_lpns(r)
-
-            # Deixo em destaque vermelho se tiver mais de 5 pendentes na fila
             e_prioridade = len(pedidos_pendentes) > 5
 
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
@@ -530,7 +512,6 @@ with aba_painel:
 
           lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
 
-          # Se já leu todas as LPNs necessárias, dou baixa direto lá na planilha
           if len(lpns_lidas_pedido) >= total_necessario:
             fuso_horario = pytz.timezone("America/Sao_Paulo")
             hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
@@ -628,19 +609,51 @@ with aba_painel:
       r_escolhido = info_pedido["registro"]
       total_necessario = info_pedido["total_esperado"]
 
-      # Valido se já passou do limite de LPNs permitidas para este pedido ou se é duplicada
       lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
           num_pedido_escolhido, []
       )
-      if len(lpns_ja_lidas) >= total_necessario:
-        st.session_state.erro_ativo = "limite"
-        st.session_state.detalhes_erro = {
-            "solicitado": f"Limite Máximo: {total_necessario} LPNs",
-            "lido": f"Tentativa excedida com a LPN: {lpn_lida}",
-        }
-        tocar_som_erro()
-        return
-      elif lpn_lida in lpns_ja_lidas:
+
+      # -------------------------------------------------------------
+      # LÓGICA INTELIGENTE: INTEIRAS vs QUEBRAS
+      # -------------------------------------------------------------
+      qtd_inteira_esperada = obter_quantidade_inteira(r_escolhido)
+      lista_quebras = obter_lista_quebras(r_escolhido)
+
+      # Verifico se já lemos todas as inteiras exigidas
+      if len(lpns_ja_lidas) < qtd_inteira_esperada:
+        # Ainda estamos validando as inteiras. Se o operador tentou passar uma quebra ou algo incorreto:
+        pass
+      else:
+        # Já passamos das inteiras! Agora estamos na etapa de quebra.
+        # Vamos verificar se há quebras pendentes na planilha
+        quebras_restantes_idx = len(lpns_ja_lidas) - qtd_inteira_esperada
+        if quebras_restantes_idx < len(lista_quebras):
+          quebra_esperada_str = lista_quebras[quebras_restantes_idx]
+          # Opcional: comparar se a quantidade extraída do segundo código de barras (qtd_lida)
+          # bate com o valor da quebra esperada cadastrada na planilha.
+          try:
+            val_quebra_esp = int(re.sub(r"\D", "", str(quebra_esperada_str)))
+            if val_quebra_esp > 0 and qtd_lida != val_quebra_esp:
+              st.session_state.erro_ativo = "validacao_qtd"
+              st.session_state.detalhes_erro = {
+                  "solicitado": f"Quebra Esperada: {val_quebra_esp} unidades",
+                  "lido": f"Quantidade no BC2 (37): {qtd_lida} unidades",
+              }
+              tocar_som_erro()
+              return
+          except Exception:
+            pass
+        else:
+          # Se já estourou tanto as inteiras quanto as quebras cadastradas:
+          st.session_state.erro_ativo = "limite"
+          st.session_state.detalhes_erro = {
+              "solicitado": f"Limite Máximo Atingido: {total_necessario} LPNs",
+              "lido": f"Tentativa excedida com a LPN: {lpn_lida}",
+          }
+          tocar_som_erro()
+          return
+
+      if lpn_lida in lpns_ja_lidas:
         st.session_state.erro_ativo = "lpn_duplicada"
         st.session_state.detalhes_erro = {
             "solicitado": "LPN ainda não lida neste pedido",
@@ -657,11 +670,6 @@ with aba_painel:
       data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
       dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
-      # Exemplo de validação de quantidade extraída se necessário (opcional/ajustável conforme regra de negócio)
-      # Aqui podes validar se oqtd_lida bate com alguma regra específica da planilha, se houver.
-      # Por enquanto, mantemos a extração funcionando perfeitamente e integrada.
-
-      # Faço as comparações para ver se bate com a planilha
       if not mat_lido or mat_lido != mat_planilha:
         st.session_state.erro_ativo = "material04"
         st.session_state.detalhes_erro = {
@@ -727,7 +735,7 @@ with aba_painel:
           tocar_som_erro()
           return
 
-      # Deu tudo certo, sigo para a confirmação visual
+      # Tudo correto, avança para confirmação visual
       st.session_state.erro_ativo = None
       st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
       st.session_state.dados_conferencia = {
@@ -904,13 +912,13 @@ with aba_painel:
       else:
         st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
 
-    elif erro == "limite" or erro == "lpn_duplicada":
+    elif erro == "limite" or erro == "lpn_duplicada" or erro == "validacao_qtd":
       st.markdown(
-          '<div class="alerta-piscar">🚫 Erro de Quantidade / LPN</div>',
+          '<div class="alerta-piscar">🚫 Validação de Quantidade / LPN</div>',
           unsafe_allow_html=True,
       )
       st.markdown(
-          '<div class="alerta-sub">Esta LPN já foi lida ou o limite total foi atingido.</div>',
+          '<div class="alerta-sub">As LPNs inteiras já foram validadas. Verifique a quantidade fracionada (quebra).</div>',
           unsafe_allow_html=True,
       )
       st.markdown(
@@ -922,7 +930,6 @@ with aba_painel:
             """,
           unsafe_allow_html=True,
       )
-      # Usando a nova imagem de validação de quantidade para este cenário de limite/quantidade
       img_qtd = IMAGENS["validacao_qtd"]
       if os.path.exists(img_qtd):
         st.image(img_qtd, width=450)
