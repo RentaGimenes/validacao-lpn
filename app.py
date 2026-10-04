@@ -33,7 +33,7 @@ st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wi
 # Refresh automático a cada 3 minutos
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# Meu CSS customizado
+# Meu CSS customizado + Script JavaScript para rolar a página automaticamente
 st.markdown(
     """
     <style>
@@ -112,6 +112,17 @@ st.markdown(
         color: #f1c40f;
     }
     </style>
+    
+    <script>
+    // Função para rolar suavemente para a seção de validação assim que o Streamlit atualizar
+    function rolarParaValidacao() {
+        const elemento = document.getElementById('secao-validacao');
+        if (elemento) {
+            elemento.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    setTimeout(rolarParaValidacao, 200);
+    </script>
 """,
     unsafe_allow_html=True,
 )
@@ -471,25 +482,38 @@ with aba_painel:
 
   st.markdown("---")
 
+  # Âncora HTML para a rolagem automática ir direto para cá
+  st.markdown('<div id="secao-validacao"></div>', unsafe_allow_html=True)
+
   if st.session_state.etapa_validacao:
     st.subheader("🔍 Confirmação Visual Obrigatória")
     d = st.session_state.dados_conferencia
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # AVISO COM O GIF DO SONIC EMBUTIDO EM BASE64 DENTRO DA CAIXA COM FUNDO PRETO E BORDA AMARELA
-    sonic_path = IMAGENS["sonic_gif"]
-    sonic_html = ""
+    # Tratamento flexível para encontrar o GIF (busca em diferentes caminhos comuns)
+    caminhos_possiveis = [
+        IMAGENS["sonic_gif"],
+        "sonicgif/SONICGIF.gif",
+        "SONICGIF.gif",
+        "sonic.gif",
+    ]
+    sonic_path = None
+    for cp in caminhos_possiveis:
+      if os.path.exists(cp):
+        sonic_path = cp
+        break
 
-    if os.path.exists(sonic_path):
+    sonic_html = ""
+    if sonic_path:
       with open(sonic_path, "rb") as f:
         data_bytes = f.read()
         encoded = base64.b64encode(data_bytes).decode()
         sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="80px">'
     else:
       sonic_html = (
-          '<span style="color: #ff4b4b; font-size: 12px;">(GIF não'
-          " encontrado)</span>"
+          '<span style="color: #ff4b4b; font-size: 11px;">(Coloque'
+          " SONICGIF.gif na pasta)</span>"
       )
 
     st.markdown(
@@ -653,7 +677,7 @@ with aba_painel:
       bc3_val = st.session_state.get("val_bc3", "").strip()
 
       if not nome_responsavel.strip():
-        st.warning("⚠️️ Digite o seu nome.")
+        st.warning("⚠ Digite o seu nome.")
         return
 
       idx_sel = st.session_state.get("pedido_selecionado_idx")
