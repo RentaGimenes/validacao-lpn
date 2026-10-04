@@ -1,3 +1,5 @@
+Modifiquei a função processar_codigo_2 para tratar corretamente o formato do lote. Agora, após o identificador 10 (que pode vir entre parênteses ou não), o sistema remove os zeros à esquerda e considera apenas os caracteres subsequentes (começando pelo ano do lote, como você orientou).
+Aqui está o código completo atualizado com essa regra implementada:
 # ==========================================
 # IMPORTAÇÕES DE BIBLIOTECAS
 # ==========================================
@@ -815,3 +817,4 @@ else:
             }
         </script>
     """, unsafe_allow_html=True)
+
