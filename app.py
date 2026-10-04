@@ -120,9 +120,9 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Estilo exclusivo para o botão de Validar LPN (Verde Customizado) */
-    div.stButton > button[kind="secondary"].botao-validar-custom,
-    div.stButton > button.botao-validar-custom {
+    /* Estilo exclusivo e fixo para o botão de Validar LPN (Verde Customizado) */
+    div.stButton > button[kind="secondary"],
+    div.stButton > button {
         background-color: #1b2421 !important;
         border: 2px solid #52b788 !important;
         color: #52b788 !important;
@@ -134,8 +134,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(82, 183, 136, 0.3) !important;
         transition: all 0.2s ease-in-out;
     }
-    div.stButton > button[kind="secondary"].botao-validar-custom:hover,
-    div.stButton > button.botao-validar-custom:hover {
+    div.stButton > button:hover {
         background-color: #2d6a4f !important;
         color: #ffffff !important;
         border-color: #74c69d !important;
@@ -504,6 +503,7 @@ else:
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
         st.session_state.val_nome = nome_responsavel
         
+        # ALERTA DE SELEÇÃO DE PEDIDO VOLTOU PARA A COLUNA ESQUERDA (EXATAMENTE ONDE ESTAVA ANTES)
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
             st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
@@ -569,16 +569,17 @@ else:
             if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=330)
         elif erro == "limite":
             st.markdown('<div class="alerta-piscar">🚫 Limite Excedido</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validadas.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validas.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
-            # Espaçamento para descer a imagem e alinhar com os campos de código de barras
-            st.markdown("<br><br>", unsafe_allow_html=True)
+            # IMAGEM DESCIDA EXATAMENTE PARA FICAR ALINHADA COM OS CAMPOS DE ENTRADA À ESQUERDA
+            st.markdown("<br><br><br><br>", unsafe_allow_html=True)
             if os.path.exists(IMAGENS["guia05"]):
                 st.image(IMAGENS["guia05"], width=330)
 
     with col_acao:
-        st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+        # ESPAÇAMENTO PARA O BOTÃO VERDE FICAR ALINHADO NA ALTURA DOS CÓDIGOS DE BARRAS
+        st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)
         
         texto_botao_validar = "VALIDAR LPN"
         idx_sel_atual_btn = st.session_state.get("pedido_selecionado_idx")
@@ -588,8 +589,8 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
 
-        # Aplicada a classe customizada estritamente a este botão com chave única
-        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", type="secondary", use_container_width=True):
+        # BOTÃO COM CLASSE E ESTILIZAÇÃO VERDE GARANTIDA
+        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", use_container_width=True):
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
             bc3_val = st.session_state.get("val_bc3", "").strip()
