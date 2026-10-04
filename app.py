@@ -540,7 +540,7 @@ with aba_painel:
         tocar_som_erro()
         return
 
-      # Validação da Data de Vencimento (datav02) com o campo extraído via '17'
+      # Validação da Data de Vencimento (datav02) comparando com o venc_lido extraído via '17'
       if data_planilha_raw and venc_lido:
         data_obj_planilha = converter_para_data_obj(data_planilha_raw)
         data_obj_lida = converter_para_data_obj(venc_lido)
