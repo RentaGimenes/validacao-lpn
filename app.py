@@ -309,43 +309,39 @@ with aba_painel:
         st.subheader("📋 Painel de Solicitações Pendentes")
     
     with col_btn_att:
-        # Carrega o gif att.gif em base64 pra botar dentro do botão
-        gif_html = ""
+        # Carrega o gif att.gif em base64 pra botar dentro do botão HTML customizado
+        gif_base64 = ""
         if os.path.exists(IMAGENS["att_gif"]):
             with open(IMAGENS["att_gif"], "rb") as f:
-                encoded_att = base64.b64encode(f.read()).decode()
-                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="14px" style="display: inline-block; vertical-align: middle; margin-right: 6px;">'
-        else:
-            gif_html = '<span style="font-size: 14px; display: inline-block; vertical-align: middle; margin-right: 6px;">🔄</span>'
+                gif_base64 = base64.b64encode(f.read()).decode()
 
-        # Estilização exata do botão preto com borda azul e texto com o GIF
-        st.markdown("""
-        <style>
-        div[data-testid="column"] button[kind="secondary"] {
-            background-color: #000000 !important;
-            border: 1.5px solid #00bfff !important;
-            border-radius: 8px !important;
-            color: #00bfff !important;
-            font-size: 11px !important;
-            font-weight: bold !important;
-            padding: 6px 12px !important;
-            box-shadow: 0 0 6px rgba(0, 191, 255, 0.4) !important;
-            width: auto !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            float: right !important;
-            margin-top: 5px !important;
-        }
-        div[data-testid="column"] button[kind="secondary"]:hover {
-            border-color: #ffffff !important;
-            color: #ffffff !important;
-            background-color: #111111 !important;
-        }
-        </style>
+        st.markdown(f"""
+        <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 5px;">
+            <form action="" method="get">
+                <button type="submit" name="atualizar_pedidos" value="true" style="
+                    background-color: #000000;
+                    border: 1.5px solid #00bfff;
+                    border-radius: 8px;
+                    color: #00bfff;
+                    font-size: 11px;
+                    font-weight: bold;
+                    padding: 6px 12px;
+                    box-shadow: 0 0 6px rgba(0, 191, 255, 0.4);
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <img src="data:image/gif;base64,{gif_base64}" width="14px" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                    ATUALIZAR PEDIDOS
+                </button>
+            </form>
+        </div>
         """, unsafe_allow_html=True)
 
-        if st.button(f"{gif_html} ATUALIZAR PEDIDOS", key="btn_atualizar_pedidos", help="Clique para atualizar os dados"):
+        query_params = st.query_params
+        if "atualizar_pedidos" in query_params:
+            st.query_params.clear()
             st.cache_data.clear()
             st.rerun()
 
