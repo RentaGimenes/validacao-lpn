@@ -133,7 +133,7 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Coluna do meio deslocada levemente para a direita */
+    /* Coluna do meio empurrada ainda mais para a direita */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -141,7 +141,7 @@ st.markdown("""
         justify-content: center;
         width: 100%;
         text-align: center;
-        margin-left: 40px;
+        margin-left: 60px;
     }
     .container-coluna-meio img {
         display: block;
@@ -518,7 +518,8 @@ else:
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
-    col_form, col_img, col_acao = st.columns([1.1, 1.2, 1.2], gap="large")
+    # Ajuste de proporção: [1.2, 1.4, 1.1] traz o bloco do meio (LPN) mais perto da direita
+    col_form, col_img, col_acao = st.columns([1.2, 1.4, 1.1], gap="large")
     
     with col_form:
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
