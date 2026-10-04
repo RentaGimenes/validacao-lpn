@@ -1,3 +1,7 @@
+Entendido! Fiz os dois ajustes solicitados no código:
+ * Validação visual sem seleção prévia: Removi a marcação automática nas opções de rádio ("Sim" / "Não"), exigindo que o operador clique manualmente em ambas as confirmações para garantir a checagem.
+ * Mensagem dinâmica no botão de confirmação: Agora, quando o pedido possui mais de uma LPN e ainda restam itens para validar, o botão exibe "✔ Validar próxima LPN" (mantendo a mensagem de conclusão apenas quando for a última LPN do pedido).
+Aqui está o código atualizado e completo:
 # ==========================================
 # IMPORTAÇÕES DE BIBLIOTECAS
 # ==========================================
@@ -299,7 +303,6 @@ def processar_codigo_2(barcode):
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
         lote = ""
-        # Pula os últimos 6 dígitos e pega os 7 anteriores a eles
         digitos_lote = re.sub(r'\D', '', limpo)
         if len(digitos_lote) >= 13:
             lote = digitos_lote[-13:-6]
@@ -398,14 +401,14 @@ if st.session_state.etapa_validacao:
     
     with col_conf1:
         st.markdown("📌 **A descrição está correta?**")
-        resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed")
+        resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed", index=None)
         st.markdown("<br>", unsafe_allow_html=True)
         if os.path.exists(IMAGENS["conf_desc"]): 
             st.image(IMAGENS["conf_desc"], width=420)
         
     with col_conf2:
         st.markdown("📌 **Você verificou a ordem?**")
-        resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed")
+        resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed", index=None)
         st.markdown("<br>", unsafe_allow_html=True)
         if os.path.exists(IMAGENS["conf_ordem"]): 
             st.image(IMAGENS["conf_ordem"], width=420)
@@ -413,7 +416,17 @@ if st.session_state.etapa_validacao:
     with col_centro:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         
-        if st.button("✔ Confirmar\nesta LPN", key="btn_confirmar_etapa_visual"):
+        # Determina o texto do botão dinamicamente se restarem LPNs
+        num_ped_atual = d["num_pedido"]
+        lpns_ja_lidas_atual = st.session_state.lpns_validadas_por_pedido.get(num_ped_atual, [])
+        total_nec_atual = d["total_esperado"]
+        
+        if (len(lpns_ja_lidas_atual) + 1) < total_nec_atual:
+            texto_botao_confirmar = "✔ Validar\npróxima LPN"
+        else:
+            texto_botao_confirmar = "✔ Confirmar\nesta LPN"
+        
+        if st.button(texto_botao_confirmar, key="btn_confirmar_etapa_visual"):
             if resp_ordem == "Sim" and resp_desc == "Sim":
                 try:
                     linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
@@ -845,3 +858,4 @@ else:
             }
         </script>
     """, unsafe_allow_html=True)
+
