@@ -150,7 +150,7 @@ except Exception as e:
     st.error(f"Erro ao conectar com o Google Sheets: {e}")
     st.stop()
 
-# Funcoes auxiliares de tratamento de texto e datas
+# Funcoes auxiliares
 def limpar_texto(texto):
     if not texto: return ""
     return str(texto).replace(".", "").replace("/", "").replace("-", "").replace(" ", "").strip()
@@ -283,162 +283,360 @@ try:
                 dados_validos.append(r)
 except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
-    # Coleta de pedidos pendentes para exibicao
-pedidos_pendentes = []
-for idx, r in enumerate(dados_validos):
-    status = str(r[7]).strip().upper() if len(r) > 7 else ""
-    if status != "CONCLUIDO":
-        pedidos_pendentes.append((idx + 2, r))
 
-# Divisao da tela principal em colunas
-col_esq, col_dir = st.columns([1.2, 1])
+aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
 
-with col_esq:
-    st.markdown("### 📋 Pedidos Pendentes")
-    if not pedidos_pendentes:
-        st.success("🎉 Todos os pedidos foram concluídos!")
+with aba_painel:
+    st.subheader("📋 Painel de Solicitações Pendentes")
+    mapa_pedidos = {}
+    if dados_validos:
+        pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and r[13].strip())]
+        if pedidos_pendentes:
+            num_colunas = 6
+            linhas_cards = [pedidos_pendentes[i:i + num_colunas] for i in range(0, len(pedidos_pendentes), num_colunas)]
+            for bloco in linhas_cards:
+                cols = st.columns(num_colunas)
+                for i, r in enumerate(bloco):
+                    idx_p = dados_validos.index(r) + 1
+                    linha_real = registos.index(r) + 1
+                    try:
+                        linha_pedido = r[1] if len(r) > 1 else ""
+                        cod_material = r[7] if len(r) > 7 else ""
+                        desc_completa = r[2] if len(r) > 2 else ""
+                        desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
+                        data_palete = r[3] if len(r) > 3 else ""
+                        data_vencimento = r[9] if len(r) > 9 else ""
+                        lote = r[10] if len(r) > 10 else ""
+                        lpn_inteira = r[4] if len(r) > 4 else "0"
+                        quebra_txt = r[6] if len(r) > 6 else "0"
+                        total_esperado = obter_quantidade_total_lpns(r)
+                        e_prioridade = len(pedidos_pendentes) > 5
+                        lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(idx_p, [])
+                        qtd_lidas = len(lpns_ja_lidas)
+                        porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
+                        mapa_pedidos[idx_p] = {"num_pedido": idx_p, "linha": linha_real, "registro": r, "total_esperado": total_esperado}
+                        with cols[i]:
+                            is_selecionado = (st.session_state.pedido_selecionado_idx == idx_p)
+                            classe_card = "card-pedido" if (is_selecionado or not e_prioridade) else "card-pedido-prioridade"
+                            destaque_sel = "border: 2px solid #2ecc71; box-shadow: 0 0 10px #2ecc71;" if is_selecionado else ""
+                            tag_prioridade_html = '<span style="color: #ff4b4b; font-weight: bold;">🔴 URGENTE / PRIORIDADE</span><br>' if e_prioridade else ''
+                            st.markdown(f"""<div class="{classe_card}" style="{destaque_sel}">
+{tag_prioridade_html}
+<b>Linha:</b> {linha_pedido}<br>
+<b>Cód Mat:</b> {cod_material}<br>
+<b>Desc:</b> {desc_resumida}<br>
+<b>Data Palete:</b> {data_palete}<br>
+<b>Venc:</b> {data_vencimento}<br>
+<b>Lote:</b> {lote}<br>
+<b>LPN Inteira:</b> {lpn_inteira}<br>
+<b>Quebra:</b> {quebra_txt}<br>
+<hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
+<span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+</div>""", unsafe_allow_html=True)
+                            label_botao = "✅ Selecionado" if is_selecionado else f"Selecionar Pedido {idx_p}"
+                            if st.button(label_botao, key=f"btn_sel_{idx_p}", use_container_width=True):
+                                st.session_state.pedido_selecionado_idx = idx_p
+                                st.rerun()
+                    except Exception:
+                        continue
+        else:
+            st.success("🎉 Todos os pedidos já foram validados e concluídos!")
     else:
-        for idx_planilha, r in pedidos_pendentes:
-            nome_cliente = str(r[0]).strip() if len(r) > 0 else ""
-            material_ped = str(r[1]).strip() if len(r) > 1 else ""
-            qtd_ped = str(r[4]).strip() if len(r) > 4 else ""
-            prioridade = str(r[8]).strip().upper() if len(r) > 8 else ""
-            
-            is_selecionado = (st.session_state.pedido_selecionado_idx == idx_planilha)
-            borda_extra = "border: 3px solid #ffffff;" if is_selecionado else ""
-            
-            if prioridade == "SIM":
-                css_card = "card-pedido-prioridade"
-                tag_prio = "🔥 **URGENTE / PRIORIDADE**<br>"
-            else:
-                css_card = "card-pedido"
-                tag_prio = ""
-                
-            card_html = f"""
-                <div class="{css_card}" style="{borda_extra}">
-                    {tag_prio}
-                    <b>Cliente/LPN:</b> {nome_cliente}<br>
-                    <b>Material:</b> {material_ped}<br>
-                    <b>Qtd:</b> {qtd_ped} | <b>Linha:</b> {idx_planilha}
-                </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
-            if st.button(f"Selecionar Linha {idx_planilha}", key=f"sel_{idx_planilha}"):
-                st.session_state.pedido_selecionado_idx = idx_planilha
-                st.session_state.etapa_validacao = True
-                if len(r) > 0: st.session_state.val_nome = str(r[0]).strip()
-                st.rerun()
+        st.info("Nenhuma solicitação encontrada na planilha.")
 
+    st.markdown("---")
     st.markdown('<div id="secao-validacao"></div>', unsafe_allow_html=True)
-    
-    if st.session_state.etapa_validacao and st.session_state.pedido_selecionado_idx:
-        st.markdown("---")
-        st.markdown(f"### 🔍 Validando Pedido (Linha {st.session_state.pedido_selecionado_idx})")
-        
-        linha_atual = None
-        for idx_p, r in pedidos_pendentes:
-            if idx_p == st.session_state.pedido_selecionado_idx:
-                linha_atual = r
-                break
-                
-        if linha_atual:
-            sol_nome = str(linha_atual[0]).strip()
-            sol_mat = str(linha_atual[1]).strip()
-            sol_ordem = str(linha_atual[2]).strip()
-            sol_lote = str(linha_atual[3]).strip()
-            sol_qtd = str(linha_atual[4]).strip()
-            sol_venc = str(linha_atual[5]).strip()
-            
-            st.markdown(f"**LPN / Cliente:** <span class='texto-destaque-lpn'>{sol_nome}</span>", unsafe_allow_html=True)
-            st.markdown(f"**Material Solicitado:** <span class='texto-destaque-mat'>{sol_mat}</span>", unsafe_allow_html=True)
-            st.markdown(f"**Ordem:** {sol_ordem} | **Lote:** {sol_lote} | **Qtd:** {sol_qtd} | **Vencimento:** {sol_venc}")
-            
-            with st.form(key="form_validacao_lpn"):
-                st.markdown("#### Digite ou Bipe os Códigos de Barras:")
-                bc1 = st.text_input("Código 1 (Ex: LPN / EAN / Material)", value=st.session_state.val_bc1)
-                bc2 = st.text_input("Código 2 (Ex: Código com Lote e Qtd)", value=st.session_state.val_bc2)
-                bc3 = st.text_input("Código 3 (Ex: DUN / Validade / Fabricação)", value=st.session_state.val_bc3)
-                
-                btn_validar = st.form_submit_button("Validar e Concluir LPN")
-                
-                if btn_validar:
-                    st.session_state.val_bc1 = bc1
-                    st.session_state.val_bc2 = bc2
-                    st.session_state.val_bc3 = bc3
-                    
-                    lpn_lida = processar_codigo_1(bc1)
-                    
-                    # 1. VERIFICAÇÃO DE LPN DUPLICADA (Usa a imagem lpnduplicada.PNG)
-                    if not st.session_state.lpns_validadas_por_pedido:
-                        st.session_state.lpns_validadas_por_pedido = {}
-                    
-                    lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(st.session_state.pedido_selecionado_idx, [])
-                    
-                    if lpn_lida and lpn_lida in lpns_ja_lidas:
-                        st.session_state.erro_ativo = "lpn_duplicada"
-                        st.session_state.detalhes_erro = {
-                            "solicitado": "",
-                            "lido": f"LPN já validada anteriormente neste pedido: {lpn_lida}"
-                        }
-                        tocar_som_erro()
-                    else:
-                        # Processamento normal dos demais códigos e validações...
-                        mat_lido, qtd_lido, lote_lido = processar_codigo_2(bc2)
-                        dun_lido, venc_lido_str, fab_lido_str = processar_codigo_3(bc3)
-                        
-                        venc_lido_formatado = formatar_data_aammdd(venc_lido_str)
-                        
-                        # Validação de Material
-                        if sol_mat and mat_lido and limpar_texto(sol_mat) != limpar_texto(mat_lido):
-                            st.session_state.erro_ativo = "material"
-                            st.session_state.detalhes_erro = {"solicitado": sol_mat, "lido": mat_lido}
-                            tocar_som_erro()
-                        else:
-                            # Se passou nas validações, registra a LPN como lida com sucesso
-                            if lpn_lida:
-                                if st.session_state.pedido_selecionado_idx not in st.session_state.lpns_validadas_por_pedido:
-                                    st.session_state.lpns_validadas_por_pedido[st.session_state.pedido_selecionado_idx] = []
-                                st.session_state.lpns_validadas_por_pedido[st.session_state.pedido_selecionado_idx].append(lpn_lida)
-                            
-                            st.session_state.erro_ativo = None
-                            sheet.update_cell(st.session_state.pedido_selecionado_idx, 8, "CONCLUIDO")
-                            st.success("✅ LPN validada e pedido concluído com sucesso!")
-                            st.session_state.etapa_validacao = False
-                            st.session_state.pedido_selecionado_idx = None
-                            st.rerun()
 
-with col_dir:
-    st.markdown("### 🚨 Painel de Erros / Alertas")
-    
-    if st.session_state.erro_ativo:
-        erro = st.session_state.erro_ativo
-        det = st.session_state.detalhes_erro
-        
-        if erro == "lpn_duplicada":
+    if st.session_state.etapa_validacao:
+        st.subheader("🔍 Confirmação Visual Obrigatória")
+        d = st.session_state.dados_conferencia
+        st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
+        sonic_path = IMAGENS["sonic_gif"] if os.path.exists(IMAGENS["sonic_gif"]) else "SONICGIF.gif"
+        sonic_html = ""
+        if os.path.exists(sonic_path):
+            with open(sonic_path, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode()
+                sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="75px" style="vertical-align: middle; margin-left: 15px;">'
+        st.markdown(f"""
+        <div style="background-color: #000000; border: 2px solid #f1c40f; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: inline-flex; align-items: center; max-width: 100%;">
+            <div style="color: #f1c40f; font-size: 14px; font-weight: bold; line-height: 1.4;">
+                ⚠️ LPNs MERAMENTE ILUSTRATIVAS<br>
+                SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
+            </div>
+            {sonic_html}
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown(f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>', unsafe_allow_html=True)
+        st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
+
+        col_conf1, col_conf2 = st.columns(2)
+        with col_conf1:
+            resp_desc_str = st.radio("📌 A descrição está correta?", ["Selecione...", "Sim", "Não"], horizontal=True, key="r_desc")
+            if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
+        with col_conf2:
+            resp_ordem_str = st.radio("📌 Você verificou a ordem?", ["Selecione...", "Sim", "Não"], horizontal=True, key="r_ordem")
+            if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
+
+        if st.button("Confirmar esta LPN", type="primary", use_container_width=True):
+            if resp_ordem_str == "Sim" and resp_desc_str == "Sim":
+                try:
+                    linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
+                    if num_ped not in st.session_state.lpns_validadas_por_pedido: st.session_state.lpns_validadas_por_pedido[num_ped] = []
+                    if lpn_atual not in st.session_state.lpns_validadas_por_pedido[num_ped]: st.session_state.lpns_validadas_por_pedido[num_ped].append(lpn_atual)
+                    lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
+                    if len(lpns_lidas_pedido) >= total_necessario:
+                        fuso_horario = pytz.timezone("America/Sao_Paulo")
+                        hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
+                        todas_lpns_str = ", ".join(lpns_lidas_pedido)
+                        sheet.update_cell(linha, 12, responsavel_acao)
+                        sheet.update_cell(linha, 13, todas_lpns_str)
+                        sheet.update_cell(linha, 14, hora_atual)
+                        if num_ped in st.session_state.lpns_validadas_por_pedido: del st.session_state.lpns_validadas_por_pedido[num_ped]
+                        if st.session_state.pedido_selecionado_idx == num_ped: st.session_state.pedido_selecionado_idx = None
+                        st.session_state.etapa_validacao = False
+                        st.session_state.erro_ativo = None
+                        st.session_state.dados_conferencia = {}
+                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                        st.cache_data.clear()
+                        st.balloons()
+                        st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
+                        st.rerun()
+                    else:
+                        st.success(f"✅ LPN `{lpn_atual}` aceita! Restam {total_necessario - len(lpns_lidas_pedido)} LPN(s).")
+                        st.session_state.etapa_validacao = False
+                        st.session_state.erro_ativo = None
+                        st.session_state.dados_conferencia = {}
+                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro: {e}")
+            else:
+                st.error("⚠ Selecione 'Sim' em ambas as confirmações!")
+        st.markdown("---")
+
+    col_form, col_img = st.columns(2)
+    with col_form:
+        st.subheader("📝 Validar e Dar Baixa na LPN")
+        nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
+        st.session_state.val_nome = nome_responsavel
+        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
+        if idx_sel_atual and idx_sel_atual in mapa_pedidos:
+            p_sel = mapa_pedidos[idx_sel_atual]
+            mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
+            linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
+            st.markdown(f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})")
+        else:
+            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠️ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+
+        def executar_validacao():
+            bc1_val = st.session_state.get("val_bc1", "").strip()
+            bc2_val = st.session_state.get("val_bc2", "").strip()
+            bc3_val = st.session_state.get("val_bc3", "").strip()
+            if not nome_responsavel.strip():
+                st.warning("⚠ Digite o seu nome.")
+                return
+            idx_sel = st.session_state.get("pedido_selecionado_idx")
+            if not idx_sel or idx_sel not in mapa_pedidos:
+                st.warning("⚠ Selecione um pedido no painel acima.")
+                return
+            if not bc1_val or not bc2_val or not bc3_val:
+                st.warning("⚠️ Preencha os 3 códigos de barras.")
+                return
+            lpn_lida = processar_codigo_1(bc1_val)
+            mat_lido, qtd_lida, lote_lido = processar_codigo_2(bc2_val)
+            dun_lido, venc_lido, fab_lido = processar_codigo_3(bc3_val)
+            info_pedido = mapa_pedidos[idx_sel]
+            linha_encontrada = info_pedido["linha"]
+            num_pedido_escolhido = info_pedido["num_pedido"]
+            r_escolhido = info_pedido["registro"]
+            total_necessario = info_pedido["total_esperado"]
+            lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
+
+            # 1. VERIFICAÇÃO DE LPN DUPLICADA (Usa sua imagem lpnduplicada.PNG)
+            if lpn_lida in lpns_ja_lidas:
+                st.session_state.erro_ativo = "lpn_duplicada"
+                st.session_state.detalhes_erro = {"solicitado": "", "lido": f"LPN já validada anteriormente: {lpn_lida}"}
+                tocar_som_erro()
+                return
+
+            qtd_inteira_esperada = obter_quantidade_inteira(r_escolhido)
+            lista_quebras = obter_lista_quebras(r_escolhido)
+            if len(lpns_ja_lidas) >= qtd_inteira_esperada:
+                if len(lista_quebras) > 0:
+                    if qtd_lida not in lista_quebras:
+                        st.session_state.erro_ativo = "validacao_qtd"
+                        st.session_state.detalhes_erro = {"solicitado": f"Quebras esperadas pendentes: {lista_quebras}", "lido": ""}
+                        tocar_som_erro()
+                        return
+                else:
+                    st.session_state.erro_ativo = "limite"
+                    st.session_state.detalhes_erro = {"solicitado": f"Limite Máximo Atingido: {total_necessario} LPNs", "lido": f"Tentativa excedida com a LPN: {lpn_lida}"}
+                    tocar_som_erro()
+                    return
+
+            mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
+            lote_planilha = limpar_texto(r_escolhido[10] if len(r_escolhido) > 10 else "")
+            data_vencimento_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
+            data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
+            dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
+
+            if not mat_lido or mat_lido != mat_planilha:
+                st.session_state.erro_ativo = "material04"
+                st.session_state.detalhes_erro = {"solicitado": mat_planilha or "(Vazio)", "lido": mat_lido or "(Não identificado)"}
+                tocar_som_erro()
+                return
+            if dun_planilha and dun_lido and dun_lido != dun_planilha:
+                st.session_state.erro_ativo = "dun03"
+                st.session_state.detalhes_erro = {"solicitado": dun_planilha, "lido": dun_lido}
+                tocar_som_erro()
+                return
+            if lote_planilha and lote_lido and lote_lido != lote_planilha:
+                st.session_state.erro_ativo = "lote06"
+                st.session_state.detalhes_erro = {"solicitado": lote_planilha, "lido": lote_lido}
+                tocar_som_erro()
+                return
+            if data_vencimento_planilha_raw and venc_lido:
+                if converter_para_data_obj(venc_lido) != converter_para_data_obj(data_vencimento_planilha_raw):
+                    st.session_state.erro_ativo = "datav02"
+                    st.session_state.detalhes_erro = {"solicitado": str(data_vencimento_planilha_raw), "lido": formatar_data_aammdd(venc_lido)}
+                    tocar_som_erro()
+                    return
+            if data_fabricacao_planilha_raw and fab_lido:
+                if converter_para_data_obj(fab_lido) != converter_para_data_obj(data_fabricacao_planilha_raw):
+                    st.session_state.erro_ativo = "datafab03"
+                    st.session_state.detalhes_erro = {"solicitado": str(data_fabricacao_planilha_raw), "lido": formatar_data_aammdd(fab_lido)}
+                    tocar_som_erro()
+                    return
+
+            st.session_state.erro_ativo = None
+            st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
+            st.session_state.dados_conferencia = {
+                "linha": linha_encontrada, "num_pedido": num_pedido_escolhido,
+                "responsavel": nome_responsavel.strip(), "lpn": lpn_lida,
+                "quantidade_extraida": qtd_lida, "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
+                "total_esperado": total_necessario,
+            }
+            st.session_state.etapa_validacao = True
+            st.rerun()
+
+        bc1 = st.text_input("1º Código de Barras (LPN)", value=st.session_state.val_bc1, key="input_bc1_field")
+        st.session_state.val_bc1 = bc1
+        bc2 = st.text_input("2º Código de Barras", value=st.session_state.val_bc2, key="input_bc2_field")
+        st.session_state.val_bc2 = bc2
+        bc3 = st.text_input("3º Código de Barras", value=st.session_state.val_bc3, key="input_bc3_field")
+        st.session_state.val_bc3 = bc3
+
+        texto_botao_validar = "Validar LPN"
+        if idx_sel_atual and idx_sel_atual in mapa_pedidos:
+            p_info = mapa_pedidos[idx_sel_atual]
+            lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(p_info["num_pedido"], [])
+            tot_esperado_pedido = p_info["total_esperado"]
+            qtd_lidas = len(lidas_atualmente)
+            if qtd_lidas > 0: texto_botao_validar = "Validar Próxima LPN"
+            porcentagem_calc = min(int((qtd_lidas / tot_esperado_pedido) * 100), 100)
+            st.markdown(f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs ({porcentagem_calc}%)")
+            st.progress(porcentagem_calc / 100.0)
+
+        if st.button(texto_botao_validar, type="primary", use_container_width=True):
+            executar_validacao()
+
+    with col_img:
+        erro = st.session_state.get("erro_ativo")
+        det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
+        if erro == "material04":
+            st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Incompatível com o solicitado.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["material04"]): st.image(IMAGENS["material04"], width=450)
+        elif erro == "lote06":
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Imcompatível com a data de vencimento.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["lote06"]): st.image(IMAGENS["lote06"], width=450)
+        elif erro == "datav02":
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Data de Validade</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Data de vencimento não está compatível.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["datav02"]): st.image(IMAGENS["datav02"], width=450)
+        elif erro == "datafab03":
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Data de Fabricação</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Data de fabricação não está de acordo.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["datafab03"]): st.image(IMAGENS["datafab03"], width=450)
+        elif erro == "dun03":
+            st.markdown('<div class="alerta-piscar">🚫 Erro de DUN</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">DUN não corresponde ao solicitado.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=450)
+        elif erro == "lpn_duplicada":
             st.markdown('<div class="alerta-piscar">🚫 LPN Duplicada</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>{det['lido']}</b></div>""", unsafe_allow_html=True)
-            img_dup_path = IMAGENS.get("lpn_duplicada", "lpnduplicada.PNG")
-            if os.path.exists(img_dup_path):
-                st.image(img_dup_path, width=450)
-            else:
-                st.warning(f"⚠ Imagem `{img_dup_path}` não encontrada na pasta.")
-                
-        elif erro == "material":
-            st.markdown('<div class="alerta-piscar">❌ Erro no Material</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>Solicitado:</b> {det['solicitado']}<br><b>Lido:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            img_path = IMAGENS.get("material04")
-            if img_path and os.path.exists(img_path):
-                st.image(img_path, width=450)
-                
-        if st.button("Limpar Erro"):
-            st.session_state.erro_ativo = None
-            st.rerun()
-    else:
-        st.info("ℹ️ Nenhum erro ativo no momento. Sistema operando normalmente.")
-        sonic_path = IMAGENS.get("sonic_gif")
-        if sonic_path and os.path.exists(sonic_path):
-            st.image(sonic_path, width=250)
+            img_dup_path = IMAGENS["lpn_duplicada"]
+            if os.path.exists(img_dup_path): st.image(img_dup_path, width=450)
+            else: st.warning(f"⚠ Imagem `{img_dup_path}` não encontrada na pasta.")
+        elif erro in ["validacao_qtd", "limite"]:
+            st.markdown('<div class="alerta-piscar">🚫 Validação de Quantidade / LPN</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">LPN\'s inteiras desse pedido já foram validadas.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["validacao_qtd"]): st.image(IMAGENS["validacao_qtd"], width=450)
+        else:
+            st.subheader("💡 Exemplo de LPN")
+            if os.path.exists(IMAGENS["guia05"]): st.image(IMAGENS["guia05"], width=450)
+            else: st.warning(f"⚠ Imagem `{IMAGENS['guia05']}` não encontrada.")
 
-# Rodapé centralizado
-st.markdown("---")
-st.markdown("<div style='text-align: center; color: gray; font-size: 12px;'>Sistema de Validação de LPN &bull; Integrado com Google Sheets</div>", unsafe_allow_html=True)
+with aba_concluidos:
+    st.subheader("🕒 Histórico de Pedidos Concluídos (Últimas 24 Horas)")
+    if dados_validos:
+        fuso_horario = pytz.timezone("America/Sao_Paulo")
+        agora = datetime.now(fuso_horario)
+        concluidos_recentes = []
+        for r in dados_validos:
+            try:
+                data_str = r[13].strip() if len(r) > 13 else ""
+                if data_str:
+                    data_limpa = re.sub(r'\s*\(.*?\)', '', data_str).strip()
+                    data_conclusao = datetime.strptime(data_limpa, "%d/%m/%Y %H:%M:%S")
+                    data_conclusao = fuso_horario.localize(data_conclusao)
+                    if (agora - data_conclusao) <= timedelta(hours=24):
+                        concluidos_recentes.append((r, data_limpa))
+            except Exception:
+                continue
+        if concluidos_recentes:
+            num_colunas = 6
+            linhas_cards_conc = [concluidos_recentes[i:i + num_colunas] for i in range(0, len(concluidos_recentes), num_colunas)]
+            for bloco in linhas_cards_conc:
+                cols = st.columns(num_colunas)
+                for i, (r, data_str) in enumerate(bloco):
+                    linha_pedido = r[1] if len(r) > 1 else ""
+                    cod_material = r[7] if len(r) > 7 else ""
+                    desc_completa_c = r[2] if len(r) > 2 else ""
+                    desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
+                    data_palete = r[3] if len(r) > 3 else ""
+                    data_vencimento = r[9] if len(r) > 9 else ""
+                    lote = r[10] if len(r) > 10 else ""
+                    lpn_inteira = r[4] if len(r) > 4 else "0"
+                    quebra_txt = r[6] if len(r) > 6 else "0"
+                    responsavel = r[11] if len(r) > 11 else "N/D"
+                    with cols[i]:
+                        st.markdown(f"""<div class="card-concluido"><b>Linha:</b> {linha_pedido}<br><b>Cód Mat:</b> {cod_material}<br><b>Desc:</b> {desc_resumida_c}<br><b>Data Palete:</b> {data_palete}<br><b>Venc:</b> {data_vencimento}<br><b>Lote:</b> {lote}<br><b>LPN Inteira:</b> {lpn_inteira}<br><b>Quebras:</b> {quebra_txt}<br><hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;"><b>Resp:</b> {responsavel}<br><span style="font-size: 11px; color: #aaaaaa;">🕒 {data_str}</span></div>""", unsafe_allow_html=True)
+        else:
+            st.info("Nenhum pedido concluído nas últimas 24 horas.")
+    else:
+        st.info("Nenhum dado encontrado.")
+
+# Rodapé centralizado fixo com o Sonic e a frase desejada
+caminhos_rodape = ["sonicgif2/sonic.gif", "sonicgif2/SONICGIF.gif", "sonicgif2.gif", "sonic2.gif"]
+sonic_rodape_path = next((cp for cp in caminhos_rodape if os.path.exists(cp)), None)
+if sonic_rodape_path:
+    with open(sonic_rodape_path, "rb") as f:
+        encoded_r = base64.b64encode(f.read()).decode()
+        sonic_rodape_html = f'<img src="data:image/gif;base64,{encoded_r}" width="45px" style="vertical-align: middle;">'
+else:
+    sonic_rodape_html = '<span style="font-size: 24px;">🦔💨</span>'
+
+st.markdown(f"""
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(14, 17, 23, 0.9); border-top: 1px solid #333; padding: 6px 0; text-align: center; z-index: 9999; display: flex; justify-content: center; align-items: center; gap: 10px;">
+        {sonic_rodape_html}
+        <span style="color: #f1c40f; font-size: 14px; font-weight: bold; font-family: sans-serif;">Validação de Lpn a todo vapor!</span>
+    </div>
+""", unsafe_allow_html=True)
