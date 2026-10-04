@@ -13,7 +13,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 # Configura a página do Streamlit para usar layout largo
-st.set_page_config(page_title="Validação de LPN", page_icon="📦", layout="wide")
+st.set_page_config(page_title="Validação de Lpn", page_icon="📦", layout="wide")
 
 # ==========================================
 # MAPEAMENTO DE IMAGENS E ARQUIVOS
@@ -152,7 +152,6 @@ st.markdown("""
         margin-right: auto;
     }
     
-    /* Botão estendido preenchendo 100% da largura do bloco */
     .container-botao-centralizado {
         display: flex;
         flex-direction: column;
@@ -192,7 +191,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Toca um som rápido de alerta caso dê erro
+# Som de erro rápido
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -201,7 +200,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# Conexão com a planilha do Google
+# Conexão com a planilha
 @st.cache_resource
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -252,7 +251,6 @@ def converter_para_data_obj(data_str):
     return None
 
 def formatar_para_aammdd(data_str):
-    """Converte qualquer string de data para o formato AAMMDD"""
     if not data_str:
         return ""
     data_obj = converter_para_data_obj(str(data_str))
@@ -269,17 +267,20 @@ def processar_codigo_1(barcode):
 def processar_codigo_2(barcode):
     try:
         limpo = barcode.replace("(", "").replace(")", "")
+        
+        # Extrai o material
         match_mat = re.search(r'90(\d+?)(?=37|$)', limpo)
         mat = match_mat.group(1) if match_mat else limpo[2:10]
         
+        # Extrai a quantidade
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
         
-        # Procura o 10 seguido de zeros e captura os dígitos do lote a partir do ano
-        match_lote = re.search(r'100*(\d+)', limpo)
+        # Ajuste feito aqui: capturando o lote mantendo os zeros à esquerda corretamente
+        match_lote = re.search(r'10([A-Za-z0-9]+)', limpo)
         lote = match_lote.group(1) if match_lote else ""
         
-        return limpar_texto(mat), quantidade, limpar_texto(lote)[:7]
+        return limpar_texto(mat), quantidade, lote[:10]
     except Exception:
         return "", 0, ""
 
@@ -319,7 +320,7 @@ def obter_quantidade_total_lpns(r):
 # ==========================================
 st.markdown("<h2 style='margin-top: 0px; padding-top: 0px;'>📦 Validação das informações das Lpn</h2>", unsafe_allow_html=True)
 
-# Inicializa estados essenciais na sessão
+# Estados da sessão
 if "etapa_validacao" not in st.session_state:
     st.session_state.etapa_validacao = False
     st.session_state.dados_conferencia = {}
@@ -336,7 +337,7 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
-# Puxa os dados atuais do Sheets
+# Carregando dados da planilha
 registos, dados_validos = [], []
 try:
     registos = sheet.get_all_values()
@@ -348,7 +349,7 @@ except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
 # ==========================================
-# TELA 1: CONFIRMAÇÃO VISUAL OBRIGATÓRIA
+# TELA 1: CONFIRMAÇÃO VISUAL
 # ==========================================
 if st.session_state.etapa_validacao:
     st.subheader("🔍 Confirmação Visual Obrigatória")
@@ -756,7 +757,7 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 1. Validação de Material
+            # Validações do código lido x planilha
             mat_esperado = limpar_texto(r_escolhido[7]) if len(r_escolhido) > 7 else ""
             if mat_lido and mat_esperado and mat_lido != mat_esperado:
                 st.session_state.erro_ativo = "material04"
@@ -764,7 +765,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 2. Validação de DUN
             dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
             if dun_lido and dun_esperado and dun_lido != dun_esperado:
                 st.session_state.erro_ativo = "dun03"
@@ -772,7 +772,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 3. Validação de Data de Vencimento / Validade
             venc_esperado_str = r_escolhido[9] if len(r_escolhido) > 9 else ""
             data_venc_obj = converter_para_data_obj(venc_esperado_str)
             if venc_lido and data_venc_obj:
@@ -783,7 +782,6 @@ else:
                     tocar_som_erro()
                     st.rerun()
 
-            # 4. Validação de Lote
             lote_esperado = limpar_texto(r_escolhido[10]) if len(r_escolhido) > 10 else ""
             if lote_lido and lote_esperado and lote_lido != lote_esperado:
                 st.session_state.erro_ativo = "lote06"
@@ -791,7 +789,6 @@ else:
                 tocar_som_erro()
                 st.rerun()
 
-            # 5. Validação de Data de Fabricação
             if fab_lido:
                 pass
 
@@ -801,7 +798,7 @@ else:
                 "num_pedido": num_pedido_escolhido,
                 "linha": linha_encontrada,
                 "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolh_id := r_escolhido) > 2 else "N/D", # mantido seguro
+                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
                 "responsavel": nome_responsavel.strip(),
                 "total_esperado": total_necessario
             }
