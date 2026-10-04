@@ -169,7 +169,6 @@ def converter_para_data_obj(data_str):
     return None
   data_str = str(data_str).strip()
 
-  # Se vier no formato puro AAMMDD (6 dígitos sem barras/traços)
   if len(data_str) == 6 and data_str.isdigit():
     try:
       ano = int("20" + data_str[0:2])
@@ -223,7 +222,6 @@ def processar_codigo_3(barcode):
   try:
     limpo = barcode.replace("(", "").replace(")", "")
 
-    # Extrai o DUN
     match_dun = re.search(r"(?:^|\D)02(\d{14})", limpo)
     if match_dun:
       dun = match_dun.group(1)
@@ -231,11 +229,9 @@ def processar_codigo_3(barcode):
       match_dun_alt = re.search(r"02(\d+?)(?=17|11|$)", limpo)
       dun = match_dun_alt.group(1) if match_dun_alt else limpo[2:16]
 
-    # Extrai a Data de Vencimento (17 + 6 dígitos AAMMDD) - retorna o formato AAMMDD puro para comparação exata ou formatada
     match_venc = re.search(r"17(\d{6})", limpo)
     vencimento = match_venc.group(1) if match_venc else ""
 
-    # Extrai a Data de Fabricação (11 + 6 dígitos AAMMDD) - retorna o formato AAMMDD puro
     match_fab = re.search(r"11(\d{6})", limpo)
     fabricacao = match_fab.group(1) if match_fab else ""
 
@@ -495,11 +491,9 @@ with aba_painel:
       lote_planilha = limpar_texto(
           r_escolhido[10] if len(r_escolhido) > 10 else ""
       )
-      # Coluna J corresponde ao índice 9 (Vencimento)
       data_vencimento_planilha_raw = (
           r_escolhido[9] if len(r_escolhido) > 9 else ""
       )
-      # Coluna D corresponde ao índice 3 (Data de Fabricação / Palete)
       data_fabricacao_planilha_raw = (
           r_escolhido[3] if len(r_escolhido) > 3 else ""
       )
