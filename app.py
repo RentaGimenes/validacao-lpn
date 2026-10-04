@@ -16,7 +16,7 @@ st.set_page_config(
 # Atualiza a página sozinho a cada 3 minutos pra não deixar o painel desatualizado
 count = st_autorefresh(interval=180000, key="datarefresh")
 
-# CSS personalizado ajustando os cards (amarelo para pendentes e verde para concluídos)
+# CSS personalizado ajustando os cards e tamanhos de fonte
 st.markdown("""
     <style>
     @keyframes piscar {
@@ -73,6 +73,16 @@ st.markdown("""
         margin-left: auto;
         margin-right: auto;
         line-height: 1.3;
+    }
+    .texto-destaque-lpn {
+        font-size: 20px !important;
+        font-weight: bold;
+        color: #2ecc71;
+    }
+    .texto-destaque-mat {
+        font-size: 18px !important;
+        font-weight: bold;
+        color: #f1c40f;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -319,33 +329,35 @@ with aba_painel:
     if st.session_state.etapa_validacao:
         st.subheader("🔍 Confirmação Visual Obrigatória")
         d = st.session_state.dados_conferencia
-        st.success(
-            f"✔ Validando LPN para o **Pedido {d['num_pedido']}** (Linha {d['linha']}"
-            " da planilha)!"
-        )
-        st.markdown(f"📦 **LPN Atual:** `{d['lpn']}`")
-        st.markdown(f"🏷 **Material:** `{d['descricao']}`")
+        
+        # Mensagem limpa sem o texto entre parênteses da linha da planilha
+        st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
+        
+        # Fontes aumentadas para LPN Atual e Material
+        st.markdown(f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>', unsafe_allow_html=True)
+        st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
 
         col_conf1, col_conf2 = st.columns(2)
+        
         with col_conf1:
+            resp_desc_str = st.radio(
+                "📌 A descrição está correta?",
+                ["Selecione...", "Sim", "Não"],
+                horizontal=True,
+                key="r_desc",
+            )
             if os.path.exists("POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A SU.png"):
                 st.image("POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A SU.png", width=420, caption="Ref. Descrição")
+
         with col_conf2:
+            resp_ordem_str = st.radio(
+                "📌 Você verificou a ordem?",
+                ["Selecione...", "Sim", "Não"],
+                horizontal=True,
+                key="r_ordem",
+            )
             if os.path.exists("POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA CORRESPONDENTE AO PEDIDO.png"):
                 st.image("POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA CORRESPONDENTE AO PEDIDO.png", width=420, caption="Ref. Ordem")
-
-        resp_desc_str = st.radio(
-            "📌 A descrição está correta?",
-            ["Selecione...", "Sim", "Não"],
-            horizontal=True,
-            key="r_desc",
-        )
-        resp_ordem_str = st.radio(
-            "📌 Você verificou a ordem?",
-            ["Selecione...", "Sim", "Não"],
-            horizontal=True,
-            key="r_ordem",
-        )
 
         if st.button("Confirmar esta LPN", type="primary", use_container_width=True):
             if resp_ordem_str == "Sim" and resp_desc_str == "Sim":
@@ -530,7 +542,6 @@ with aba_painel:
             key="input_bc3",
         )
 
-        # Lógica para definir o texto do botão (Validar LPN ou Validar Próxima LPN)
         texto_botao_validar = "Validar LPN"
         if pedido_selecionado != "Selecione o pedido...":
             p_info = mapa_pedidos[pedido_selecionado]
@@ -540,7 +551,6 @@ with aba_painel:
             tot_esperado_pedido = p_info["total_esperado"]
             qtd_lidas = len(lidas_atualmente)
             
-            # Se já validou alguma, muda para "Validar Próxima LPN"
             if qtd_lidas > 0:
                 texto_botao_validar = "Validar Próxima LPN"
 
@@ -560,7 +570,7 @@ with aba_painel:
                 "Finalizar Pedido Completo", type="secondary", use_container_width=True
             )
 
-    # Lado direito: alertas visuais com ordem corrigida
+    # Lado direito: alertas visuais
     with col_img:
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
@@ -657,7 +667,7 @@ with aba_painel:
             )
 
             if len(lpns_lidas_pedido) < total_necessario:
-                st.error("⚠️️ Faltam LPNs a serem validadas.")
+                st.error("⚠ Faltam LPNs a serem validadas.")
                 tocar_som_erro()
             else:
                 fuso_horario = pytz.timezone("America/Sao_Paulo")
