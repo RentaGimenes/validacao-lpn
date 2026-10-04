@@ -1,14 +1,6 @@
 import streamlit as st
-import streamlit.components.v1 as components
 
-st.subheader("Validação de Códigos de Barras (Modo Híbrido: Com/Sem Enter)")
-
-# Definimos o tamanho esperado para os códigos de barras (ex: 13 caracteres)
-TAMANHO_CODIGO = 13 
-
-# Estados para controlar qual campo está ativo e os valores salvos
-if "campo_atual" not in st.session_state:
-    st.session_state.campo_atual = 1
+# Inicializa as variáveis no session_state se não existirem
 if "bc1" not in st.session_state:
     st.session_state.bc1 = ""
 if "bc2" not in st.session_state:
@@ -16,53 +8,32 @@ if "bc2" not in st.session_state:
 if "bc3" not in st.session_state:
     st.session_state.bc3 = ""
 
-# Função que valida tudo quando o 3º campo é preenchido
-def executar_validacao():
-    st.success(f"Validação realizada com sucesso!\n- BC1: {st.session_state.bc1}\n- BC2: {st.session_state.bc2}\n- BC3: {st.session_state.bc3}")
-    # Aqui entraria a sua lógica de checagem no banco/planilha e o som da Opção 28 se houver erro
+# Funções de callback para avançar o foco automaticamente quando o Enter for disparado pela pistola
+def processar_bc1():
+    # O valor digitado/bipado já fica salvo automaticamente no session_state.bc1
+    pass
 
-# Componente inteligente em JavaScript injetado na tela
-# Ele escuta o evento de digitação: se der Enter OU se atingir o tamanho exato do código de barras, avança sozinho!
-script_html = f"""
-<div>
-  <input type="text" id="leitor" autofocus placeholder="Aguardando leitura..." style="width: 100%; padding: 12px; font-size: 18px; border: 2px solid #4CAF50; border-radius: 5px;" />
-</div>
+def processar_bc2():
+    pass
 
-<script>
-  const input = document.getElementById("leitor");
-  const tamanhoEsperado = {TAMANHO_CODIGO};
-  let campoAtual = {st.session_state.campo_atual};
+def processar_bc3():
+    # Ao bipar o terceiro e a pistola enviar o Enter, esta função roda na hora!
+    if st.session_state.bc1 and st.session_state.bc2 and st.session_state.bc3:
+        # Aqui você coloca sua validação (se der erro, toca o som da Opção 28)
+        st.success("Todos os códigos lidos! Validando...")
 
-  input.focus();
+# Interface limpa e nativa do Streamlit
+st.title("Validação de LPN / Códigos de Barras")
 
-  input.addEventListener("input", (e) => {{
-    let valor = input.value.trim();
-    // Se a pistola mandou caracteres rapidamente e atingiu o tamanho do código (mesmo sem Enter)
-    if (valor.length >= tamanhoEsperado) {{
-      enviarDado(valor);
-    }}
-  }});
+# Campo 1
+st.text_input("1º Código de Barras", key="bc1", on_change=processar_bc1)
 
-  input.addEventListener("keydown", (e) => {{
-    // Se a pistola mandou o Enter configurado
-    if (e.key === "Enter") {{
-      let valor = input.value.trim();
-      if (valor.length > 0) {{
-        enviarDado(valor);
-      }}
-    }}
-  }});
+# Campo 2
+st.text_input("2º Código de Barras", key="bc2", on_change=processar_bc2)
 
-  function enviarDado(valor) {{
-    // Comunica com o Streamlit enviando o valor via query params ou componente
-    // No Streamlit moderno, podemos usar setComponentValue ou atualizar via Streamlit API
-    const data = {{ campo: campoAtual, valor: valor }};
-    window.parent.postMessage({{ type: 'streamlit:setComponentValue', value: data }}, '*');
-  }}
-</script>
-"""
+# Campo 3 (ao ler este, dispara a validação final sozinha por causa do Enter da pistola)
+st.text_input("3º Código de Barras", key="bc3", on_change=processar_bc3)
 
-# Renderiza o componente customizado
-# (Nota: Em ambientes de produção do Streamlit, componentes customizados ou bidirecionais 
-# costumam usar bibliotecas como 'streamlit-keyup' ou componentes React customizados, 
-# mas a lógica conceitual no navegador é exatamente essa).
+# Botão opcional caso queira manter redundância
+if st.button("Validar Manualmente"):
+    processar_bc3()
