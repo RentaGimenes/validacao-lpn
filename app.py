@@ -114,6 +114,19 @@ st.markdown("""
         line-height: 1.4;
     }
     
+    /* Card estilizado para pedidos já concluídos */
+    .card-pedido-concluido {
+        background-color: #112615;
+        border: 1px solid #2ecc71;
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #ffffff;
+        margin-bottom: 8px;
+        text-align: left;
+        line-height: 1.4;
+    }
+    
     .texto-destaque-lpn {
         font-size: 20px !important;
         font-weight: bold;
@@ -455,7 +468,9 @@ else:
 
     mapa_pedidos = {}
     if dados_validos:
+        # Separa pedidos pendentes e concluídos com base na coluna 14 (data/hora de conclusão)
         pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and str(r[13]).strip())]
+        pedidos_concluidos = [r for r in dados_validos if (len(r) > 13 and str(r[13]).strip())]
         
         if pedidos_pendentes:
             num_colunas = 6
@@ -510,7 +525,38 @@ else:
                     except Exception:
                         continue
         else:
-            st.success("🎉 Todos os pedidos já foram validados e concluídos!")
+            st.success("🎉 Todos os pedidos pendentes já foram validados e concluídos!")
+
+        # ==========================================
+        # ABA DE PEDIDOS CONCLUÍDOS (Exibida apenas na tela principal)
+        # ==========================================
+        if pedidos_concluidos:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("### ✅ Pedidos Concluídos")
+            num_colunas_conc = 6
+            linhas_cards_conc = [pedidos_concluidos[i:i + num_colunas_conc] for i in range(0, len(pedidos_concluidos), num_colunas_conc)]
+            for bloco_conc in linhas_cards_conc:
+                cols_conc = st.columns(num_colunas_conc)
+                for j, rc in enumerate(bloco_conc):
+                    try:
+                        linha_pedido_c = rc[1] if len(rc) > 1 else ""
+                        cod_material_c = rc[7] if len(rc) > 7 else ""
+                        desc_completa_c = rc[2] if len(rc) > 2 else ""
+                        desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
+                        responsavel_c = rc[11] if len(rc) > 11 else ""
+                        data_conclusao_c = rc[13] if len(rc) > 13 else ""
+                        
+                        with cols_conc[j]:
+                            st.markdown(f"""<div class="card-pedido-concluido">
+<span style="color: #2ecc71; font-weight: bold;">✔ CONCLUÍDO</span><br>
+<b>Linha:</b> {linha_pedido_c}<br>
+<b>Cód Mat:</b> {cod_material_c}<br>
+<b>Desc:</b> {desc_resumida_c}<br>
+<b>Resp:</b> {responsavel_c}<br>
+<b>Data:</b> {data_conclusao_c}
+</div>""", unsafe_allow_html=True)
+                    except Exception:
+                        continue
     else:
         st.info("Nenhuma solicitação encontrada na planilha.")
 
