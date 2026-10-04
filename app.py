@@ -482,10 +482,13 @@ with aba_painel:
     sonic_html = ""
 
     if os.path.exists(sonic_path):
-      with open(sonic_path, "rb") as f:
-        data_bytes = f.read()
-        encoded = base64.b64encode(data_bytes).decode()
-        sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="75" style="margin-left: 15px; vertical-align: middle;">'
+      try:
+        with open(sonic_path, "rb") as f:
+          data_bytes = f.read()
+          encoded = base64.b64encode(data_bytes).decode()
+          sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="75" style="vertical-align: middle;">'
+      except Exception:
+        sonic_html = ""
     else:
       sonic_html = (
           '<span style="color: #ff4b4b; font-size: 12px;">(GIF não'
@@ -499,7 +502,7 @@ with aba_painel:
                 ⚠️ LPNs MERAMENTE ILUSTRATIVAS<br>
                 SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
             </div>
-            <div>
+            <div style="flex-shrink: 0; padding-left: 15px;">
                 {sonic_html}
             </div>
         </div>
@@ -659,7 +662,7 @@ with aba_painel:
       idx_sel = st.session_state.get("pedido_selecionado_idx")
       if not idx_sel or idx_sel not in mapa_pedidos:
         st.warning(
-            "⚠️️ Selecione um pedido clicando no cartão correspondente no painel"
+            "⚠ Selecione um pedido clicando no cartão correspondente no painel"
             " acima."
         )
         return
