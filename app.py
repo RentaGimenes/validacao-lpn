@@ -212,7 +212,6 @@ def init_connection():
     return client
 
 @st.cache_data(ttl=30)
-py_cached_get_all_values()
 def carregar_dados_planilha():
     client = init_connection()
     spreadsheet_name = "SOLICITAÇÃO DE LPN"
