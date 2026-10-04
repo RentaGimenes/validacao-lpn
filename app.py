@@ -321,13 +321,13 @@ if st.session_state.etapa_validacao:
         st.markdown("📌 **A descrição está correta?**")
         resp_desc = st.radio("desc_radio", ["Sim", "Não"], index=None, horizontal=True, label_visibility="collapsed", key="r_desc")
         
-        # Bloco que muda de cor conforme a escolha
+        # Caixa dinâmica conforme o seu desenho (verde para Sim, vermelho para Não, padrão escuro se vazio)
         if resp_desc == "Sim":
-            st.markdown('<div style="background-color: #1a3a1a; border: 2px solid #2ecc71; padding: 10px; border-radius: 6px; color: #2ecc71; font-weight: bold; text-align: center; margin-bottom: 10px;">✔ Descrição Correta (Aprovado)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #152915; border: 2px solid #2ecc71; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 10px;"><span style="color: #2ecc71; font-weight: bold; font-size: 16px;">☑ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #888888; font-weight: normal; font-size: 16px;">☐ Não</span></div>', unsafe_allow_html=True)
         elif resp_desc == "Não":
-            st.markdown('<div style="background-color: #3a1a1a; border: 2px solid #ff4b4b; padding: 10px; border-radius: 6px; color: #ff4b4b; font-weight: bold; text-align: center; margin-bottom: 10px;">❌ Descrição Incorreta (Bloqueado)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #2c1515; border: 2px solid #ff4b4b; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 10px;"><span style="color: #888888; font-weight: normal; font-size: 16px;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #ff4b4b; font-weight: bold; font-size: 16px;">☒ Não</span></div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div style="background-color: #222222; border: 2px solid #555555; padding: 10px; border-radius: 6px; color: #aaaaaa; font-weight: bold; text-align: center; margin-bottom: 10px;">Aguardando Seleção...</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #1e1e1e; border: 2px solid #444444; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 10px;"><span style="color: #aaaaaa; font-weight: normal; font-size: 16px;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #aaaaaa; font-weight: normal; font-size: 16px;">☐ Não</span></div>', unsafe_allow_html=True)
             
         if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
         
@@ -335,13 +335,13 @@ if st.session_state.etapa_validacao:
         st.markdown("📌 **Você verificou a ordem?**")
         resp_ordem = st.radio("ordem_radio", ["Sim", "Não"], index=None, horizontal=True, label_visibility="collapsed", key="r_ordem")
         
-        # Bloco que muda de cor conforme a escolha
+        # Caixa dinâmica conforme o seu desenho
         if resp_ordem == "Sim":
-            st.markdown('<div style="background-color: #1a3a1a; border: 2px solid #2ecc71; padding: 10px; border-radius: 6px; color: #2ecc71; font-weight: bold; text-align: center; margin-bottom: 10px;">✔ Ordem Verificada (Aprovado)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #152915; border: 2px solid #2ecc71; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 10px;"><span style="color: #2ecc71; font-weight: bold; font-size: 16px;">☑ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #888888; font-weight: normal; font-size: 16px;">☐ Não</span></div>', unsafe_allow_html=True)
         elif resp_ordem == "Não":
-            st.markdown('<div style="background-color: #3a1a1a; border: 2px solid #ff4b4b; padding: 10px; border-radius: 6px; color: #ff4b4b; font-weight: bold; text-align: center; margin-bottom: 10px;">❌ Ordem Incorreta (Bloqueado)</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #2c1515; border: 2px solid #ff4b4b; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 10px;"><span style="color: #888888; font-weight: normal; font-size: 16px;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #ff4b4b; font-weight: bold; font-size: 16px;">☒ Não</span></div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div style="background-color: #222222; border: 2px solid #555555; padding: 10px; border-radius: 6px; color: #aaaaaa; font-weight: bold; text-align: center; margin-bottom: 10px;">Aguardando Seleção...</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #1e1e1e; border: 2px solid #444444; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 10px;"><span style="color: #aaaaaa; font-weight: normal; font-size: 16px;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #aaaaaa; font-weight: normal; font-size: 16px;">☐ Não</span></div>', unsafe_allow_html=True)
             
         if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
 
