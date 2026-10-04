@@ -248,6 +248,19 @@ def converter_para_data_obj(data_str):
         except Exception: pass
     return None
 
+def formatar_para_aammdd(data_str):
+    """Converte qualquer string de data para o formato AAMMDD"""
+    if not data_str:
+        return ""
+    data_obj = converter_para_data_obj(str(data_str))
+    if data_obj:
+        return data_obj.strftime("%y%m%d")
+    # Se já vier limpo e com 6 dígitos numéricos
+    digitos = re.sub(r'\D', '', str(data_str))
+    if len(digitos) == 6:
+        return digitos
+    return str(data_str)
+
 def processar_codigo_1(barcode):
     return barcode.replace("(", "").replace(")", "").strip()
 
@@ -512,7 +525,11 @@ else:
                             desc_completa = r[2] if len(r) > 2 else ""
                             desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
                             data_palete = r[3] if len(r) > 3 else ""
-                            data_vencimento = r[9] if len(r) > 9 else ""
+                            
+                            # Formatação da data de vencimento para AAMMDD
+                            vencimento_bruto = r[9] if len(r) > 9 else ""
+                            data_vencimento = formatar_para_aammdd(vencimento_bruto)
+                            
                             lote = r[10] if len(r) > 10 else ""
                             lpn_inteira = r[4] if len(r) > 4 else "0"
                             quebra_txt = r[6] if len(r) > 6 else "0"
@@ -749,7 +766,7 @@ else:
                 st.rerun()
 
             # 2. Validação de DUN
-            dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
+            dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolh_id) > 8 else "" if False else (limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else "")
             if dun_lido and dun_esperado and dun_lido != dun_esperado:
                 st.session_state.erro_ativo = "dun03"
                 st.session_state.detalhes_erro = {"solicitado": dun_esperado, "lido": dun_lido}
