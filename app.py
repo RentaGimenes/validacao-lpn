@@ -11,7 +11,7 @@ from streamlit_autorefresh import st_autorefresh
 # --- CONFIGURAÇÃO DOS NOMES DAS IMAGENS ---
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
-    "conf_desc": "descricao do material.png",
+    "conf_desc": "descricao material.png",
     "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
     "lote06": "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png",
@@ -168,8 +168,9 @@ def converter_para_data_obj(data_str):
   if not data_str:
     return None
   data_str = str(data_str).strip()
-  digitos = re.sub(r"\D", "", data_str)
-  if len(data_str) == 6 and "/" not in data_str and "-" not in data_str:
+
+  # Se vier no formato puro AAMMDD (6 dígitos sem barras/traços)
+  if len(data_str) == 6 and data_str.isdigit():
     try:
       ano = int("20" + data_str[0:2])
       mes = int(data_str[2:4])
@@ -178,6 +179,7 @@ def converter_para_data_obj(data_str):
     except Exception:
       pass
 
+  digitos = re.sub(r"\D", "", data_str)
   for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d", "%Y/%m/%d", "%d%m%Y"):
     try:
       return datetime.strptime(data_str, fmt).date()
@@ -222,18 +224,20 @@ def processar_codigo_3(barcode):
     limpo = barcode.replace("(", "").replace(")", "")
 
     # Extrai o DUN
-    match_dun = re.search(r"02(\d+?)(?=17|$)", limpo)
-    dun = match_dun.group(1) if match_dun else limpo[2:16]
+    match_dun = re.search(r"(?:^|\D)02(\d{14})", limpo)
+    if match_dun:
+      dun = match_dun.group(1)
+    else:
+      match_dun_alt = re.search(r"02(\d+?)(?=17|11|$)", limpo)
+      dun = match_dun_alt.group(1) if match_dun_alt else limpo[2:16]
 
-    # Extrai a Data de Vencimento (após o identificador 17)
+    # Extrai a Data de Vencimento (17 + 6 dígitos AAMMDD) - retorna o formato AAMMDD puro para comparação exata ou formatada
     match_venc = re.search(r"17(\d{6})", limpo)
-    vencimento = (
-        formatar_data_aammdd(match_venc.group(1)) if match_venc else ""
-    )
+    vencimento = match_venc.group(1) if match_venc else ""
 
-    # Extrai a Data de Fabricação (após o identificador 11)
+    # Extrai a Data de Fabricação (11 + 6 dígitos AAMMDD) - retorna o formato AAMMDD puro
     match_fab = re.search(r"11(\d{6})", limpo)
-    fabricacao = formatar_data_aammdd(match_fab.group(1)) if match_fab else ""
+    fabricacao = match_fab.group(1) if match_fab else ""
 
     return limpar_texto(dun), limpar_texto(vencimento), limpar_texto(fabricacao)
   except Exception:
@@ -491,11 +495,13 @@ with aba_painel:
       lote_planilha = limpar_texto(
           r_escolhido[10] if len(r_escolhido) > 10 else ""
       )
+      # Coluna J corresponde ao índice 9 (Vencimento)
       data_vencimento_planilha_raw = (
           r_escolhido[9] if len(r_escolhido) > 9 else ""
       )
+      # Coluna D corresponde ao índice 3 (Data de Fabricação / Palete)
       data_fabricacao_planilha_raw = (
-          r_escolhido[14] if len(r_escolhido) > 14 else ""
+          r_escolhido[3] if len(r_escolhido) > 3 else ""
       )
       dun_planilha = limpar_texto(
           r_escolhido[8] if len(r_escolhido) > 8 else ""
@@ -537,7 +543,7 @@ with aba_painel:
             st.session_state.erro_ativo = "datav02"
             st.session_state.detalhes_erro = {
                 "solicitado": str(data_vencimento_planilha_raw),
-                "lido": str(venc_lido),
+                "lido": formatar_data_aammdd(venc_lido),
             }
             tocar_som_erro()
             return
@@ -553,7 +559,7 @@ with aba_painel:
             st.session_state.erro_ativo = "datafab03"
             st.session_state.detalhes_erro = {
                 "solicitado": str(data_fabricacao_planilha_raw),
-                "lido": str(fab_lido),
+                "lido": formatar_data_aammdd(fab_lido),
             }
             tocar_som_erro()
             return
@@ -693,7 +699,7 @@ with aba_painel:
       if os.path.exists(img_nome):
         st.image(img_nome, width=450)
       else:
-        st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+        st.warning(f"⚠ Imagem `{img_nome}` não encontrada.")
 
     elif erro == "datafab03":
       st.markdown(
