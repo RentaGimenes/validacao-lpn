@@ -329,6 +329,10 @@ if "detalhes_erro" not in st.session_state:
 if "pedido_selecionado_idx" not in st.session_state:
   st.session_state.pedido_selecionado_idx = None
 
+# Controle para limpar os inputs de forma segura
+if "limpar_inputs" not in st.session_state:
+  st.session_state.limpar_inputs = False
+
 registos = []
 dados_validos = []
 try:
@@ -551,9 +555,7 @@ with aba_painel:
             if "dados_conferencia" in st.session_state:
               del st.session_state.dados_conferencia
 
-            for k in ["input_bc1", "input_bc2", "input_bc3"]:
-              st.session_state[k] = ""
-
+            st.session_state.limpar_inputs = True
             st.cache_data.clear()
             st.balloons()
             st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
@@ -569,9 +571,7 @@ with aba_painel:
             if "dados_conferencia" in st.session_state:
               del st.session_state.dados_conferencia
 
-            for k in ["input_bc1", "input_bc2", "input_bc3"]:
-              st.session_state[k] = ""
-
+            st.session_state.limpar_inputs = True
             st.rerun()
 
         except Exception as e:
@@ -595,6 +595,13 @@ with aba_painel:
           f" {linha_s} - Mat: {mat_s})"
       )
 
+    # Se a flag de limpeza estiver ativa, limpamos os valores do state antes de criar os inputs
+    if st.session_state.get("limpar_inputs", False):
+      st.session_state["input_bc1"] = ""
+      st.session_state["input_bc2"] = ""
+      st.session_state["input_bc3"] = ""
+      st.session_state.limpar_inputs = False
+
     def executar_validacao():
       bc1_val = st.session_state.get("input_bc1", "").strip()
       bc2_val = st.session_state.get("input_bc2", "").strip()
@@ -607,13 +614,13 @@ with aba_painel:
       idx_sel = st.session_state.get("pedido_selecionado_idx")
       if not idx_sel or idx_sel not in mapa_pedidos:
         st.warning(
-            "⚠ Selecione um pedido clicando no cartão correspondente no painel"
+            "⚠️ Selecione um pedido clicando no cartão correspondente no painel"
             " acima."
         )
         return
 
       if not bc1_val or not bc2_val or not bc3_val:
-        st.warning("⚠ Preencha os 3 códigos de barras.")
+        st.warning("⚠️ Preencha os 3 códigos de barras.")
         return
 
       lpn_lida = processar_codigo_1(bc1_val)
@@ -753,11 +760,6 @@ with aba_painel:
       st.session_state.etapa_validacao = True
       st.rerun()
 
-    # Garante a existência das chaves de input no session_state
-    for k in ["input_bc1", "input_bc2", "input_bc3"]:
-      if k not in st.session_state:
-        st.session_state[k] = ""
-
     bc1 = st.text_input(
         "1º Código de Barras (LPN)",
         key="input_bc1",
@@ -792,13 +794,10 @@ with aba_painel:
 
     if st.button(texto_botao_validar, type="primary", use_container_width=True):
       executar_validacao()
-      # Se passou da validação inicial sem erro grave, limpa os campos via session_state e força refresh
       if not st.session_state.get("erro_ativo") and not st.session_state.get(
           "etapa_validacao"
       ):
-        st.session_state["input_bc1"] = ""
-        st.session_state["input_bc2"] = ""
-        st.session_state["input_bc3"] = ""
+        st.session_state.limpar_inputs = True
         st.rerun()
 
   with col_img:
