@@ -49,6 +49,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Função auxiliar para tocar um som de erro usando Web Audio API do navegador
+def tocar_som_erro():
+    sound_html = """
+        <audio autoplay>
+            <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+        </audio>
+    """
+    st.markdown(sound_html, unsafe_allow_html=True)
+
 # Conectando com o Google Sheets usando os secrets do Streamlit (sem dor de cabeça)
 @st.cache_resource
 def init_connection():
@@ -409,6 +418,7 @@ with aba_painel:
                     "solicitado": f"Limite Máximo: {total_necessario} LPNs",
                     "lido": f"Tentativa excedida com a LPN: {lpn_lida}"
                 }
+                tocar_som_erro()
                 return
             elif lpn_lida in lpns_ja_lidas:
                 st.session_state.erro_ativo = "lpn_duplicada"
@@ -416,6 +426,7 @@ with aba_painel:
                     "solicitado": "LPN ainda não lida neste pedido",
                     "lido": f"LPN já validada anteriormente: {lpn_lida}"
                 }
+                tocar_som_erro()
                 return
 
             mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
@@ -431,6 +442,7 @@ with aba_painel:
                     "solicitado": mat_planilha or "(Vazio na planilha)",
                     "lido": mat_lido or "(Não identificado)"
                 }
+                tocar_som_erro()
                 return
 
             if dun_planilha and dun_lido and dun_lido != dun_planilha:
@@ -439,6 +451,7 @@ with aba_painel:
                     "solicitado": dun_planilha,
                     "lido": dun_lido
                 }
+                tocar_som_erro()
                 return
 
             if lote_planilha and lote_lido and lote_lido != lote_planilha:
@@ -447,6 +460,7 @@ with aba_painel:
                     "solicitado": lote_planilha,
                     "lido": lote_lido
                 }
+                tocar_som_erro()
                 return
 
             if data_planilha_raw and venc_lido:
@@ -460,6 +474,7 @@ with aba_painel:
                             "solicitado": str(data_planilha_raw),
                             "lido": str(venc_lido)
                         }
+                        tocar_som_erro()
                         return
 
             st.session_state.erro_ativo = None
@@ -531,7 +546,7 @@ with aba_painel:
             if os.path.exists(img_nome):
                 st.image(img_nome, width=450)
             else:
-                st.warning(f"⚠️️ Imagem `{img_nome}` não encontrada.")
+                st.warning(f"⚠ Imagem `{img_nome}` não encontrada.")
 
         elif erro == "lote":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
@@ -611,6 +626,7 @@ with aba_painel:
 
             if len(lpns_lidas_pedido) < total_necessario:
                 st.error("⚠️ Faltam LPNs a serem validadas.")
+                tocar_som_erro()
             else:
                 fuso_horario = pytz.timezone("America/Sao_Paulo")
                 hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
