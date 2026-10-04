@@ -141,12 +141,12 @@ st.markdown("""
         justify-content: flex-start;
         width: 100%;
         text-align: center;
-        margin-top: -35px;
+        margin-top: -30px;
     }
     .container-coluna-meio img {
         display: block;
         margin-left: auto;
-        margin-right: auto;
+        margin-right: -20px;
     }
     .container-coluna-direita {
         display: flex;
