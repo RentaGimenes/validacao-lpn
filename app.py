@@ -1,46 +1,20 @@
 import streamlit as st
-import streamlit.components.v1 as components
 
-# Inicializa o estado
-for campo in ["bc1", "bc2", "bc3"]:
-    if campo not in st.session_state:
-        st.session_state[campo] = ""
-
+# Título da aplicação
 st.title("Validação de LPN / Códigos de Barras")
 
-# Campos nativos do Streamlit
-st.text_input("1º Código de Barras", key="bc1")
-st.text_input("2º Código de Barras", key="bc2")
-st.text_input("3º Código de Barras", key="bc3")
+# Formulário para garantir que o Enter em qualquer campo submeta os dados de forma limpa
+with st.form(key="form_validacao"):
+    bc1 = st.text_input("1º Código de Barras")
+    bc2 = st.text_input("2º Código de Barras")
+    bc3 = st.text_input("3º Código de Barras")
 
-if st.session_state.bc1 and st.session_state.bc2 and st.session_state.bc3:
-    st.success("✅ Todos os códigos preenchidos! Executando validação...")
+    # Botão de validação (que também é disparado ao dar Enter no último campo)
+    submitted = st.form_submit_button("Validar Códigos")
 
-# Script em JavaScript para injetar o foco automático nos inputs do Streamlit
-components.html(
-    """
-<script>
-    const doc = window.parent.document;
-    
-    function configurarFoco() {
-        const inputs = doc.querySelectorAll('input[type="text"]');
-        if (inputs.length >= 3) {
-            inputs[0].addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    setTimeout(() => inputs[1].focus(), 100);
-                }
-            });
-            inputs[1].addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    setTimeout(() => inputs[2].focus(), 100);
-                }
-            });
-        }
-    }
-    
-    // Tenta configurar logo após carregar
-    setTimeout(configurarFoco, 500);
-</script>
-""",
-    height=0,
-)
+if submitted:
+    if bc1 and bc2 and bc3:
+        # Aqui entra a sua lógica de validação (se der erro, toca o som da Opção 28)
+        st.success(f"✅ Códigos validados com sucesso!\n- {bc1}\n- {bc2}\n- {bc3}")
+    else:
+        st.warning("⚠️ Por favor, preencha ou bipa todos os três códigos antes de validar.")
