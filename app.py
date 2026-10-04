@@ -319,29 +319,49 @@ if st.session_state.etapa_validacao:
     
     with col_conf1:
         st.markdown("📌 **A descrição está correta?**")
-        resp_desc = st.radio("desc_radio", ["Sim", "Não"], index=None, horizontal=True, label_visibility="collapsed", key="r_desc")
         
-        # Caixa única no formato do seu desenho contornando o Sim/Não com cor dinâmica
+        # Criação de botões normais para simular a seleção limpa em formato de caixa única
+        col_sub1, col_sub2 = st.columns(2)
+        with col_sub1:
+            if st.button("Sim (Descrição)", key="btn_desc_sim", use_container_width=True):
+                st.session_state["resp_desc_val"] = "Sim"
+        with col_sub2:
+            if st.button("Não (Descrição)", key="btn_desc_nao", use_container_width=True):
+                st.session_state["resp_desc_val"] = "Não"
+                
+        resp_desc = st.session_state.get("resp_desc_val", None)
+        
+        # Caixa única contornando o Sim/Não com cor dinâmica
         if resp_desc == "Sim":
-            st.markdown('<div style="background-color: #152915; border: 2px solid #2ecc71; padding: 8px 14px; border-radius: 6px; display: inline-block; margin-bottom: 10px;"><span style="color: #2ecc71; font-weight: bold;">☑ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #888888;">☐ Não</span></div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #152915; border: 2px solid #2ecc71; padding: 10px 14px; border-radius: 6px; display: inline-block; margin-top: 8px; margin-bottom: 10px;"><span style="color: #2ecc71; font-weight: bold;">☑ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #888888;">☐ Não</span></div>', unsafe_allow_html=True)
         elif resp_desc == "Não":
-            st.markdown('<div style="background-color: #2c1515; border: 2px solid #ff4b4b; padding: 8px 14px; border-radius: 6px; display: inline-block; margin-bottom: 10px;"><span style="color: #888888;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #ff4b4b; font-weight: bold;">☒ Não</span></div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #2c1515; border: 2px solid #ff4b4b; padding: 10px 14px; border-radius: 6px; display: inline-block; margin-top: 8px; margin-bottom: 10px;"><span style="color: #888888;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #ff4b4b; font-weight: bold;">☒ Não</span></div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div style="background-color: #1e1e1e; border: 2px solid #555555; padding: 8px 14px; border-radius: 6px; display: inline-block; margin-bottom: 10px;"><span style="color: #aaaaaa;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #aaaaaa;">☐ Não</span></div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #1e1e1e; border: 2px solid #555555; padding: 10px 14px; border-radius: 6px; display: inline-block; margin-top: 8px; margin-bottom: 10px;"><span style="color: #aaaaaa;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #aaaaaa;">☐ Não</span></div>', unsafe_allow_html=True)
             
         if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
         
     with col_conf2:
         st.markdown("📌 **Você verificou a ordem?**")
-        resp_ordem = st.radio("ordem_radio", ["Sim", "Não"], index=None, horizontal=True, label_visibility="collapsed", key="r_ordem")
         
-        # Caixa única no formato do seu desenho contornando o Sim/Não com cor dinâmica
+        # Criação de botões normais para simular a seleção limpa em formato de caixa única
+        col_sub3, col_sub4 = st.columns(2)
+        with col_sub3:
+            if st.button("Sim (Ordem)", key="btn_ordem_sim", use_container_width=True):
+                st.session_state["resp_ordem_val"] = "Sim"
+        with col_sub4:
+            if st.button("Não (Ordem)", key="btn_ordem_nao", use_container_width=True):
+                st.session_state["resp_ordem_val"] = "Não"
+                
+        resp_ordem = st.session_state.get("resp_ordem_val", None)
+        
+        # Caixa única contornando o Sim/Não com cor dinâmica
         if resp_ordem == "Sim":
-            st.markdown('<div style="background-color: #152915; border: 2px solid #2ecc71; padding: 8px 14px; border-radius: 6px; display: inline-block; margin-bottom: 10px;"><span style="color: #2ecc71; font-weight: bold;">☑ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #888888;">☐ Não</span></div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #152915; border: 2px solid #2ecc71; padding: 10px 14px; border-radius: 6px; display: inline-block; margin-top: 8px; margin-bottom: 10px;"><span style="color: #2ecc71; font-weight: bold;">☑ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #888888;">☐ Não</span></div>', unsafe_allow_html=True)
         elif resp_ordem == "Não":
-            st.markdown('<div style="background-color: #2c1515; border: 2px solid #ff4b4b; padding: 8px 14px; border-radius: 6px; display: inline-block; margin-bottom: 10px;"><span style="color: #888888;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #ff4b4b; font-weight: bold;">☒ Não</span></div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #2c1515; border: 2px solid #ff4b4b; padding: 10px 14px; border-radius: 6px; display: inline-block; margin-top: 8px; margin-bottom: 10px;"><span style="color: #888888;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #ff4b4b; font-weight: bold;">☒ Não</span></div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div style="background-color: #1e1e1e; border: 2px solid #555555; padding: 8px 14px; border-radius: 6px; display: inline-block; margin-bottom: 10px;"><span style="color: #aaaaaa;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #aaaaaa;">☐ Não</span></div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: #1e1e1e; border: 2px solid #555555; padding: 10px 14px; border-radius: 6px; display: inline-block; margin-top: 8px; margin-bottom: 10px;"><span style="color: #aaaaaa;">☐ Sim</span> &nbsp;&nbsp;&nbsp;&nbsp; <span style="color: #aaaaaa;">☐ Não</span></div>', unsafe_allow_html=True)
             
         if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
 
@@ -387,6 +407,8 @@ if st.session_state.etapa_validacao:
                         st.session_state.erro_ativo = None
                         st.session_state.dados_conferencia = {}
                         st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                        st.session_state.pop("resp_desc_val", None)
+                        st.session_state.pop("resp_ordem_val", None)
                         st.cache_data.clear()
                         st.balloons()
                         st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
@@ -397,6 +419,8 @@ if st.session_state.etapa_validacao:
                         st.session_state.erro_ativo = None
                         st.session_state.dados_conferencia = {}
                         st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                        st.session_state.pop("resp_desc_val", None)
+                        st.session_state.pop("resp_ordem_val", None)
                         st.rerun()
                 except Exception as e:
                     st.error(f"Erro: {e}")
@@ -524,7 +548,7 @@ else:
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
             st.markdown(f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})")
         else:
-            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠️️ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
+            st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
 
         def executar_validacao():
             bc1_val = st.session_state.get("val_bc1", "").strip()
