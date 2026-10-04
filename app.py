@@ -297,88 +297,109 @@ try:
 except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
-# Abas da tela
-aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
-
 # ==========================================
-# ABA PRINCIPAL
+# ROTEAMENTO DE TELA (COM OU SEM ABAS)
 # ==========================================
-with aba_painel:
-    # Se estiver na etapa de confirmação visual, esconde o painel de solicitações e exibe apenas a confirmação
-    if st.session_state.etapa_validacao:
-        st.subheader("🔍 Confirmação Visual Obrigatória")
-        d = st.session_state.dados_conferencia
-        st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
-        
-        sonic_path = IMAGENS["sonic_gif"] if os.path.exists(IMAGENS["sonic_gif"]) else "SONICGIF.gif"
-        sonic_html = ""
-        if os.path.exists(sonic_path):
-            with open(sonic_path, "rb") as f:
-                encoded = base64.b64encode(f.read()).decode()
-                sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="75px" style="vertical-align: middle; margin-left: 15px;">'
-        
-        st.markdown(f"""
-        <div style="background-color: #000000; border: 2px solid #f1c40f; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: inline-flex; align-items: center; max-width: 100%;">
-            <div style="color: #f1c40f; font-size: 14px; font-weight: bold; line-height: 1.4;">
-                ⚠️ LPNs MERAMENTE ILUSTRATIVAS<br>
-                SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
-            </div>
-            {sonic_html}
+if st.session_state.etapa_validacao:
+    # Quando estiver na validação visual, esconde as abas e exibe direto a tela limpa no topo[cite: 3]
+    st.subheader("🔍 Confirmação Visual Obrigatória")
+    d = st.session_state.dados_conferencia
+    st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
+    
+    sonic_path = IMAGENS["sonic_gif"] if os.path.exists(IMAGENS["sonic_gif"]) else "SONICGIF.gif"
+    sonic_html = ""
+    if os.path.exists(sonic_path):
+        with open(sonic_path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode()
+            sonic_html = f'<img src="data:image/gif;base64,{encoded}" width="75px" style="vertical-align: middle; margin-left: 15px;">'
+    
+    st.markdown(f"""
+    <div style="background-color: #000000; border: 2px solid #f1c40f; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: inline-flex; align-items: center; max-width: 100%;">
+        <div style="color: #f1c40f; font-size: 14px; font-weight: bold; line-height: 1.4;">
+            ⚠️ LPNs MERAMENTE ILUSTRATIVAS<br>
+            SEUS VALORES DEVEM SER CONSIDERADOS APENAS COMO EXEMPLO PARA FACILITAR A VISUALIZAÇÃO DA DIVERGÊNCIA.
         </div>
-        """, unsafe_allow_html=True)
+        {sonic_html}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown(f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>', unsafe_allow_html=True)
+    st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
+
+    col_conf1, col_conf2 = st.columns(2)
+    with col_conf1:
+        st.markdown("📌 **A descrição está correta?**")
+        resp_desc = st.radio("desc_radio", ["Sim", "Não"], index=None, horizontal=True, label_visibility="collapsed", key="r_desc")
         
-        st.markdown(f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>', unsafe_allow_html=True)
-        st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
+        # Estilização dinâmica da caixa de acordo com a resposta da descrição
+        if resp_desc == "Sim":
+            st.markdown('<div style="background-color: #1a3a1a; border: 2px solid #2ecc71; padding: 10px; border-radius: 6px; color: #2ecc71; font-weight: bold; text-align: center; margin-bottom: 10px;">✔ Descrição Correta (Aprovado)</div>', unsafe_allow_html=True)
+        elif resp_desc == "Não":
+            st.markdown('<div style="background-color: #3a1a1a; border: 2px solid #ff4b4b; padding: 10px; border-radius: 6px; color: #ff4b4b; font-weight: bold; text-align: center; margin-bottom: 10px;">❌ Descrição Incorreta (Bloqueado)</div>', unsafe_allow_html=True)
+            
+        if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
+        
+    with col_conf2:
+        st.markdown("📌 **Você verificou a ordem?**")
+        resp_ordem = st.radio("ordem_radio", ["Sim", "Não"], index=None, horizontal=True, label_visibility="collapsed", key="r_ordem")
+        
+        # Estilização dinâmica da caixa de acordo com a resposta da ordem
+        if resp_ordem == "Sim":
+            st.markdown('<div style="background-color: #1a3a1a; border: 2px solid #2ecc71; padding: 10px; border-radius: 6px; color: #2ecc71; font-weight: bold; text-align: center; margin-bottom: 10px;">✔ Ordem Verificada (Aprovado)</div>', unsafe_allow_html=True)
+        elif resp_ordem == "Não":
+            st.markdown('<div style="background-color: #3a1a1a; border: 2px solid #ff4b4b; padding: 10px; border-radius: 6px; color: #ff4b4b; font-weight: bold; text-align: center; margin-bottom: 10px;">❌ Ordem Incorreta (Bloqueado)</div>', unsafe_allow_html=True)
+            
+        if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
 
-        col_conf1, col_conf2 = st.columns(2)
-        with col_conf1:
-            resp_desc_str = st.radio("📌 A descrição está correta?", ["Selecione...", "Sim", "Não"], horizontal=True, key="r_desc")
-            if os.path.exists(IMAGENS["conf_desc"]): st.image(IMAGENS["conf_desc"], width=420)
-        with col_conf2:
-            resp_ordem_str = st.radio("📌 Você verificou a ordem?", ["Selecione...", "Sim", "Não"], horizontal=True, key="r_ordem")
-            if os.path.exists(IMAGENS["conf_ordem"]): st.image(IMAGENS["conf_ordem"], width=420)
-
-        if st.button("Confirmar esta LPN", type="primary", use_container_width=True):
-            if resp_ordem_str == "Sim" and resp_desc_str == "Sim":
-                try:
-                    linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
-                    if num_ped not in st.session_state.lpns_validadas_por_pedido: st.session_state.lpns_validadas_por_pedido[num_ped] = []
-                    if lpn_atual not in st.session_state.lpns_validadas_por_pedido[num_ped]: st.session_state.lpns_validadas_por_pedido[num_ped].append(lpn_atual)
+    if st.button("Confirmar esta LPN", type="primary", use_container_width=True):
+        if resp_ordem == "Sim" and resp_desc == "Sim":
+            try:
+                linha, num_ped, lpn_atual, responsavel_acao, total_necessario = d["linha"], d["num_pedido"], d["lpn"], d["responsavel"], d["total_esperado"]
+                if num_ped not in st.session_state.lpns_validadas_por_pedido: st.session_state.lpns_validadas_por_pedido[num_ped] = []
+                if lpn_atual not in st.session_state.lpns_validadas_por_pedido[num_ped]: st.session_state.lpns_validadas_por_pedido[num_ped].append(lpn_atual)
+                
+                lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
+                if len(lpns_lidas_pedido) >= total_necessario:
+                    fuso_horario = pytz.timezone("America/Sao_Paulo")
+                    hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
+                    todas_lpns_str = ", ".join(lpns_lidas_pedido)
                     
-                    lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
-                    if len(lpns_lidas_pedido) >= total_necessario:
-                        fuso_horario = pytz.timezone("America/Sao_Paulo")
-                        hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
-                        todas_lpns_str = ", ".join(lpns_lidas_pedido)
-                        
-                        sheet.update_cell(linha, 12, responsavel_acao)
-                        sheet.update_cell(linha, 13, todas_lpns_str)
-                        sheet.update_cell(linha, 14, hora_atual)
-                        
-                        if num_ped in st.session_state.lpns_validadas_por_pedido: del st.session_state.lpns_validadas_por_pedido[num_ped]
-                        if st.session_state.pedido_selecionado_idx == num_ped: st.session_state.pedido_selecionado_idx = None
-                        
-                        st.session_state.etapa_validacao = False
-                        st.session_state.erro_ativo = None
-                        st.session_state.dados_conferencia = {}
-                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
-                        st.cache_data.clear()
-                        st.balloons()
-                        st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
-                        st.rerun()
-                    else:
-                        st.success(f"✅ LPN `{lpn_atual}` aceita! Restam {total_necessario - len(lpns_lidas_pedido)} LPN(s).")
-                        st.session_state.etapa_validacao = False
-                        st.session_state.erro_ativo = None
-                        st.session_state.dados_conferencia = {}
-                        st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Erro: {e}")
-            else:
-                st.error("⚠ Selecione 'Sim' em ambas as confirmações!")
-    else:
-        # Exibe o painel de solicitações normal quando não estiver na confirmação visual
+                    sheet.update_cell(linha, 12, responsavel_acao)
+                    sheet.update_cell(linha, 13, todas_lpns_str)
+                    sheet.update_cell(linha, 14, hora_atual)
+                    
+                    if num_ped in st.session_state.lpns_validadas_por_pedido: del st.session_state.lpns_validadas_por_pedido[num_ped]
+                    if st.session_state.pedido_selecionado_idx == num_ped: st.session_state.pedido_selecionado_idx = None
+                    
+                    st.session_state.etapa_validacao = False
+                    st.session_state.erro_ativo = None
+                    st.session_state.dados_conferencia = {}
+                    st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                    st.cache_data.clear()
+                    st.balloons()
+                    st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
+                    st.rerun()
+                else:
+                    st.success(f"✅ LPN `{lpn_atual}` aceita! Restam {total_necessario - len(lpns_lidas_pedido)} LPN(s).")
+                    st.session_state.etapa_validacao = False
+                    st.session_state.erro_ativo = None
+                    st.session_state.dados_conferencia = {}
+                    st.session_state.val_bc1 = st.session_state.val_bc2 = st.session_state.val_bc3 = ""
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Erro: {e}")
+        else:
+            st.error("⚠ Você precisa selecionar 'Sim' em ambas as confirmações para prosseguir!")
+    st.markdown("---")
+
+else:
+    # Abas normais da tela quando NÃO estiver na confirmação visual
+    aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
+
+    # ==========================================
+    # ABA PRINCIPAL
+    # ==========================================
+    with aba_painel:
         col_tit_painel, col_btn_att = st.columns([5, 1.5])
         with col_tit_painel:
             st.subheader("📋 Painel de Solicitações Pendentes")
@@ -661,47 +682,47 @@ with aba_painel:
                 if os.path.exists(IMAGENS["guia05"]):
                     st.image(IMAGENS["guia05"], width=460)
 
-# ==========================================
-# ABA DE CONCLUÍDOS NAS ÚLTIMAS 24H
-# ==========================================
-with aba_concluidos:
-    st.subheader("🕒 Pedidos Concluídos nas Últimas 24 Horas")
-    try:
-        fuso_horario = pytz.timezone("America/Sao_Paulo")
-        agora = datetime.now(fuso_horario)
-        limite_24h = agora - timedelta(hours=24)
-        
-        concluidos_recolhidos = []
-        if len(registos) > 1:
-            for r in registos[1:]:
-                if len(r) > 13 and r[13].strip():
-                    data_hora_str = r[13].strip()
-                    try:
-                        data_hora_concl = datetime.strptime(data_hora_str, "%d/%m/%Y %H:%M:%S")
-                        data_hora_concl = fuso_horario.localize(data_hora_concl)
-                        if data_hora_concl >= limite_24h:
-                            concluidos_recolhidos.append((data_hora_concl, r))
-                    except Exception:
-                        continue
-                        
-        if concluidos_recolhidos:
-            concluidos_recolhidos.sort(key=lambda x: x[0], reverse=True)
-            for dh, r in concluidos_recolhidos:
-                num_linha_ped = r[1] if len(r) > 1 else ""
-                mat_ped = r[7] if len(r) > 7 else ""
-                desc_ped = r[2] if len(r) > 2 else ""
-                resp_ped = r[11] if len(r) > 11 else ""
-                lpns_ped = r[12] if len(r) > 12 else ""
-                hora_fmt = dh.strftime("%H:%M:%S - %d/%m/%Y")
-                
-                st.markdown(f"""
-                <div style="background-color: #1a261a; border: 1px solid #2ecc71; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; color: #fff;">
-                    <b>🕒 Concluído em:</b> {hora_fmt} | <b>Linha:</b> {num_linha_ped} | <b>Responsável:</b> {resp_ped}<br>
-                    <b>Material:</b> {mat_ped} - {desc_ped}<br>
-                    <b>LPNs Validadas:</b> {lpns_ped}
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.info("Nenhum pedido concluído nas últimas 24 horas.")
-    except Exception as e:
-        st.warning(f"Não foi possível carregar o histórico: {e}")
+    # ==========================================
+    # ABA DE CONCLUÍDOS NAS ÚLTIMAS 24H
+    # ==========================================
+    with aba_concluidos:
+        st.subheader("🕒 Pedidos Concluídos nas Últimas 24 Horas")
+        try:
+            fuso_horario = pytz.timezone("America/Sao_Paulo")
+            agora = datetime.now(fuso_horario)
+            limite_24h = agora - timedelta(hours=24)
+            
+            concluidos_recolhidos = []
+            if len(registos) > 1:
+                for r in registos[1:]:
+                    if len(r) > 13 and r[13].strip():
+                        data_hora_str = r[13].strip()
+                        try:
+                            data_hora_concl = datetime.strptime(data_hora_str, "%d/%m/%Y %H:%M:%S")
+                            data_hora_concl = fuso_horario.localize(data_hora_concl)
+                            if data_hora_concl >= limite_24h:
+                                concluidos_recolhidos.append((data_hora_concl, r))
+                        except Exception:
+                            continue
+                            
+            if concluidos_recolhidos:
+                concluidos_recolhidos.sort(key=lambda x: x[0], reverse=True)
+                for dh, r in concluidos_recolhidos:
+                    num_linha_ped = r[1] if len(r) > 1 else ""
+                    mat_ped = r[7] if len(r) > 7 else ""
+                    desc_ped = r[2] if len(r) > 2 else ""
+                    resp_ped = r[11] if len(r) > 11 else ""
+                    lpns_ped = r[12] if len(r) > 12 else ""
+                    hora_fmt = dh.strftime("%H:%M:%S - %d/%m/%Y")
+                    
+                    st.markdown(f"""
+                    <div style="background-color: #1a261a; border: 1px solid #2ecc71; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; color: #fff;">
+                        <b>🕒 Concluído em:</b> {hora_fmt} | <b>Linha:</b> {num_linha_ped} | <b>Responsável:</b> {resp_ped}<br>
+                        <b>Material:</b> {mat_ped} - {desc_ped}<br>
+                        <b>LPNs Validadas:</b> {lpns_ped}
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("Nenhum pedido concluído nas últimas 24 horas.")
+        except Exception as e:
+            st.warning(f"Não foi possível carregar o histórico: {e}")
