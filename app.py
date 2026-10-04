@@ -256,24 +256,31 @@ def processar_codigo_3(barcode):
     return "", "", ""
 
 
+def obter_lista_quebras(r):
+  # Coluna G (índice 6) -> Quantas caixas no palete de quebra (ex: 36,18,10)
+  try:
+    texto_quebras = str(r[6]).strip() if len(r) > 6 else ""
+    if not texto_quebras or texto_quebras == "0":
+      return []
+    # Separa por vírgula e limpa espaços
+    partes = [p.strip() for p in texto_quebras.split(",") if p.strip()]
+    return partes
+  except Exception:
+    return []
+
+
 def obter_quantidade_total_lpns(r):
   try:
-    val_e = (
+    val_inteiros = (
         int(re.sub(r"\D", "", str(r[4])))
         if len(r) > 4 and str(r[4]).strip()
         else 0
     )
   except Exception:
-    val_e = 0
-  try:
-    val_f = (
-        int(re.sub(r"\D", "", str(r[5])))
-        if len(r) > 5 and str(r[5]).strip()
-        else 0
-    )
-  except Exception:
-    val_f = 0
-  total = val_e + val_f
+    val_inteiros = 0
+
+  lista_quebras = obter_lista_quebras(r)
+  total = val_inteiros + len(lista_quebras)
   return total if total > 0 else 1
 
 
@@ -311,7 +318,7 @@ with aba_painel:
   st.subheader("📋 Painel de Solicitações Pendentes")
   if dados_validos:
     pedidos_pendentes = [
-        r for r in dados_validos if not (len(r) > 11 and r[11].strip())
+        r for r in dados_validos if not (len(r) > 13 and r[13].strip())
     ]
     if pedidos_pendentes:
       num_colunas = 6
@@ -326,7 +333,7 @@ with aba_painel:
           try:
             idx_linha = registos.index(r) + 1
             lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
-            material = r[7] if len(r) > 7 else "N/D"
+            material = r[2] if len(r) > 2 else "N/D"  # Nome do material (coluna C)
             total_esperado = obter_quantidade_total_lpns(r)
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
                 idx_p, []
@@ -339,7 +346,7 @@ with aba_painel:
                   f"""
                                     <div class="card-pedido">
                                         <b style="color: #f1c40f;">Ped. {idx_p}</b><br>
-                                        <b>Ref:</b> {lpn_col_b} | <b>Mat:</b> {material}<br>
+                                        <b>Ref:</b> {lpn_col_b} | <b>Mat:</b> {material[:15]}...<br>
                                         <span style="color: #f1c40f;"><b>{qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
                                     </div>
                                     """,
@@ -415,15 +422,15 @@ with aba_painel:
 
           lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
 
-          # VERIFICAÇÃO INTELIGENTE: Se atingiu o total necessário (seja 1 ou a última de várias), finaliza na planilha
+          # Se atingiu o total necessário (1 LPN ou a última de várias), finaliza na planilha (Colunas L, M, N)
           if len(lpns_lidas_pedido) >= total_necessario:
             fuso_horario = pytz.timezone("America/Sao_Paulo")
             hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
             todas_lpns_str = ", ".join(lpns_lidas_pedido)
 
-            sheet.update_cell(linha, 12, responsavel_acao)
-            sheet.update_cell(linha, 13, todas_lpns_str)
-            sheet.update_cell(linha, 14, hora_atual)
+            sheet.update_cell(linha, 12, responsavel_acao)  # Coluna L
+            sheet.update_cell(linha, 13, todas_lpns_str)  # Coluna M
+            sheet.update_cell(linha, 14, hora_atual)  # Coluna N
 
             if num_ped in st.session_state.lpns_validadas_por_pedido:
               del st.session_state.lpns_validadas_por_pedido[num_ped]
@@ -444,7 +451,6 @@ with aba_painel:
             )
             st.rerun()
           else:
-            # Caso ainda faltem LPNs para este pedido
             st.success(
                 f"✅ LPN `{lpn_atual}` aceita! Restam"
                 f" {total_necessario - len(lpns_lidas_pedido)} LPN(s) para este"
@@ -478,7 +484,7 @@ with aba_painel:
       for idx_p, r in enumerate(dados_validos, start=1):
         responsavel_atual = r[11] if len(r) > 11 else ""
         if not responsavel_atual.strip():
-          mat_txt = r[7] if len(r) > 7 else "N/D"
+          mat_txt = r[2] if len(r) > 2 else "N/D"
           tot_esp = obter_quantidade_total_lpns(r)
           label_ped = (
               f"Pedido {idx_p} - Mat: {mat_txt} (Esperado: {tot_esp} LPNs)"
@@ -542,9 +548,7 @@ with aba_painel:
         tocar_som_erro()
         return
 
-      mat_planilha = limpar_texto(
-          r_escolhido[7] if len(r_escolhido) > 7 else ""
-      )
+      mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
       lote_planilha = limpar_texto(
           r_escolhido[10] if len(r_escolhido) > 10 else ""
       )
@@ -554,9 +558,7 @@ with aba_painel:
       data_fabricacao_planilha_raw = (
           r_escolhido[3] if len(r_escolhido) > 3 else ""
       )
-      dun_planilha = limpar_texto(
-          r_escolhido[8] if len(r_escolhido) > 8 else ""
-      )
+      dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
       if not mat_lido or mat_lido != mat_planilha:
         st.session_state.erro_ativo = "material04"
@@ -866,7 +868,7 @@ with aba_concluidos:
         for i, (r, data_str) in enumerate(bloco):
           idx_linha = registos.index(r) + 1
           lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
-          material = r[7] if len(r) > 7 else "N/D"
+          material = r[2] if len(r) > 2 else "N/D"
           responsavel = r[11] if len(r) > 11 else "N/D"
 
           with cols[i]:
@@ -874,7 +876,7 @@ with aba_concluidos:
                 f"""
                             <div class="card-concluido">
                                 <b style="color: #2ecc71;">Ref: {lpn_col_b}</b><br>
-                                <b>Mat:</b> {material}<br>
+                                <b>Mat:</b> {material[:15]}...<br>
                                 <b>Resp:</b> {responsavel}<br>
                                 <span style="font-size: 11px; color: #aaaaaa;">🕒 {data_str}</span>
                             </div>
