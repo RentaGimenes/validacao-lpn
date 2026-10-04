@@ -60,30 +60,30 @@ st.markdown(
     .card-pedido {
         background-color: #1e1e1e;
         border: 2px solid #f1c40f;
-        padding: 6px 8px;
-        border-radius: 6px;
-        font-size: 14px;
-        color: #ffffff;
-        margin-bottom: 8px;
-        text-align: center;
-        max-width: 220px;
-        margin-left: auto;
-        margin-right: auto;
-        line-height: 1.3;
-    }
-    .card-concluido {
-        background-color: #1e1e1e;
-        border: 2px solid #2ecc71;
-        padding: 6px 8px;
+        padding: 8px 10px;
         border-radius: 6px;
         font-size: 13px;
         color: #ffffff;
         margin-bottom: 8px;
-        text-align: center;
-        max-width: 220px;
+        text-align: left;
+        max-width: 250px;
         margin-left: auto;
         margin-right: auto;
-        line-height: 1.3;
+        line-height: 1.4;
+    }
+    .card-concluido {
+        background-color: #1e1e1e;
+        border: 2px solid #2ecc71;
+        padding: 8px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        color: #ffffff;
+        margin-bottom: 8px;
+        text-align: left;
+        max-width: 250px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.4;
     }
     .texto-destaque-lpn {
         font-size: 20px !important;
@@ -257,12 +257,10 @@ def processar_codigo_3(barcode):
 
 
 def obter_lista_quebras(r):
-  # Coluna G (índice 6) -> Quantas caixas no palete de quebra (ex: 36,18,10)
   try:
     texto_quebras = str(r[6]).strip() if len(r) > 6 else ""
     if not texto_quebras or texto_quebras == "0":
       return []
-    # Separa por vírgula e limpa espaços
     partes = [p.strip() for p in texto_quebras.split(",") if p.strip()]
     return partes
   except Exception:
@@ -331,9 +329,21 @@ with aba_painel:
         for i, r in enumerate(bloco):
           idx_p = dados_validos.index(r) + 1
           try:
-            idx_linha = registos.index(r) + 1
-            lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
-            material = r[2] if len(r) > 2 else "N/D"  # Nome do material (coluna C)
+            # Extraindo campos solicitados para o cartão
+            linha_pedido = r[1] if len(r) > 1 else ""  # Linha (ex: R03)[cite: 5]
+            cod_material = r[7] if len(r) > 7 else ""  # Código do Material[cite: 5]
+            data_palete = r[3] if len(r) > 3 else ""  # Data do Palete[cite: 5]
+            data_vencimento = (
+                r[9] if len(r) > 9 else ""
+            )  # Data de Vencimento[cite: 5]
+            lote = r[10] if len(r) > 10 else ""  # Lote[cite: 5]
+            lpn_inteira = (
+                r[4] if len(r) > 4 else "0"
+            )  # Quantidade de Paletes Inteiros[cite: 5]
+            quebra_txt = (
+                r[6] if len(r) > 6 else "0"
+            )  # Quantas caixas no palete de quebra[cite: 5]
+
             total_esperado = obter_quantidade_total_lpns(r)
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
                 idx_p, []
@@ -345,9 +355,15 @@ with aba_painel:
               st.markdown(
                   f"""
                                     <div class="card-pedido">
-                                        <b style="color: #f1c40f;">Ped. {idx_p}</b><br>
-                                        <b>Ref:</b> {lpn_col_b} | <b>Mat:</b> {material[:15]}...<br>
-                                        <span style="color: #f1c40f;"><b>{qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+                                        <b>Linha:</b> {linha_pedido}<br>
+                                        <b>Cód Mat:</b> {cod_material}<br>
+                                        <b>Data Palete:</b> {data_palete}<br>
+                                        <b>Venc:</b> {data_vencimento}<br>
+                                        <b>Lote:</b> {lote}<br>
+                                        <b>LPN Inteira:</b> {lpn_inteira}<br>
+                                        <b>Quebra:</b> {quebra_txt}<br>
+                                        <hr style="margin: 4px 0; border-color: #444;">
+                                        <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
                                     </div>
                                     """,
                   unsafe_allow_html=True,
@@ -422,15 +438,14 @@ with aba_painel:
 
           lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
 
-          # Se atingiu o total necessário (1 LPN ou a última de várias), finaliza na planilha (Colunas L, M, N)
           if len(lpns_lidas_pedido) >= total_necessario:
             fuso_horario = pytz.timezone("America/Sao_Paulo")
             hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
             todas_lpns_str = ", ".join(lpns_lidas_pedido)
 
-            sheet.update_cell(linha, 12, responsavel_acao)  # Coluna L
-            sheet.update_cell(linha, 13, todas_lpns_str)  # Coluna M
-            sheet.update_cell(linha, 14, hora_atual)  # Coluna N
+            sheet.update_cell(linha, 12, responsavel_acao)
+            sheet.update_cell(linha, 13, todas_lpns_str)
+            sheet.update_cell(linha, 14, hora_atual)
 
             if num_ped in st.session_state.lpns_validadas_por_pedido:
               del st.session_state.lpns_validadas_por_pedido[num_ped]
@@ -778,7 +793,7 @@ with aba_painel:
       if os.path.exists(img_nome):
         st.image(img_nome, width=450)
       else:
-        st.warning(f"⚠️ Imagem `{img_nome}` não encontrada.")
+        st.warning(f"⚠️️ Imagem `{img_nome}` não encontrada.")
 
     elif erro == "dun03":
       st.markdown(
@@ -866,17 +881,27 @@ with aba_concluidos:
       for bloco in linhas_cards_conc:
         cols = st.columns(num_colunas)
         for i, (r, data_str) in enumerate(bloco):
-          idx_linha = registos.index(r) + 1
-          lpn_col_b = r[1] if len(r) > 1 and r[1].strip() else f"#{idx_linha}"
-          material = r[2] if len(r) > 2 else "N/D"
+          linha_pedido = r[1] if len(r) > 1 else ""
+          cod_material = r[7] if len(r) > 7 else ""
+          data_palete = r[3] if len(r) > 3 else ""
+          data_vencimento = r[9] if len(r) > 9 else ""
+          lote = r[10] if len(r) > 10 else ""
+          lpn_inteira = r[4] if len(r) > 4 else "0"
+          quebra_txt = r[6] if len(r) > 6 else "0"
           responsavel = r[11] if len(r) > 11 else "N/D"
 
           with cols[i]:
             st.markdown(
                 f"""
                             <div class="card-concluido">
-                                <b style="color: #2ecc71;">Ref: {lpn_col_b}</b><br>
-                                <b>Mat:</b> {material[:15]}...<br>
+                                <b>Linha:</b> {linha_pedido}<br>
+                                <b>Cód Mat:</b> {cod_material}<br>
+                                <b>Data Palete:</b> {data_palete}<br>
+                                <b>Venc:</b> {data_vencimento}<br>
+                                <b>Lote:</b> {lote}<br>
+                                <b>LPN Inteira:</b> {lpn_inteira}<br>
+                                <b>Quebra:</b> {quebra_txt}<br>
+                                <hr style="margin: 4px 0; border-color: #444;">
                                 <b>Resp:</b> {responsavel}<br>
                                 <span style="font-size: 11px; color: #aaaaaa;">🕒 {data_str}</span>
                             </div>
