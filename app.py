@@ -25,6 +25,7 @@ IMAGENS = {
     "dun03": "DUN NAO ESTA CORRESPONDENTE A DUN DO MATERIAL SOLICITADO.png",
     "validacao_qtd": "validação da quantidade.PNG",
     "sonic_gif": "sonicgif/SONICGIF.gif",
+    "sonic_rodape": "sonicgif2",  # Pasta ou arquivo do rodapé no GitHub
 }
 
 # Configuração inicial da pagina do aplicativo
@@ -504,7 +505,7 @@ with aba_painel:
 
     st.success(f"✔ Validando LPN para o **Pedido {d['num_pedido']}**!")
 
-    # Procura pelo arquivo de GIF do Sonic
+    # Procura pelo arquivo de GIF do Sonic do AVISO (SONICGIF.gif)
     caminhos_possiveis = [
         IMAGENS["sonic_gif"],
         "sonicgif/SONICGIF.gif",
@@ -882,16 +883,6 @@ with aba_painel:
       executar_validacao()
 
   with col_img:
-    # Rodapé fixo ou exibição do Sonic na parte inferior da tela de validação ou painel principal
-    st.markdown(
-        """
-        <div style="position: fixed; bottom: 10px; right: 20px; z-index: 9999;">
-            <img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z2dHFhNDl3bDFqZmh2ZzR1Z2F1Y21wMG12YnZsdGJ3dzJ2aDZjayZlcD12MV9internal_gif_by_gif_id&ct=g/giphy.gif" width="60px" style="opacity: 0.85;">
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     erro = st.session_state.get("erro_ativo")
     det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
 
@@ -1165,5 +1156,37 @@ with aba_concluidos:
       st.info("Nenhum pedido concluído nas últimas 24 horas.")
   else:
     st.info("Nenhum dado encontrado.")
+
+# Rodapé fixo com o Sonic do Rodapé (sonicgif2)
+caminhos_rodape = [
+    "sonicgif2/sonic.gif",
+    "sonicgif2/SONICGIF.gif",
+    "sonicgif2.gif",
+    "sonic2.gif",
+]
+sonic_rodape_path = None
+for cp in caminhos_rodape:
+  if os.path.exists(cp):
+    sonic_rodape_path = cp
+    break
+
+sonic_rodape_html = ""
+if sonic_rodape_path:
+  with open(sonic_rodape_path, "rb") as f:
+    data_bytes_r = f.read()
+    encoded_r = base64.b64encode(data_bytes_r).decode()
+    sonic_rodape_html = f'<img src="data:image/gif;base64,{encoded_r}" width="60px" style="opacity: 0.85;">'
+else:
+  # Fallback caso a estrutura exata do arquivo na pasta mude
+  sonic_rodape_html = '<img src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Z2dHFhNDl3bDFqZmh2ZzR1Z2F1Y21wMG12YnZsdGJ3dzJ2aDZjayZlcD12MV9internal_gif_by_gif_id&ct=g/giphy.gif" width="60px" style="opacity: 0.85;">'
+
+st.markdown(
+    f"""
+    <div style="position: fixed; bottom: 10px; right: 20px; z-index: 9999;">
+        {sonic_rodape_html}
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown("---")
