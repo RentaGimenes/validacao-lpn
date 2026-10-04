@@ -27,7 +27,7 @@ IMAGENS = {
     "validacao_qtd": "validação da quantidade.PNG",
     "lpn_duplicada": "lpnduplicada.PNG",
     "sonic_gif": "sonicgif/SONICGIF.gif",
-    "att_gif": "att.gif", # GIF ao lado do botão de atualizar se houver
+    "att_gif": "att.gif", # GIF do anel / ícone de atualização
 }
 
 # Configura a pagina do streamlit pra usar o layout largo
@@ -124,17 +124,42 @@ st.markdown("""
         font-weight: bold;
         color: #f1c40f;
     }
-    /* Estilo do botão azul claro personalizado */
-    .stButton > button.btn-atualizar {
-        background-color: #3498db !important;
-        color: white !important;
+
+    /* Estilo personalizado para o botão ATUALIZAR PEDIDOS */
+    .stButton > button.btn-atualizar-estilo {
+        background-color: #000000 !important;
+        border: 2px solid #00bfff !important;
+        border-radius: 14px !important;
+        color: #00bfff !important;
         font-weight: bold !important;
-        border-radius: 6px !important;
-        border: none !important;
-        padding: 0.4rem 1rem !important;
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        width: 100% !important;
+        box-shadow: 0 0 8px rgba(0, 191, 255, 0.3) !important;
+        transition: 0.2s ease-in-out !important;
     }
-    .stButton > button.btn-atualizar:hover {
-        background-color: #2980b9 !important;
+    .stButton > button.btn-atualizar-estilo:hover {
+        background-color: #0c1a24 !important;
+        border-color: #3498db !important;
+        color: #3498db !important;
+        box-shadow: 0 0 12px rgba(52, 152, 219, 0.6) !important;
+    }
+
+    /* RODAPÉ FIXO ABSOLUTO NA TELA */
+    .footer-fixo {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        background-color: #0e1117 !important;
+        border-top: 1px solid #333333 !important;
+        padding: 8px 0 !important;
+        text-align: center !important;
+        z-index: 999999 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 10px !important;
     }
     </style>
     
@@ -308,24 +333,58 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
-# Organização do topo com abas e o botão "ATUALIZAR PEDIDOS" ao lado
-col_abas, col_botao_att = st.columns([5, 1.8])
+# Organização do topo com abas e o botão personalizado ao lado
+col_abas, col_espaco, col_botao_att = st.columns([5, 0.5, 2])
 
 with col_abas:
     aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
 
 with col_botao_att:
-    st.markdown("<div style='margin-top: 5px;'></div>", unsafe_allow_html=True)
-    subcol_btn, subcol_gif = st.columns([3, 1])
-    with subcol_btn:
-        if st.button("🔄 ATUALIZAR", use_container_width=True, help="Atualizar dados da planilha"):
-            st.cache_data.clear()
-            st.rerun()
-    with subcol_gif:
-        if os.path.exists(IMAGENS["att_gif"]):
-            with open(IMAGENS["att_gif"], "rb") as f:
-                encoded_att = base64.b64encode(f.read()).decode()
-                st.markdown(f'<img src="data:image/gif;base64,{encoded_att}" width="30px" style="margin-top: 5px;">', unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 2px;'></div>", unsafe_allow_html=True)
+    
+    # Monta o HTML do botão com o GIF em cima e o texto em azul embaixo
+    gif_html = ""
+    if os.path.exists(IMAGENS["att_gif"]):
+        with open(IMAGENS["att_gif"], "rb") as f:
+            encoded_att = base64.b64encode(f.read()).decode()
+            gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="32px" style="display: block; margin: 0 auto 4px auto;">'
+    else:
+        gif_html = '<span style="font-size: 20px; display: block; text-align: center; margin-bottom: 2px;">🟡</span>'
+
+    html_botao_custom = f"""
+    <div style="background-color: #000000; border: 2px solid #00bfff; border-radius: 14px; padding: 6px; text-align: center; box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);">
+        {gif_html}
+        <span style="color: #00bfff; font-size: 11px; font-weight: bold; font-family: sans-serif; display: block; letter-spacing: 0.5px;">ATUALIZAR PEDIDOS</span>
+    </div>
+    """
+    
+    # Botão invisível em cima para capturar o clique do usuário mantendo o layout exato
+    if st.button("Atualizar Pedidos", key="btn_atualizar_customizado", use_container_width=True, help="Atualizar dados da planilha"):
+        st.cache_data.clear()
+        st.rerun()
+        
+    # Insere o visual estilizado sobrepondo/acompanhando o botão do Streamlit via JS/HTML
+    st.markdown(f"""
+    <style>
+    /* Oculta o texto padrão do botão do Streamlit para exibir apenas o nosso design customizado */
+    div[data-testid="column"] button[key="btn_atualizar_customizado"] p {{
+        visibility: hidden;
+    }}
+    div[data-testid="column"] button[key="btn_atualizar_customizado"] {{
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        height: auto !important;
+    }}
+    div[data-testid="column"] button[key="btn_atualizar_customizado"]::after {{
+        content: "";
+        display: block;
+    }}
+    </style>
+    <div style="margin-top: -46px; pointer-events: none;">
+        {html_botao_custom}
+    </div>
+    """, unsafe_allow_html=True)
 
 # Pega todos os dados da planilha
 registos, dados_validos = [], []
@@ -509,7 +568,7 @@ with aba_painel:
                 st.warning("⚠ Selecione um pedido no painel acima.")
                 return
             if not bc1_val or not bc2_val or not bc3_val:
-                st.warning("⚠️ Preencha os 3 códigos de barras.")
+                st.warning("⚠️️ Preencha os 3 códigos de barras.")
                 return
                 
             lpn_lida = processar_codigo_1(bc1_val)
@@ -704,12 +763,12 @@ caminho_meu_gif = "sonicrodape.gif"
 if os.path.exists(caminho_meu_gif):
     with open(caminho_meu_gif, "rb") as f:
         encoded_r = base64.b64encode(f.read()).decode()
-        sonic_rodape_html = f'<img src="data:image/gif;base64,{encoded_r}" width="40px" style="vertical-align: middle;">'
+        sonic_rodape_html = f'<img src="data:image/gif;base64,{encoded_r}" width="35px" style="vertical-align: middle;">'
 else:
-    sonic_rodape_html = '<span style="font-size: 20px;">🦔💨</span>'
+    sonic_rodape_html = '<span style="font-size: 18px;">🦔💨</span>'
 
 st.markdown(f"""
-    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(14, 17, 23, 0.95); border-top: 1px solid #333; padding: 6px 0; text-align: center; z-index: 99999; display: flex; justify-content: center; align-items: center; gap: 10px;">
+    <div class="footer-fixo">
         {sonic_rodape_html}
         <span style="color: #f1c40f; font-size: 14px; font-weight: bold; font-family: sans-serif;">Validação de Lpn a todo vapor!</span>
     </div>
