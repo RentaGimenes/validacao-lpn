@@ -336,7 +336,6 @@ with aba_painel:
             linha_pedido = r[1] if len(r) > 1 else ""
             cod_material = r[7] if len(r) > 7 else ""
             
-            # Pegando a descrição (coluna 2) e abreviando para os primeiros 22 caracteres
             desc_completa = r[2] if len(r) > 2 else ""
             desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
 
@@ -509,7 +508,7 @@ with aba_painel:
     st.subheader("📝 Validar e Dar Baixa na LPN")
     nome_responsavel = st.text_input("Nome", placeholder="Digite seu nome...")
 
-    # Exibindo o pedido atualmente selecionado de forma limpa
+    # Exibindo o pedido atualmente selecionado de forma limpa (sem o aviso quando vazio)
     idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
       p_sel = mapa_pedidos[idx_sel_atual]
@@ -518,8 +517,6 @@ with aba_painel:
       st.markdown(
           f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})"
       )
-    else:
-      st.info("👆 Clique no botão **Selecionar** abaixo do cartão do pedido desejado no painel acima.")
 
     def executar_validacao():
       bc1_val = st.session_state.get("input_bc1", "").strip()
