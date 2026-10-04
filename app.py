@@ -125,26 +125,6 @@ st.markdown("""
         color: #f1c40f;
     }
 
-    /* Estilo personalizado para o botão ATUALIZAR PEDIDOS */
-    .stButton > button.btn-atualizar-estilo {
-        background-color: #000000 !important;
-        border: 2px solid #00bfff !important;
-        border-radius: 14px !important;
-        color: #00bfff !important;
-        font-weight: bold !important;
-        font-size: 12px !important;
-        padding: 6px 10px !important;
-        width: 100% !important;
-        box-shadow: 0 0 8px rgba(0, 191, 255, 0.3) !important;
-        transition: 0.2s ease-in-out !important;
-    }
-    .stButton > button.btn-atualizar-estilo:hover {
-        background-color: #0c1a24 !important;
-        border-color: #3498db !important;
-        color: #3498db !important;
-        box-shadow: 0 0 12px rgba(52, 152, 219, 0.6) !important;
-    }
-
     /* RODAPÉ FIXO ABSOLUTO NA TELA */
     .footer-fixo {
         position: fixed !important;
@@ -313,7 +293,7 @@ def obter_quantidade_total_lpns(r):
     total = obter_quantidade_inteira(r) + len(obter_lista_quebras(r))
     return total if total > 0 else 1
 
-# Cabeçalho da pagina (compactado no topo)
+# Cabeçalho da pagina
 st.markdown("## 📦 Validação das informações das Lpn")
 
 # Inicializa as variáveis de controle no session_state se não existirem
@@ -333,58 +313,8 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
-# Organização do topo com abas e o botão personalizado ao lado
-col_abas, col_espaco, col_botao_att = st.columns([5, 0.5, 2])
-
-with col_abas:
-    aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
-
-with col_botao_att:
-    st.markdown("<div style='margin-top: 2px;'></div>", unsafe_allow_html=True)
-    
-    # Monta o HTML do botão com o GIF em cima e o texto em azul embaixo
-    gif_html = ""
-    if os.path.exists(IMAGENS["att_gif"]):
-        with open(IMAGENS["att_gif"], "rb") as f:
-            encoded_att = base64.b64encode(f.read()).decode()
-            gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="32px" style="display: block; margin: 0 auto 4px auto;">'
-    else:
-        gif_html = '<span style="font-size: 20px; display: block; text-align: center; margin-bottom: 2px;">🟡</span>'
-
-    html_botao_custom = f"""
-    <div style="background-color: #000000; border: 2px solid #00bfff; border-radius: 14px; padding: 6px; text-align: center; box-shadow: 0 0 8px rgba(0, 191, 255, 0.3);">
-        {gif_html}
-        <span style="color: #00bfff; font-size: 11px; font-weight: bold; font-family: sans-serif; display: block; letter-spacing: 0.5px;">ATUALIZAR PEDIDOS</span>
-    </div>
-    """
-    
-    # Botão invisível em cima para capturar o clique do usuário mantendo o layout exato
-    if st.button("Atualizar Pedidos", key="btn_atualizar_customizado", use_container_width=True, help="Atualizar dados da planilha"):
-        st.cache_data.clear()
-        st.rerun()
-        
-    # Insere o visual estilizado sobrepondo/acompanhando o botão do Streamlit via JS/HTML
-    st.markdown(f"""
-    <style>
-    /* Oculta o texto padrão do botão do Streamlit para exibir apenas o nosso design customizado */
-    div[data-testid="column"] button[key="btn_atualizar_customizado"] p {{
-        visibility: hidden;
-    }}
-    div[data-testid="column"] button[key="btn_atualizar_customizado"] {{
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        height: auto !important;
-    }}
-    div[data-testid="column"] button[key="btn_atualizar_customizado"]::after {{
-        content: "";
-        display: block;
-    }}
-    </style>
-    <div style="margin-top: -46px; pointer-events: none;">
-        {html_botao_custom}
-    </div>
-    """, unsafe_allow_html=True)
+# Abas principais no topo
+aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
 
 # Pega todos os dados da planilha
 registos, dados_validos = [], []
@@ -401,7 +331,52 @@ except Exception as e:
 # CONTEÚDO DA ABA PRINCIPAL
 # ==========================================
 with aba_painel:
-    st.subheader("📋 Painel de Solicitações Pendentes")
+    # Linha com o título do painel e o botão de atualizar pedidos lado a lado
+    col_tit_painel, col_btn_att = st.columns([5, 1.2])
+    with col_tit_painel:
+        st.subheader("📋 Painel de Solicitações Pendentes")
+    
+    with col_btn_att:
+        # Prepara o GIF do anel para dentro do botão personalizado
+        gif_html = ""
+        if os.path.exists(IMAGENS["att_gif"]):
+            with open(IMAGENS["att_gif"], "rb") as f:
+                encoded_att = base64.b64encode(f.read()).decode()
+                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="38px" style="display: block; margin: 0 auto 2px auto;">'
+        else:
+            gif_html = '<span style="font-size: 22px; display: block; text-align: center; margin-bottom: 2px;">🟡</span>'
+
+        html_botao_custom = f"""
+        <div style="background-color: #000000; border: 2px solid #00bfff; border-radius: 12px; padding: 6px 10px; text-align: center; box-shadow: 0 0 10px rgba(0, 191, 255, 0.4); cursor: pointer;">
+            {gif_html}
+            <span style="color: #00bfff; font-size: 10px; font-weight: bold; font-family: sans-serif; display: block; letter-spacing: 0.5px;">ATUALIZAR PEDIDOS</span>
+        </div>
+        """
+        
+        # Botão invisível do Streamlit que captura o clique
+        if st.button("Atualizar Pedidos", key="btn_atualizar_customizado", use_container_width=True, help="Atualizar dados da planilha"):
+            st.cache_data.clear()
+            st.rerun()
+            
+        # Aplica o visual customizado por cima do botão do Streamlit
+        st.markdown(f"""
+        <style>
+        div[data-testid="column"] button[key="btn_atualizar_customizado"] p {{
+            visibility: hidden;
+        }}
+        div[data-testid="column"] button[key="btn_atualizar_customizado"] {{
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: 0px !important;
+        }}
+        </style>
+        <div style="margin-top: -50px; pointer-events: none;">
+            {html_botao_custom}
+        </div>
+        """, unsafe_allow_html=True)
+
     mapa_pedidos = {}
     if dados_validos:
         pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and r[13].strip())]
@@ -568,7 +543,7 @@ with aba_painel:
                 st.warning("⚠ Selecione um pedido no painel acima.")
                 return
             if not bc1_val or not bc2_val or not bc3_val:
-                st.warning("⚠️️ Preencha os 3 códigos de barras.")
+                st.warning("⚠ Preencha os 3 códigos de barras.")
                 return
                 
             lpn_lida = processar_codigo_1(bc1_val)
