@@ -13,7 +13,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 # ==========================================
-# CONFIGURAÇÃO DE IMAGENS E ARQUIVOS
+# MAPEAMENTO DE IMAGENS E ARQUIVOS
 # ==========================================
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
@@ -41,7 +41,7 @@ count = st_autorefresh(interval=180000, key="datarefresh")
 # ==========================================
 st.markdown("""
     <style>
-    /* Remove o espaço em branco excessivo no topo da página do Streamlit */
+    /* Tira aquele espaço gigante em branco no topo da pagina */
     .block-container {
         padding-top: 1.2rem !important;
         padding-bottom: 5rem !important;
@@ -50,6 +50,7 @@ st.markdown("""
         background: transparent;
     }
     
+    /* Animaçãozinha pro alerta de erro piscar na tela */
     @keyframes piscar {
         0% { opacity: 1; }
         50% { opacity: 0.3; }
@@ -77,6 +78,8 @@ st.markdown("""
         margin-bottom: 12px;
         margin-top: 5px;
     }
+    
+    /* Estilos dos cards de pedidos */
     .card-pedido {
         background-color: #1e1e1e;
         border: 2px solid #f1c40f;
@@ -100,20 +103,6 @@ st.markdown("""
         line-height: 1.4;
         box-shadow: 0 0 8px rgba(255, 75, 75, 0.6);
     }
-    .card-concluido {
-        background-color: #1e1e1e;
-        border: 2px solid #2ecc71;
-        padding: 10px;
-        border-radius: 6px;
-        font-size: 13px;
-        color: #ffffff;
-        margin-bottom: 8px;
-        text-align: left;
-        max-width: 250px;
-        margin-left: auto;
-        margin-right: auto;
-        line-height: 1.4;
-    }
     .texto-destaque-lpn {
         font-size: 20px !important;
         font-weight: bold;
@@ -124,26 +113,10 @@ st.markdown("""
         font-weight: bold;
         color: #f1c40f;
     }
-
-    /* RODAPÉ FIXO ABSOLUTO NA TELA */
-    .footer-fixo {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        background-color: #0e1117 !important;
-        border-top: 1px solid #333333 !important;
-        padding: 8px 0 !important;
-        text-align: center !important;
-        z-index: 999999 !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 10px !important;
-    }
     </style>
     
     <script>
+    /* Joga a tela direto pra parte de validação automaticamente */
     function rolarParaValidacao() {
         const elemento = document.getElementById('secao-validacao');
         if (elemento) {
@@ -154,7 +127,7 @@ st.markdown("""
     </script>
 """, unsafe_allow_html=True)
 
-# Função pra tocar o som de erro quando der algo errado
+# Toca um som de alerta quando der erro na leitura
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -187,7 +160,7 @@ except Exception as e:
     st.stop()
 
 # ==========================================
-# FUNÇÕES AUXILIARES DE TRATAMENTO
+# FUNÇÕES DE TRATAMENTO DE TEXTO E CÓDIGOS
 # ==========================================
 def limpar_texto(texto):
     if not texto: return ""
@@ -293,10 +266,10 @@ def obter_quantidade_total_lpns(r):
     total = obter_quantidade_inteira(r) + len(obter_lista_quebras(r))
     return total if total > 0 else 1
 
-# Cabeçalho da pagina
+# Título principal
 st.markdown("## 📦 Validação das informações das Lpn")
 
-# Inicializa as variáveis de controle no session_state se não existirem
+# Inicializa as variáveis na sessão pra não resetar sozinho
 if "etapa_validacao" not in st.session_state:
     st.session_state.etapa_validacao = False
     st.session_state.dados_conferencia = {}
@@ -313,10 +286,10 @@ if "val_bc1" not in st.session_state: st.session_state.val_bc1 = ""
 if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
-# Abas principais no topo
+# Abas da tela
 aba_painel, aba_concluidos = st.tabs(["📋 Painel Principal e Validação", "🕒 Concluídos nas Últimas 24h"])
 
-# Pega todos os dados da planilha
+# Puxa os dados da planilha do Google
 registos, dados_validos = [], []
 try:
     registos = sheet.get_all_values()
@@ -328,36 +301,34 @@ except Exception as e:
     st.warning(f"Aviso ao carregar dados da planilha: {e}")
 
 # ==========================================
-# CONTEÚDO DA ABA PRINCIPAL
+# ABA PRINCIPAL
 # ==========================================
 with aba_painel:
-    # Linha com o título do painel e o botão de atualizar pedidos na mesma altura
     col_tit_painel, col_btn_att = st.columns([5, 1.5])
     with col_tit_painel:
         st.subheader("📋 Painel de Solicitações Pendentes")
     
     with col_btn_att:
-        # Prepara o GIF do anel
+        # Carrega o gif att.gif em base64 pra botar dentro do botão
         gif_html = ""
         if os.path.exists(IMAGENS["att_gif"]):
             with open(IMAGENS["att_gif"], "rb") as f:
                 encoded_att = base64.b64encode(f.read()).decode()
-                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="16px" style="display: inline-block; vertical-align: middle; margin-right: 4px;">'
+                gif_html = f'<img src="data:image/gif;base64,{encoded_att}" width="14px" style="display: inline-block; vertical-align: middle; margin-right: 6px;">'
         else:
-            gif_html = '<span style="font-size: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;">🟡</span>'
+            gif_html = '<span style="font-size: 14px; display: inline-block; vertical-align: middle; margin-right: 6px;">🔄</span>'
 
-        # Criação do botão limpo e totalmente funcional usando st.button estilizado por CSS
+        # Estilização exata do botão preto com borda azul e texto com o GIF
         st.markdown("""
         <style>
-        /* Estiliza o botão do Streamlit para ter o tamanho exato da marcação */
         div[data-testid="column"] button[kind="secondary"] {
             background-color: #000000 !important;
             border: 1.5px solid #00bfff !important;
             border-radius: 8px !important;
             color: #00bfff !important;
-            font-size: 10px !important;
+            font-size: 11px !important;
             font-weight: bold !important;
-            padding: 4px 10px !important;
+            padding: 6px 12px !important;
             box-shadow: 0 0 6px rgba(0, 191, 255, 0.4) !important;
             width: auto !important;
             display: inline-flex !important;
@@ -369,11 +340,12 @@ with aba_painel:
         div[data-testid="column"] button[kind="secondary"]:hover {
             border-color: #ffffff !important;
             color: #ffffff !important;
+            background-color: #111111 !important;
         }
         </style>
         """, unsafe_allow_html=True)
 
-        if st.button(f"🔄 ATUALIZAR PEDIDOS", key="btn_atualizar_pedidos", help="Clique para atualizar os dados"):
+        if st.button(f"{gif_html} ATUALIZAR PEDIDOS", key="btn_atualizar_pedidos", help="Clique para atualizar os dados"):
             st.cache_data.clear()
             st.rerun()
 
@@ -440,7 +412,7 @@ with aba_painel:
     st.markdown("---")
     st.markdown('<div id="secao-validacao"></div>', unsafe_allow_html=True)
 
-    # Etapa de confirmação visual obrigatória antes de salvar na planilha
+    # Confirmação visual antes de dar baixa definitiva
     if st.session_state.etapa_validacao:
         st.subheader("🔍 Confirmação Visual Obrigatória")
         d = st.session_state.dados_conferencia
@@ -515,6 +487,7 @@ with aba_painel:
                 st.error("⚠ Selecione 'Sim' em ambas as confirmações!")
         st.markdown("---")
 
+    # Formulário de entrada dos códigos de barras
     col_form, col_img = st.columns(2)
     with col_form:
         st.subheader("📝 Validar e Dar Baixa na LPN")
@@ -557,6 +530,7 @@ with aba_painel:
             total_necessario = info_pedido["total_esperado"]
             lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
 
+            # Valida se a LPN já foi lida antes
             if lpn_lida in lpns_ja_lidas:
                 st.session_state.erro_ativo = "lpn_duplicada"
                 st.session_state.detalhes_erro = {"solicitado": "", "lido": f"LPN já validada anteriormente: {lpn_lida}"}
@@ -584,6 +558,7 @@ with aba_painel:
             data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
             dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
+            # Validações de dados (material, lote, validades, etc.)
             if not mat_lido or mat_lido != mat_planilha:
                 st.session_state.erro_ativo = "material04"
                 st.session_state.detalhes_erro = {"solicitado": mat_planilha or "(Vazio)", "lido": mat_lido or "(Não identificado)"}
@@ -644,6 +619,7 @@ with aba_painel:
         if st.button(texto_botao_validar, type="primary", use_container_width=True):
             executar_validacao()
 
+    # Coluna dos erros (exibe imagens e avisos caso algum código venha errado)
     with col_img:
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
@@ -672,79 +648,65 @@ with aba_painel:
             st.markdown('<div class="alerta-sub">DUN não corresponde ao solicitado.</div>', unsafe_allow_html=True)
             st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""", unsafe_allow_html=True)
             if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=450)
+        elif erro == "validacao_qtd":
+            st.markdown('<div class="alerta-piscar">🚫 Erro de Quantidade / Quebra</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Quantidade lida não confere com as quebras pendentes.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao">{det['solicitado']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["validacao_qtd"]): st.image(IMAGENS["validacao_qtd"], width=450)
         elif erro == "lpn_duplicada":
             st.markdown('<div class="alerta-piscar">🚫 LPN Duplicada</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>{det['lido']}</b></div>""", unsafe_allow_html=True)
-            img_dup_path = IMAGENS["lpn_duplicada"]
-            if os.path.exists(img_dup_path): st.image(img_dup_path, width=450)
-            else: st.warning(f"⚠ Imagem `{img_dup_path}` não encontrada na pasta.")
-        elif erro in ["validacao_qtd", "limite"]:
-            st.markdown('<div class="alerta-piscar">🚫 Validação de Quantidade / LPN</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">LPN\'s inteiras desse pedido já foram validadas.</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["validacao_qtd"]): st.image(IMAGENS["validacao_qtd"], width=450)
+            st.markdown('<div class="alerta-sub">Esta LPN já foi validada neste pedido.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao">{det['lido']}</div>""", unsafe_allow_html=True)
+            if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=450)
+        elif erro == "limite":
+            st.markdown('<div class="alerta-piscar">🚫 Limite Excedido</div>', unsafe_allow_html=True)
+            st.markdown('<div class="alerta-sub">Todas as LPNs deste pedido já foram validadas.</div>', unsafe_allow_html=True)
+            st.markdown(f"""<div class="alerta-comparacao"><b>INFO:</b> {det['solicitado']}</div>""", unsafe_allow_html=True)
         else:
-            st.subheader("💡 Exemplo de LPN")
-            if os.path.exists(IMAGENS["guia05"]): st.image(IMAGENS["guia05"], width=450)
-            else: st.warning(f"⚠ Imagem `{IMAGENS['guia05']}` não encontrada.")
+            if os.path.exists(IMAGENS["guia05"]):
+                st.image(IMAGENS["guia05"], width=460)
 
 # ==========================================
-# CONTEÚDO DA ABA DE CONCLUÍDOS
+# ABA DE CONCLUÍDOS NAS ÚLTIMAS 24H
 # ==========================================
 with aba_concluidos:
-    st.subheader("🕒 Histórico de Pedidos Concluídos (Últimas 24 Horas)")
-    if dados_validos:
+    st.subheader("🕒 Pedidos Concluídos nas Últimas 24 Horas")
+    try:
         fuso_horario = pytz.timezone("America/Sao_Paulo")
         agora = datetime.now(fuso_horario)
-        concluidos_recentes = []
-        for r in dados_validos:
-            try:
-                data_str = r[13].strip() if len(r) > 13 else ""
-                if data_str:
-                    data_limpa = re.sub(r'\s*\(.*?\)', '', data_str).strip()
-                    data_conclusao = datetime.strptime(data_limpa, "%d/%m/%Y %H:%M:%S")
-                    data_conclusao = fuso_horario.localize(data_conclusao)
-                    if (agora - data_conclusao) <= timedelta(hours=24):
-                        concluidos_recentes.append((r, data_limpa))
-            except Exception:
-                continue
-        if concluidos_recentes:
-            num_colunas = 6
-            linhas_cards_conc = [concluidos_recentes[i:i + num_colunas] for i in range(0, len(concluidos_recentes), num_colunas)]
-            for bloco in linhas_cards_conc:
-                cols = st.columns(num_colunas)
-                for i, (r, data_str) in enumerate(bloco):
-                    linha_pedido = r[1] if len(r) > 1 else ""
-                    cod_material = r[7] if len(r) > 7 else ""
-                    desc_completa_c = r[2] if len(r) > 2 else ""
-                    desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
-                    data_palete = r[3] if len(r) > 3 else ""
-                    data_vencimento = r[9] if len(r) > 9 else ""
-                    lote = r[10] if len(r) > 10 else ""
-                    lpn_inteira = r[4] if len(r) > 4 else "0"
-                    quebra_txt = r[6] if len(r) > 6 else "0"
-                    responsavel = r[11] if len(r) > 11 else "N/D"
-                    with cols[i]:
-                        st.markdown(f"""<div class="card-concluido"><b>Linha:</b> {linha_pedido}<br><b>Cód Mat:</b> {cod_material}<br><b>Desc:</b> {desc_resumida_c}<br><b>Data Palete:</b> {data_palete}<br><b>Venc:</b> {data_vencimento}<br><b>Lote:</b> {lote}<br><b>LPN Inteira:</b> {lpn_inteira}<br><b>Quebras:</b> {quebra_txt}<br><hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;"><b>Resp:</b> {responsavel}<br><span style="font-size: 11px; color: #aaaaaa;">🕒 {data_str}</span></div>""", unsafe_allow_html=True)
+        limite_24h = agora - timedelta(hours=24)
+        
+        concluidos_recolhidos = []
+        if len(registos) > 1:
+            for r in registos[1:]:
+                if len(r) > 13 and r[13].strip():
+                    data_hora_str = r[13].strip()
+                    try:
+                        data_hora_concl = datetime.strptime(data_hora_str, "%d/%m/%Y %H:%M:%S")
+                        data_hora_concl = fuso_horario.localize(data_hora_concl)
+                        if data_hora_concl >= limite_24h:
+                            concluidos_recolhidos.append((data_hora_concl, r))
+                    except Exception:
+                        continue
+                        
+        if concluidos_recolhidos:
+            concluidos_recolhidos.sort(key=lambda x: x[0], reverse=True)
+            for dh, r in concluidos_recolhidos:
+                num_linha_ped = r[1] if len(r) > 1 else ""
+                mat_ped = r[7] if len(r) > 7 else ""
+                desc_ped = r[2] if len(r) > 2 else ""
+                resp_ped = r[11] if len(r) > 11 else ""
+                lpns_ped = r[12] if len(r) > 12 else ""
+                hora_fmt = dh.strftime("%H:%M:%S - %d/%m/%Y")
+                
+                st.markdown(f"""
+                <div style="background-color: #1a261a; border: 1px solid #2ecc71; padding: 10px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; color: #fff;">
+                    <b>🕒 Concluído em:</b> {hora_fmt} | <b>Linha:</b> {num_linha_ped} | <b>Responsável:</b> {resp_ped}<br>
+                    <b>Material:</b> {mat_ped} - {desc_ped}<br>
+                    <b>LPNs Validadas:</b> {lpns_ped}
+                </div>
+                """, unsafe_allow_html=True)
         else:
             st.info("Nenhum pedido concluído nas últimas 24 horas.")
-    else:
-        st.info("Nenhum dado encontrado.")
-
-# ==========================================
-# RODAPÉ FIXO NA BASE DA TELA
-# ==========================================
-caminho_meu_gif = "sonicrodape.gif"
-if os.path.exists(caminho_meu_gif):
-    with open(caminho_meu_gif, "rb") as f:
-        encoded_r = base64.b64encode(f.read()).decode()
-        sonic_rodape_html = f'<img src="data:image/gif;base64,{encoded_r}" width="35px" style="vertical-align: middle;">'
-else:
-    sonic_rodape_html = '<span style="font-size: 18px;">🦔💨</span>'
-
-st.markdown(f"""
-    <div class="footer-fixo">
-        {sonic_rodape_html}
-        <span style="color: #f1c40f; font-size: 14px; font-weight: bold; font-family: sans-serif;">Validação de Lpn a todo vapor!</span>
-    </div>
-""", unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"Não foi possível carregar o histórico: {e}")
