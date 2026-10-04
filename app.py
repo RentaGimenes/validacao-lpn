@@ -66,9 +66,6 @@ st.markdown(
         color: #ffffff;
         margin-bottom: 8px;
         text-align: left;
-        max-width: 250px;
-        margin-left: auto;
-        margin-right: auto;
         line-height: 1.4;
     }
     .card-concluido {
@@ -297,6 +294,9 @@ if "erro_ativo" not in st.session_state:
 if "detalhes_erro" not in st.session_state:
   st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
 
+if "pedido_selecionado_idx" not in st.session_state:
+  st.session_state.pedido_selecionado_idx = None
+
 registos = []
 dados_validos = []
 try:
@@ -313,7 +313,9 @@ aba_painel, aba_concluidos = st.tabs(
 )
 
 with aba_painel:
-  st.subheader("📋 Painel de Solicitações Pendentes")
+  st.subheader("📋 Painel de Solicitações Pendentes (Clique no cartão para selecionar)")
+  
+  mapa_pedidos = {}
   if dados_validos:
     pedidos_pendentes = [
         r for r in dados_validos if not (len(r) > 13 and r[13].strip())
@@ -328,46 +330,56 @@ with aba_painel:
         cols = st.columns(num_colunas)
         for i, r in enumerate(bloco):
           idx_p = dados_validos.index(r) + 1
+          linha_real = registos.index(r) + 1
+          
           try:
-            # Extraindo campos solicitados para o cartão
-            linha_pedido = r[1] if len(r) > 1 else ""  # Linha (ex: R03)[cite: 5]
-            cod_material = r[7] if len(r) > 7 else ""  # Código do Material[cite: 5]
-            data_palete = r[3] if len(r) > 3 else ""  # Data do Palete[cite: 5]
-            data_vencimento = (
-                r[9] if len(r) > 9 else ""
-            )  # Data de Vencimento[cite: 5]
-            lote = r[10] if len(r) > 10 else ""  # Lote[cite: 5]
-            lpn_inteira = (
-                r[4] if len(r) > 4 else "0"
-            )  # Quantidade de Paletes Inteiros[cite: 5]
-            quebra_txt = (
-                r[6] if len(r) > 6 else "0"
-            )  # Quantas caixas no palete de quebra[cite: 5]
+            linha_pedido = r[1] if len(r) > 1 else ""
+            cod_material = r[7] if len(r) > 7 else ""
+            data_palete = r[3] if len(r) > 3 else ""
+            data_vencimento = r[9] if len(r) > 9 else ""
+            lote = r[10] if len(r) > 10 else ""
+            lpn_inteira = r[4] if len(r) > 4 else "0"
+            quebra_txt = r[6] if len(r) > 6 else "0"
 
             total_esperado = obter_quantidade_total_lpns(r)
-            lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
-                idx_p, []
-            )
+            lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(idx_p, [])
             qtd_lidas = len(lpns_ja_lidas)
             porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
 
+            mapa_pedidos[idx_p] = {
+                "num_pedido": idx_p,
+                "linha": linha_real,
+                "registro": r,
+                "total_esperado": total_esperado,
+            }
+
             with cols[i]:
+              is_selecionado = (st.session_state.pedido_selecionado_idx == idx_p)
+              borda_cor = "#2ecc71" if is_selecionado else "#f1c40f"
+              destaque_sel = "box-shadow: 0 0 10px #2ecc71;" if is_selecionado else ""
+
               st.markdown(
                   f"""
-                                    <div class="card-pedido">
-                                        <b>Linha:</b> {linha_pedido}<br>
-                                        <b>Cód Mat:</b> {cod_material}<br>
-                                        <b>Data Palete:</b> {data_palete}<br>
-                                        <b>Venc:</b> {data_vencimento}<br>
-                                        <b>Lote:</b> {lote}<br>
-                                        <b>LPN Inteira:</b> {lpn_inteira}<br>
-                                        <b>Quebra:</b> {quebra_txt}<br>
-                                        <hr style="margin: 4px 0; border-color: #444;">
-                                        <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
-                                    </div>
-                                    """,
+                  <div class="card-pedido" style="border: 2px solid {borda_cor}; {destaque_sel}">
+                      <b>Linha:</b> {linha_pedido}<br>
+                      <b>Cód Mat:</b> {cod_material}<br>
+                      <b>Data Palete:</b> {data_palete}<br>
+                      <b>Venc:</b> {data_vencimento}<br>
+                      <b>Lote:</b> {lote}<br>
+                      <b>LPN Inteira:</b> {lpn_inteira}<br>
+                      <b>Quebra:</b> {quebra_txt}<br>
+                      <hr style="margin: 4px 0; border-color: #444;">
+                      <span style="color: #f1c40f;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+                  </div>
+                  """,
                   unsafe_allow_html=True,
               )
+              
+              label_botao = f"✅ Selecionado" if is_selecionado else f"Selecionar Pedido {idx_p}"
+              if st.button(label_botao, key=f"btn_sel_{idx_p}", use_container_width=True):
+                st.session_state.pedido_selecionado_idx = idx_p
+                st.rerun()
+
           except Exception:
             continue
     else:
@@ -432,9 +444,7 @@ with aba_painel:
           if num_ped not in st.session_state.lpns_validadas_por_pedido:
             st.session_state.lpns_validadas_por_pedido[num_ped] = []
           if lpn_atual not in st.session_state.lpns_validadas_por_pedido[num_ped]:
-            st.session_state.lpns_validadas_por_pedido[num_ped].append(
-                lpn_atual
-            )
+            st.session_state.lpns_validadas_por_pedido[num_ped].append(lpn_atual)
 
           lpns_lidas_pedido = st.session_state.lpns_validadas_por_pedido[num_ped]
 
@@ -449,6 +459,9 @@ with aba_painel:
 
             if num_ped in st.session_state.lpns_validadas_por_pedido:
               del st.session_state.lpns_validadas_por_pedido[num_ped]
+            
+            if st.session_state.pedido_selecionado_idx == num_ped:
+              st.session_state.pedido_selecionado_idx = None
 
             st.session_state.etapa_validacao = False
             st.session_state.erro_ativo = None
@@ -461,15 +474,12 @@ with aba_painel:
 
             st.cache_data.clear()
             st.balloons()
-            st.success(
-                "🎉 Última LPN confirmada! Pedido concluído com sucesso!"
-            )
+            st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
             st.rerun()
           else:
             st.success(
                 f"✅ LPN `{lpn_atual}` aceita! Restam"
-                f" {total_necessario - len(lpns_lidas_pedido)} LPN(s) para este"
-                " pedido."
+                f" {total_necessario - len(lpns_lidas_pedido)} LPN(s) para este pedido."
             )
             st.session_state.etapa_validacao = False
             st.session_state.erro_ativo = None
@@ -493,30 +503,17 @@ with aba_painel:
     st.subheader("📝 Validar e Dar Baixa na LPN")
     nome_responsavel = st.text_input("Nome", placeholder="Digite seu nome...")
 
-    opcoes_pedidos = ["Selecione o pedido..."]
-    mapa_pedidos = {}
-    if dados_validos:
-      for idx_p, r in enumerate(dados_validos, start=1):
-        responsavel_atual = r[11] if len(r) > 11 else ""
-        if not responsavel_atual.strip():
-          mat_txt = r[2] if len(r) > 2 else "N/D"
-          tot_esp = obter_quantidade_total_lpns(r)
-          label_ped = (
-              f"Pedido {idx_p} - Mat: {mat_txt} (Esperado: {tot_esp} LPNs)"
-          )
-          opcoes_pedidos.append(label_ped)
-          linha_real = registos.index(r) + 1
-          mapa_pedidos[label_ped] = {
-              "num_pedido": idx_p,
-              "linha": linha_real,
-              "registro": r,
-              "total_esperado": tot_esp,
-          }
-
-    pedido_selecionado = st.selectbox(
-        "📌 Selecione o Número do Pedido", opcoes_pedidos
-    )
-
+    # Exibindo o pedido atualmente selecionado de forma limpa
+    idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
+    if idx_sel_atual and idx_sel_atual in mapa_pedidos:
+      p_sel = mapa_pedidos[idx_sel_atual]
+      mat_s = p_sel["registro"][2] if len(p_sel["registro"]) > 2 else "N/D"
+      linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
+      st.markdown(
+          f"🎯 **Pedido Selecionado:** Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})"
+      )
+    else:
+      st.info("👆 Clique no botão **Selecionar** abaixo do cartão do pedido desejado no painel acima.")
 
     def executar_validacao():
       bc1_val = st.session_state.get("input_bc1", "").strip()
@@ -526,9 +523,12 @@ with aba_painel:
       if not nome_responsavel.strip():
         st.warning("⚠️ Digite o seu nome.")
         return
-      if pedido_selecionado == "Selecione o pedido...":
-        st.warning("⚠️ Selecione o pedido.")
+      
+      idx_sel = st.session_state.get("pedido_selecionado_idx")
+      if not idx_sel or idx_sel not in mapa_pedidos:
+        st.warning("⚠️ Selecione um pedido clicando no cartão correspondente no painel acima.")
         return
+
       if not bc1_val or not bc2_val or not bc3_val:
         st.warning("⚠ Preencha os 3 códigos de barras.")
         return
@@ -537,15 +537,13 @@ with aba_painel:
       mat_lido, lote_lido = processar_codigo_2(bc2_val)
       dun_lido, venc_lido, fab_lido = processar_codigo_3(bc3_val)
 
-      info_pedido = mapa_pedidos[pedido_selecionado]
+      info_pedido = mapa_pedidos[idx_sel]
       linha_encontrada = info_pedido["linha"]
       num_pedido_escolhido = info_pedido["num_pedido"]
       r_escolhido = info_pedido["registro"]
       total_necessario = info_pedido["total_esperado"]
 
-      lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
-          num_pedido_escolhido, []
-      )
+      lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
       if len(lpns_ja_lidas) >= total_necessario:
         st.session_state.erro_ativo = "limite"
         st.session_state.detalhes_erro = {
@@ -564,15 +562,9 @@ with aba_painel:
         return
 
       mat_planilha = limpar_texto(r_escolhido[7] if len(r_escolhido) > 7 else "")
-      lote_planilha = limpar_texto(
-          r_escolhido[10] if len(r_escolhido) > 10 else ""
-      )
-      data_vencimento_planilha_raw = (
-          r_escolhido[9] if len(r_escolhido) > 9 else ""
-      )
-      data_fabricacao_planilha_raw = (
-          r_escolhido[3] if len(r_escolhido) > 3 else ""
-      )
+      lote_planilha = limpar_texto(r_escolhido[10] if len(r_escolhido) > 10 else "")
+      data_vencimento_planilha_raw = r_escolhido[9] if len(r_escolhido) > 9 else ""
+      data_fabricacao_planilha_raw = r_escolhido[3] if len(r_escolhido) > 3 else ""
       dun_planilha = limpar_texto(r_escolhido[8] if len(r_escolhido) > 8 else "")
 
       if not mat_lido or mat_lido != mat_planilha:
@@ -617,9 +609,7 @@ with aba_painel:
             return
 
       if data_fabricacao_planilha_raw and fab_lido:
-        data_fab_obj_planilha = converter_para_data_obj(
-            data_fabricacao_planilha_raw
-        )
+        data_fab_obj_planilha = converter_para_data_obj(data_fabricacao_planilha_raw)
         data_fab_obj_lida = converter_para_data_obj(fab_lido)
 
         if data_fab_obj_planilha and data_fab_obj_lida:
@@ -653,7 +643,6 @@ with aba_painel:
       st.session_state.etapa_validacao = True
       st.rerun()
 
-
     bc1 = st.text_input(
         "1º Código de Barras (LPN)",
         placeholder="AGUARDANDO ENTRADA",
@@ -671,11 +660,9 @@ with aba_painel:
     )
 
     texto_botao_validar = "Validar LPN"
-    if pedido_selecionado != "Selecione o pedido...":
-      p_info = mapa_pedidos[pedido_selecionado]
-      lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(
-          p_info["num_pedido"], []
-      )
+    if idx_sel_atual and idx_sel_atual in mapa_pedidos:
+      p_info = mapa_pedidos[idx_sel_atual]
+      lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(p_info["num_pedido"], [])
       tot_esperado_pedido = p_info["total_esperado"]
       qtd_lidas = len(lidas_atualmente)
 
@@ -684,8 +671,7 @@ with aba_painel:
 
       porcentagem_calc = min(int((qtd_lidas / tot_esperado_pedido) * 100), 100)
       st.markdown(
-          f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs"
-          f" ({porcentagem_calc}%)"
+          f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs ({porcentagem_calc}%)"
       )
       st.progress(porcentagem_calc / 100.0)
 
@@ -694,9 +680,7 @@ with aba_painel:
 
   with col_img:
     erro = st.session_state.get("erro_ativo")
-    det = st.session_state.get(
-        "detalhes_erro", {"solicitado": "", "lido": ""}
-    )
+    det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
 
     if erro == "material04":
       st.markdown(
@@ -776,8 +760,7 @@ with aba_painel:
           unsafe_allow_html=True,
       )
       st.markdown(
-          '<div class="alerta-sub">Data de fabricação não está de acordo com'
-          " o solicitado.</div>",
+          '<div class="alerta-sub">Data de fabricação não está de acordo com o solicitado.</div>',
           unsafe_allow_html=True,
       )
       st.markdown(
@@ -793,7 +776,7 @@ with aba_painel:
       if os.path.exists(img_nome):
         st.image(img_nome, width=450)
       else:
-        st.warning(f"⚠️️ Imagem `{img_nome}` não encontrada.")
+        st.warning(f"⚠ Imagem `{img_nome}` não encontrada.")
 
     elif erro == "dun03":
       st.markdown(
@@ -801,8 +784,7 @@ with aba_painel:
           unsafe_allow_html=True,
       )
       st.markdown(
-          '<div class="alerta-sub">DUN não está correspondente à DUN do'
-          " material solicitado.</div>",
+          '<div class="alerta-sub">DUN não está correspondente à DUN do material solicitado.</div>',
           unsafe_allow_html=True,
       )
       st.markdown(
@@ -826,8 +808,7 @@ with aba_painel:
           unsafe_allow_html=True,
       )
       st.markdown(
-          '<div class="alerta-sub">Esta LPN já foi lida ou o limite total foi'
-          " atingido.</div>",
+          '<div class="alerta-sub">Esta LPN já foi lida ou o limite total foi atingido.</div>',
           unsafe_allow_html=True,
       )
       st.markdown(
@@ -849,10 +830,7 @@ with aba_painel:
       if os.path.exists(img_guia):
         st.image(img_guia, width=450)
       else:
-        st.warning(
-            f"⚠ Salve a imagem com o nome `{img_guia}` na mesma pasta do"
-            " script."
-        )
+        st.warning(f"⚠ Salve a imagem com o nome `{img_guia}` na mesma pasta do script.")
 
 with aba_concluidos:
   st.subheader("🕒 Histórico de Pedidos Concluídos (Últimas 24 Horas)")
