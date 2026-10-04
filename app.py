@@ -271,10 +271,14 @@ def processar_codigo_2(barcode):
         limpo = barcode.replace("(", "").replace(")", "")
         match_mat = re.search(r'90(\d+?)(?=37|$)', limpo)
         mat = match_mat.group(1) if match_mat else limpo[2:10]
+        
         match_qtd = re.search(r'37(\d+)', limpo)
         quantidade = int(match_qtd.group(1).lstrip('0') or '0') if match_qtd else 0
-        match_lote = re.search(r'10(\d+)', limpo)
-        lote = match_lote.group(1).lstrip('0') or match_lote.group(1) if match_lote else ""
+        
+        # Procura o 10 seguido opcionalmente de zeros e captura os dígitos do lote a partir do ano
+        match_lote = re.search(r'100*(\d+)', limpo)
+        lote = match_lote.group(1) if match_lote else ""
+        
         return limpar_texto(mat), quantidade, limpar_texto(lote)[:7]
     except Exception:
         return "", 0, ""
@@ -528,7 +532,6 @@ else:
                             desc_resumida = (desc_completa[:22] + "...") if len(desc_completa) > 22 else desc_completa
                             data_palete = r[3] if len(r) > 3 else ""
                             
-                            # Formatação da data de vencimento para AAMMDD
                             vencimento_bruto = r[9] if len(r) > 9 else ""
                             data_vencimento = formatar_para_aammdd(vencimento_bruto)
                             
@@ -609,15 +612,13 @@ else:
     st.markdown("---")
 
     # ==========================================
-    # FORMULÁRIO DE LEITURA E VALIDAÇÃO (ESTRUTURA PEDIDA)
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
-    # Divisão EXATA em 3 colunas: Esquerda (Campos), Meio (Aviso e Botão), Direita (Modelo LPN Exemplo)
     col_esq, col_meio, col_dir = st.columns([1.2, 1.2, 1.4], gap="large")
     
     with col_esq:
-        # ESQUERDA: Campos para bipar (com limpeza controlada pelo session_state)
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
         st.session_state.val_nome = nome_responsavel
         
@@ -639,7 +640,6 @@ else:
             st.progress(porcentagem_calc / 100.0)
 
     with col_meio:
-        # MEIO: Aviso de selecionar pedido, status e botão de validação estendido com texto centralizado
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
 
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
@@ -664,7 +664,6 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-        # Botão envolvido na classe CSS para ocupar 100% da largura do bloco com texto centralizado
         st.markdown('<div class="container-botao-centralizado">', unsafe_allow_html=True)
         btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -672,7 +671,6 @@ else:
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_dir:
-        # DIREITA: Imagem / Modelo da LPN de exemplo e alertas de erro caso ocorram
         st.markdown('<div id="ancora-validacao"></div>', unsafe_allow_html=True)
         st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
         
@@ -725,7 +723,6 @@ else:
                 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Regras executadas ao clicar no botão de iniciar validação (Validação Completa de Erros)
         if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
@@ -786,7 +783,7 @@ else:
                     tocar_som_erro()
                     st.rerun()
 
-            # 4. Validação de Lote / Data de Criação
+            # 4. Validação de Lote
             lote_esperado = limpar_texto(r_escolhido[10]) if len(r_escolhido) > 10 else ""
             if lote_lido and lote_esperado and lote_lido != lote_esperado:
                 st.session_state.erro_ativo = "lote06"
@@ -798,7 +795,6 @@ else:
             if fab_lido:
                 pass
 
-            # Passou em todas as validações sem erros, abre a tela de confirmação visual
             st.session_state.erro_ativo = None
             st.session_state.etapa_validacao = True
             st.session_state.dados_conferencia = {
@@ -811,7 +807,6 @@ else:
             }
             st.rerun()
 
-    # Mantém o scroll na posição correta
     st.markdown("""
         <script>
             const element = document.getElementById('ancora-validacao');
