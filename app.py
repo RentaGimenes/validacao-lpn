@@ -169,6 +169,18 @@ def converter_para_data_obj(data_str):
     return None
   data_str = str(data_str).strip()
 
+  # Tratamento específico para formato YY.MM.DD (ex: 26.09.09 vindo do Forms/Planilha)
+  if re.match(r"^\d{2}\.\d{2}\.\d{2}$", data_str):
+    try:
+      partes = data_str.split(".")
+      ano = int("20" + partes[0])
+      mes = int(partes[1])
+      dia = int(partes[2])
+      return datetime(ano, mes, dia).date()
+    except Exception:
+      pass
+
+  # Se vier em formato puro AAMMDD (6 dígitos sem separadores)
   if len(data_str) == 6 and data_str.isdigit():
     try:
       ano = int("20" + data_str[0:2])
