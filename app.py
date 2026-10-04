@@ -599,12 +599,46 @@ else:
     st.markdown("---")
 
     # ==========================================
-    # FORMULÁRIO DE LEITURA E VALIDAÇÃO DOS CÓDIGOS
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO DOS CÓDIGOS (POSIÇÃO INVERTIDA)
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
-    col_form, col_img, col_acao = st.columns([1.2, 1.4, 1.1], gap="large")
+    # Ordem ajustada: Coluna Esquerda agora abriga a Ação/Aviso/Botão, e a Direita abriga a Guia/Imagem de Exemplo
+    col_acao, col_form, col_img = st.columns([1.1, 1.2, 1.4], gap="large")
     
+    with col_acao:
+        st.markdown('<div class="container-coluna-direita">', unsafe_allow_html=True)
+
+        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
+        if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
+            st.markdown("""
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="background-color: rgba(60, 20, 20, 0.6); border: 2px dashed #ff4b4b; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
+                    <span style="color: #ff4b4b; font-size: 18px; font-weight: bold;">⚠ Para iniciar, por favor selecione um pedido.</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            p_sel = mapa_pedidos[idx_sel_atual]
+            mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
+            linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
+            st.markdown(f"""
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="background-color: #152c1a; border: 1px solid #52b788; padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
+                    <span style="color: #52b788; font-size: 14px; font-weight: bold;">🎯 Pedido Selecionado:</span><br>
+                    <span style="color: #ffffff; font-size: 13px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown('<div class="container-botao-imagem">', unsafe_allow_html=True)
+        
+        # Botão principal para iniciar a validação dos códigos bipados
+        btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
     with col_form:
         nome_responsavel = st.text_input("Nome", value=st.session_state.val_nome, placeholder="Digite seu nome...", key="input_nome_field")
         st.session_state.val_nome = nome_responsavel
@@ -677,39 +711,6 @@ else:
             elif os.path.exists("image_51919d.png"):
                 st.image("image_51919d.png", width=450)
                 
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col_acao:
-        st.markdown('<div class="container-coluna-direita">', unsafe_allow_html=True)
-
-        idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
-        if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
-            st.markdown("""
-            <div style="display: flex; justify-content: center; width: 100%;">
-                <div style="background-color: rgba(60, 20, 20, 0.6); border: 2px dashed #ff4b4b; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
-                    <span style="color: #ff4b4b; font-size: 18px; font-weight: bold;">⚠ Para iniciar, por favor selecione um pedido.</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            p_sel = mapa_pedidos[idx_sel_atual]
-            mat_s = p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
-            linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
-            st.markdown(f"""
-            <div style="display: flex; justify-content: center; width: 100%;">
-                <div style="background-color: #152c1a; border: 1px solid #52b788; padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
-                    <span style="color: #52b788; font-size: 14px; font-weight: bold;">🎯 Pedido Selecionado:</span><br>
-                    <span style="color: #ffffff; font-size: 13px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown('<div class="container-botao-imagem">', unsafe_allow_html=True)
-        
-        # Botão principal para iniciar a validação dos códigos bipados
-        btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
-
-        st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
         # Regras executadas ao clicar no botão de iniciar validação (Validação Completa de Erros)
