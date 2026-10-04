@@ -120,9 +120,8 @@ st.markdown("""
         margin-bottom: 15px;
     }
 
-    /* Estilo exclusivo e fixo para o botão de Validar LPN (Verde Customizado) */
-    div.stButton > button[kind="secondary"],
-    div.stButton > button {
+    /* Estilo exclusivo e fixo APENAS para o botão de Validar LPN (Verde Customizado) */
+    div.stButton > button#b_validar_lpn_custom {
         background-color: #1b2421 !important;
         border: 2px solid #52b788 !important;
         color: #52b788 !important;
@@ -134,7 +133,7 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(82, 183, 136, 0.3) !important;
         transition: all 0.2s ease-in-out;
     }
-    div.stButton > button:hover {
+    div.stButton > button#b_validar_lpn_custom:hover {
         background-color: #2d6a4f !important;
         color: #ffffff !important;
         border-color: #74c69d !important;
@@ -569,7 +568,7 @@ else:
                 st.image(IMAGENS["guia05"], width=330)
 
     with col_acao:
-        # ALERTA DE SELEÇÃO DE PEDIDO AGORA POSICIONADO CORRETAMENTE NA COLUNA DA DIREITA
+        # ALERTA DE SELEÇÃO DE PEDIDO NA COLUNA DA DIREITA
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
             st.markdown("""<div style="background-color: #3a1515; border: 2px dashed #ff4b4b; padding: 14px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><span style="color: #ff4b4b; font-size: 15px; font-weight: bold;">⚠ POR FAVOR, SELECIONE UM PEDIDO PARA CONFIRMAR AS LPN</span></div>""", unsafe_allow_html=True)
@@ -579,7 +578,7 @@ else:
             linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
             st.markdown(f"""<div style="background-color: #152c1a; border: 2px solid #52b788; padding: 14px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><span style="color: #52b788; font-size: 14px; font-weight: bold;">🎯 Pedido Selecionado:</span><br><span style="color: #ffffff; font-size: 13px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span></div>""", unsafe_allow_html=True)
 
-        # BOTÃO VERDE EXCLUSIVO NA COLUNA DA DIREITA
+        # BOTÃO VERDE EXCLUSIVO COM ID ESPECÍFICO NA COLUNA DA DIREITA
         texto_botao_validar = "VALIDAR LPN"
         idx_sel_atual_btn = st.session_state.get("pedido_selecionado_idx")
         if idx_sel_atual_btn and idx_sel_atual_btn in mapa_pedidos:
@@ -588,7 +587,22 @@ else:
             if len(lidas_atualmente_btn) > 0:
                 texto_botao_validar = "VALIDAR\nPRÓXIMA LPN"
 
-        if st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", use_container_width=True):
+        # CRIANDO O BOTÃO COM O ELEMENTO HTML/ID PARA APLICAR O ESTILO VERDE APENAS NELE
+        btn_validar_clicado = st.button(texto_botao_validar, key="btn_validar_lpn_custom", help="Clique para validar a LPN informada", use_container_width=True)
+        
+        # Inserindo tag CSS via markdown para forçar o ID no botão gerado pelo Streamlit
+        st.markdown("""
+            <script>
+                var buttons = window.parent.document.querySelectorAll('button');
+                buttons.forEach(function(el) {
+                    if (el.innerText.includes("VALIDAR LPN") || el.innerText.includes("VALIDAR\nPRÓXIMA LPN")) {
+                        el.id = "b_validar_lpn_custom";
+                    }
+                });
+            </script>
+        """, unsafe_allow_html=True)
+
+        if btn_validar_clicado:
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
             bc3_val = st.session_state.get("val_bc3", "").strip()
