@@ -11,14 +11,8 @@ from streamlit_autorefresh import st_autorefresh
 # --- CONFIGURAÇÃO DOS NOMES DAS IMAGENS ---
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
-    "conf_desc": (
-        "POR FAVOR VERIFIQUE SE A DESCRIÇÃO DO MATERIAL ESTÁ DE ACORDO COM A"
-        " SU.png"
-    ),
-    "conf_ordem": (
-        "POR FAVOR VERIFIQUE SE A ORDEM DE PRODUÇÃO É DO MATERIAL E DA LINHA"
-        " CORRESPONDENTE AO PEDIDO.png"
-    ),
+    "conf_desc": "descricao do material.png",
+    "conf_ordem": "ordemdeprod.png",
     "material04": "ERRO NO MATERIAL - INCOMPATIVEL COM O SOLICITADO.png",
     "lote06": "LOTE IMCOMPATIVEL COM A DATA DE VENCIMENTO.png",
     "datav02": "DATA DE VENCIMENTO NAO ESTA COMPATIVEL.png",
@@ -370,7 +364,7 @@ with aba_painel:
       )
       img_desc = IMAGENS["conf_desc"]
       if os.path.exists(img_desc):
-        st.image(img_desc, width=420, caption="Ref. Descrição")
+        st.image(img_desc, width=420)
 
     with col_conf2:
       resp_ordem_str = st.radio(
@@ -381,7 +375,7 @@ with aba_painel:
       )
       img_ordem = IMAGENS["conf_ordem"]
       if os.path.exists(img_ordem):
-        st.image(img_ordem, width=420, caption="Ref. Ordem")
+        st.image(img_ordem, width=420)
 
     if st.button("Confirmar esta LPN", type="primary", use_container_width=True):
       if resp_ordem_str == "Sim" and resp_desc_str == "Sim":
@@ -500,11 +494,9 @@ with aba_painel:
       data_vencimento_planilha_raw = (
           r_escolhido[9] if len(r_escolhido) > 9 else ""
       )
-      # Se houver coluna específica para Data de Fabricação na planilha (ex: coluna 15, ajuste se necessário), adicione aqui.
       data_fabricacao_planilha_raw = (
           r_escolhido[14] if len(r_escolhido) > 14 else ""
       )
-
       dun_planilha = limpar_texto(
           r_escolhido[8] if len(r_escolhido) > 8 else ""
       )
@@ -536,7 +528,6 @@ with aba_painel:
         tocar_som_erro()
         return
 
-      # Validação separada da Data de Vencimento
       if data_vencimento_planilha_raw and venc_lido:
         data_obj_planilha = converter_para_data_obj(data_vencimento_planilha_raw)
         data_obj_lida = converter_para_data_obj(venc_lido)
@@ -551,7 +542,6 @@ with aba_painel:
             tocar_som_erro()
             return
 
-      # Validação separada da Data de Fabricação
       if data_fabricacao_planilha_raw and fab_lido:
         data_fab_obj_planilha = converter_para_data_obj(
             data_fabricacao_planilha_raw
