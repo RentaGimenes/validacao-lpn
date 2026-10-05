@@ -12,11 +12,11 @@ import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# Configura a página do Streamlit para usar layout largo
+# Configura a página do Streamlit
 st.set_page_config(page_title="Validação de Lpn", page_icon="📦", layout="wide")
 
 # ==========================================
-# MAPEAMENTO DE IMAGENS E ARQUIVOS (EXATO DO REPOSITÓRIO)
+# MAPEAMENTO DE IMAGENS E ARQUIVOS
 # ==========================================
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
@@ -38,7 +38,7 @@ IMAGENS = {
 count = st_autorefresh(interval=180000, key="datarefresh")
 
 # ==========================================
-# ESTILOS VISUAIS (CSS CUSTOMIZADO)
+# ESTILOS VISUAIS (CSS)
 # ==========================================
 st.markdown("""
     <style>
@@ -191,7 +191,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Som de erro rápido
+# Som de erro
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -200,7 +200,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# Conexão com a planilha
+# Conecta na planilha do google
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_dict = dict(st.secrets["gcp_service_account"])
@@ -230,7 +230,7 @@ except Exception as e:
     st.stop()
 
 # ==========================================
-# FUNÇÕES DE APOIO E TRATAMENTO
+# FUNÇÕES AUXILIARES
 # ==========================================
 def limpar_texto(texto):
     if not texto: return ""
@@ -239,27 +239,22 @@ def limpar_texto(texto):
 def extrair_hora_da_string(texto_coluna):
     if not texto_coluna: return ""
     texto_str = str(texto_coluna).strip()
-    # Tenta encontrar padrão de hora (HH:MM:SS ou HH:MM)
     match_hora = re.search(r'(\d{2}:\d{2}(?::\d{2})?)', texto_str)
     if match_hora:
-        hora_encontrada = match_hora.group(1)
-        # Se veio com segundos (HH:MM:SS), corta para HH:MM se preferir, ou mantém. Vamos manter limpo.
-        return hora_encontrada
+        return match_hora.group(1)
     return texto_str
 
 def formatar_lote_rigoroso(lote_str):
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
-    if not digitos:
-        return ""
+    if not digitos: return ""
     miolo = digitos[-7:] if len(digitos) >= 7 else digitos.zfill(7)
     return "0000000" + miolo
 
 def formatar_lote_lido_rigoroso(lote_str):
     if not lote_str: return ""
     digitos = re.sub(r'\D', '', str(lote_str))
-    if not digitos:
-        return ""
+    if not digitos: return ""
     miolo_lote = digitos[-7:] if len(digitos) >= 7 else digitos.zfill(7)
     return "0000000" + miolo_lote
 
@@ -288,8 +283,7 @@ def converter_para_data_obj(data_str):
     return None
 
 def formatar_para_aammdd(data_str):
-    if not data_str:
-        return ""
+    if not data_str: return ""
     data_obj = converter_para_data_obj(str(data_str))
     if data_obj:
         return data_obj.strftime("%y%m%d")
@@ -354,11 +348,11 @@ def obter_quantidade_total_lpns(r):
     return total if total > 0 else 1
 
 # ==========================================
-# CABEÇALHO DO APLICATIVO
+# INÍCIO DA INTERFACE DO APP
 # ==========================================
 st.markdown("<h2 style='margin-top: 0px; padding-top: 0px;'>📦 Validação das informações das Lpn</h2>", unsafe_allow_html=True)
 
-# Estados da sessão
+# Controla os estados da sessão
 if "etapa_validacao" not in st.session_state:
     st.session_state.etapa_validacao = False
     st.session_state.dados_conferencia = {}
@@ -527,10 +521,14 @@ else:
 
     mapa_pedidos = {}
     if dados_validos:
+        # Separa os pedidos pendentes
         pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and str(r[13]).strip())]
         
+        # Filtra os concluídos apenas para o dia de hoje (limpa automático à meia-noite)
         fuso_horario_BR = pytz.timezone("America/Sao_Paulo")
         agora_br = datetime.now(fuso_horario_BR)
+        hoje_data = agora_br.date()
+        
         pedidos_concluidos_24h = []
         for r in dados_validos:
             if len(r) > 13 and str(r[13]).strip():
@@ -545,10 +543,10 @@ else:
                 if data_conc_obj:
                     if data_conc_obj.tzinfo is None:
                         data_conc_obj = fuso_horario_BR.localize(data_conc_obj)
-                    if (agora_br - data_conc_obj) <= timedelta(hours=24):
+                    
+                    # Mostra apenas se foi concluído hoje (zera à meia-noite)
+                    if data_conc_obj.date() == hoje_data:
                         pedidos_concluidos_24h.append(r)
-                else:
-                    pedidos_concluidos_24h.append(r)
 
         aba_pendentes, aba_concluidos = st.tabs(["⏳ Pedidos Pendentes", "✅ Pedidos Concluídos"])
 
@@ -581,7 +579,6 @@ else:
                             qtd_lidas = len(lpns_ja_lidas)
                             porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
                             
-                            # Extração da hora da solicitação da primeira coluna (índice 0)
                             hora_solicitacao_bruta = r[0] if len(r) > 0 else ""
                             hora_solicitacao = extrair_hora_da_string(hora_solicitacao_bruta)
                             
@@ -631,14 +628,9 @@ else:
                             desc_completa_c = rc[2] if len(rc) > 2 else ""
                             desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
                             
-                            # Quantidade de LPNs Inteiras
                             lpn_inteira_c = rc[4] if len(rc) > 4 else "0"
-                            
-                            # Lista de quebras e contagem da quantidade de LPNs de quebra
                             lista_quebras_c = obter_lista_quebras(rc)
                             qtd_lpns_quebra_c = len(lista_quebras_c)
-                            
-                            # Valores das quebras formatados separados por vírgula (ex: 36, 18)
                             valores_quebras_str_c = ", ".join(map(str, lista_quebras_c)) if lista_quebras_c else "0"
                             
                             responsavel_c = rc[11] if len(rc) > 11 else ""
@@ -659,14 +651,14 @@ else:
                         except Exception:
                             continue
             else:
-                st.info("Nenhum pedido concluído nas últimas 24 horas.")
+                st.info("Nenhum pedido concluído hoje.")
     else:
         st.info("Nenhuma solicitação encontrada na planilha.")
 
     st.markdown("---")
 
     # ==========================================
-    # FORMULÁRIO DE LEITURA E VALIDAÇÃO RIGOROSA
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
@@ -733,150 +725,91 @@ else:
                     st.rerun()
         else:
             btn_validar_clicado = st.button("INICIAR VALIDAÇÃO", key="btn_executar_validacao_nativo")
-            
+
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_dir:
-        st.markdown('<div id="ancora-validacao"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
-        
         erro = st.session_state.get("erro_ativo")
-        det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
-        
-        if erro == "lote06":
-            st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">Lote lido não confere com o padrão exigido.</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO (Planilha):</b> {det['solicitado']}<br><b>LIDO (Código):</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["lote06"]): st.image(IMAGENS["lote06"], width=310)
-        elif erro == "lpn_duplicada":
-            st.markdown('<div class="alerta-piscar">🚫 LPN Duplicada</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">Esta LPN já foi validada neste pedido.</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao">{det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["lpn_duplicada"]): st.image(IMAGENS["lpn_duplicada"], width=310)
-        elif erro == "material04":
-            st.markdown('<div class="alerta-piscar">🚫 Erro no Material</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">Código do material incompatível com o solicitado.</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["material04"]): st.image(IMAGENS["material04"], width=310)
-        elif erro == "dun03":
-            st.markdown('<div class="alerta-piscar">🚫 Erro no DUN</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">DUN não corresponde ao material solicitado.</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["dun03"]): st.image(IMAGENS["dun03"], width=310)
-        elif erro == "datav02":
-            st.markdown('<div class="alerta-piscar">🚫 Erro de Vencimento</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">Data de vencimento não está compatível.</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["datav02"]): st.image(IMAGENS["datav02"], width=310)
-        elif erro == "datafab03":
-            st.markdown('<div class="alerta-piscar">🚫 Erro de Fabricação</div>', unsafe_allow_html=True)
-            st.markdown('<div class="alerta-sub">Data de fabricação não está de acordo com o solicitado.</div>', unsafe_allow_html=True)
-            st.markdown(f"""<div class="alerta-comparacao"><b>ESPERADO:</b> {det['solicitado']}<br><b>LIDO:</b> {det['lido']}</div>""", unsafe_allow_html=True)
-            if os.path.exists(IMAGENS["datafab03"]): st.image(IMAGENS["datafab03"], width=310)
+        if erro is not None:
+            tocar_som_erro()
+            st.markdown(f'<div class="alerta-piscar">⚠ ERRO: {erro}</div>', unsafe_allow_html=True)
+            det = st.session_state.get("detalhes_erro", {})
+            sol = det.get("solicitado", "")
+            lid = det.get("lido", "")
+            
+            if erro in ["ERRO NO MATERIAL", "DATA DE VENCIMENTO", "DATA DE FABRICAÇÃO", "DUN NÃO CORRESPONDE", "LOTE INCOMPATÍVEL"]:
+                st.markdown(f'<div class="alerta-sub">DIVERGÊNCIA ENCONTRADA</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="alerta-comparacao"><b>Solicitado:</b> {sol}<br><b>Lido:</b> {lid}</div>', unsafe_allow_html=True)
+            
+            img_chave = None
+            if erro == "ERRO NO MATERIAL": img_chave = "material04"
+            elif erro == "DUN NÃO CORRESPONDE": img_chave = "dun03"
+            elif erro == "DATA DE VENCIMENTO": img_chave = "datav02"
+            elif erro == "DATA DE FABRICAÇÃO": img_chave = "datafab03"
+            elif erro == "LOTE INCOMPATÍVEL": img_chave = "lote06"
+            elif erro == "LPN DUPLICADA": img_chave = "lpn_duplicada"
+            elif erro == "QUANTIDADE": img_chave = "validacao_qtd"
+            
+            if img_chave and img_chave in IMAGENS and os.path.exists(IMAGENS[img_chave]):
+                st.image(IMAGENS[img_chave], width=350)
         else:
-            if os.path.exists(IMAGENS["guia05"]):
-                st.image(IMAGENS["guia05"], width=450)
+            st.info("Preencha os campos e clique em 'Iniciar Validação' para conferir as LPNs.")
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        def executar_validacao_logica():
-            bc1_val = st.session_state.get("val_bc1", "").strip()
-            bc2_val = st.session_state.get("val_bc2", "").strip()
-            bc3_val = st.session_state.get("val_bc3", "").strip()
+    # Ação de validação ao clicar no botão central
+    if 'btn_validar_clicado' in locals() and btn_validar_clicado:
+        if not nome_responsavel.strip():
+            st.error("Por favor, preencha o campo 'Nome' antes de validar.")
+        elif not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
+            st.error("Por favor, selecione um pedido no painel acima antes de validar.")
+        elif not bc1.strip() and not bc2.strip() and not bc3.strip():
+            st.error("Preencha ao menos o primeiro código de barras (LPN).")
+        else:
+            p_dados = mapa_pedidos[idx_sel_atual]
+            reg = p_dados["registro"]
             
-            if not nome_responsavel.strip():
-                st.warning("⚠ Digite o seu nome.")
-                st.stop()
-            idx_sel = st.session_state.get("pedido_selecionado_idx")
-            if not idx_sel or idx_sel not in mapa_pedidos:
-                st.warning("⚠ Para iniciar, por favor selecione um pedido.")
-                st.stop()
-            if not bc1_val or not bc2_val or not bc3_val:
-                st.warning("⚠ Preencha os 3 códigos de barras.")
-                st.stop()
-                
-            lpn_lida = processar_codigo_1(bc1_val)
-            mat_lido, _, lote_lido_bruto = processar_codigo_2(bc2_val)
-            dun_lido, venc_lido, fab_lido = processar_codigo_3(bc3_val)
+            # Executa a verificação dos códigos lidos
+            lpn_lida = processar_codigo_1(bc1)
+            mat_lido, qtd_lida, lote_lido = processar_codigo_2(bc2) if bc2 else ("", 0, "")
+            dun_lido, venc_lido, fab_lido = processar_codigo_3(bc3) if bc3 else ("", "", "")
             
-            info_pedido = mapa_pedidos[idx_sel]
-            linha_encontrada = info_pedido["linha"]
-            num_pedido_escolhido = info_pedido["num_pedido"]
-            r_escolhido = info_pedido["registro"]
-            total_necessario = info_pedido["total_esperado"]
-            lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(num_pedido_escolhido, [])
-
-            if lpn_lida in lpns_ja_lidas:
-                st.session_state.erro_ativo = "lpn_duplicada"
-                st.session_state.detalhes_erro = {"solicitado": "", "lido": f"LPN já validada anteriormente: {lpn_lida}"}
-                tocar_som_erro()
-                st.rerun()
-
-            mat_esperado = limpar_texto(r_escolhido[7]) if len(r_escolhido) > 7 else ""
-            if mat_esperado and mat_lido != mat_esperado:
-                st.session_state.erro_ativo = "material04"
-                st.session_state.detalhes_erro = {"solicitado": mat_esperado, "lido": mat_lido}
-                tocar_som_erro()
-                st.rerun()
-
-            dun_esperado = limpar_texto(r_escolhido[8]) if len(r_escolhido) > 8 else ""
-            if dun_esperado and dun_lido != dun_esperado:
-                st.session_state.erro_ativo = "dun03"
-                st.session_state.detalhes_erro = {"solicitado": dun_esperado, "lido": dun_lido}
-                tocar_som_erro()
-                st.rerun()
-
-            venc_esperado = formatar_para_aammdd(r_escolhido[9] if len(r_escolhido) > 9 else "")
-            venc_lido_fmt = formatar_para_aammdd(venc_lido)
-            if venc_esperado and venc_lido_fmt != venc_esperado:
-                st.session_state.erro_ativo = "datav02"
-                st.session_state.detalhes_erro = {"solicitado": venc_esperado, "lido": venc_lido_fmt}
-                tocar_som_erro()
-                st.rerun()
-
-            fab_esperado = formatar_para_aammdd(r_escolhido[3] if len(r_escolhido) > 3 else "")
-            fab_lido_fmt = formatar_para_aammdd(fab_lido)
-            if fab_esperado and fab_lido_fmt != fab_esperado:
-                st.session_state.erro_ativo = "datafab03"
-                st.session_state.detalhes_erro = {"solicitado": fab_esperado, "lido": fab_lido_fmt}
-                tocar_som_erro()
-                st.rerun()
-
-            lote_esperado_bruto = r_escolhido[10] if len(r_escolhido) > 10 else ""
-            lote_esperado_formatado = formatar_lote_rigoroso(lote_esperado_bruto)
-            lote_lido_formatado = formatar_lote_lido_rigoroso(lote_lido_bruto)
+            mat_solicitado = limpar_texto(reg[7] if len(reg) > 7 else "")
+            dun_solicitado = limpar_texto(reg[8] if len(reg) > 8 else "")
+            venc_solicitado = formatar_para_aammdd(reg[9] if len(reg) > 9 else "")
+            lote_solicitado = formatar_lote_rigoroso(reg[10] if len(reg) > 10 else "")
+            lote_lido_formatado = formatar_lote_lido_rigoroso(lote_lido)
             
-            if lote_esperado_formatado:
-                if not lote_lido_formatado or lote_lido_formatado != lote_esperado_formatado:
-                    st.session_state.erro_ativo = "lote06"
-                    st.session_state.detalhes_erro = {
-                        "solicitado": lote_esperado_formatado, 
-                        "lido": lote_lido_formatado if lote_lido_formatado else "N/A (Não lido)"
-                    }
-                    tocar_som_erro()
-                    st.rerun()
-
-            st.session_state.erro_ativo = None
-            st.session_state.etapa_validacao = True
-            st.session_state.dados_conferencia = {
-                "num_pedido": num_pedido_escolhido,
-                "linha": linha_encontrada,
-                "lpn": lpn_lida,
-                "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "N/D",
-                "responsavel": nome_responsavel.strip(),
-                "total_esperado": total_necessario
-            }
-            st.rerun()
-
-        if btn_validar_clicado:
-            executar_validacao_logica()
-
-    st.markdown("""
-        <script>
-            const element = document.getElementById('ancora-validacao');
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        </script>
-    """, unsafe_allow_html=True)
+            # Validações lógicas
+            erro_encontrado = None
+            detalhes = {"solicitado": "", "lido": ""}
+            
+            if bc2 and mat_lido != mat_solicitado:
+                erro_encontrado = "ERRO NO MATERIAL"
+                detalhes = {"solicitado": mat_solicitado, "lido": mat_lido}
+            elif bc3 and dun_lido and dun_solicitado and dun_lido != dun_solicitado:
+                erro_encontrado = "DUN NÃO CORRESPONDE"
+                detalhes = {"solicitado": dun_solicitado, "lido": dun_lido}
+            elif bc3 and venc_lido and venc_solicitado and venc_lido != venc_solicitado:
+                erro_encontrado = "DATA DE VENCIMENTO"
+                detalhes = {"solicitado": venc_solicitado, "lido": venc_lido}
+            elif bc2 and lote_lido_formatado and lote_solicitado and lote_lido_formatado != lote_solicitado:
+                erro_encontrado = "LOTE INCOMPATÍVEL"
+                detalhes = {"solicitado": lote_solicitado, "lido": lote_lido_formatado}
+            
+            if erro_encontrado:
+                st.session_state.erro_ativo = erro_encontrado
+                st.session_state.detalhes_erro = detalhes
+                st.rerun()
+            else:
+                # Se passou nas validações, vai para a tela de confirmação visual
+                st.session_state.erro_ativo = None
+                st.session_state.etapa_validacao = True
+                st.session_state.dados_conferencia = {
+                    "linha": p_dados["linha"],
+                    "num_pedido": p_dados["num_pedido"],
+                    "lpn": lpn_lida,
+                    "descricao": reg[2] if len(reg) > 2 else "",
+                    "responsavel": nome_responsavel,
+                    "total_esperado": p_dados["total_esperado"]
+                }
+                st.rerun()
