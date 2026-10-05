@@ -141,10 +141,10 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: flex-start;
+        justify-content: center;
         width: 100%;
         text-align: center;
-        margin-top: -10px;
+        margin-top: 0px;
     }
     .container-coluna-meio img {
         display: block;
@@ -651,7 +651,7 @@ else:
                         except Exception:
                             continue
             else:
-                st.info("Nenhum pedido concluído hoje.")
+                st.info("Nenhum pedido concluído nas últimas 24 horas.")
     else:
         st.info("Nenhuma solicitação encontrada na planilha.")
 
@@ -674,6 +674,10 @@ else:
         st.session_state.val_bc2 = bc2
         bc3 = st.text_input("3º Código de Barras", value=st.session_state.val_bc3, key="input_bc3_field")
         st.session_state.val_bc3 = bc3
+
+        # Exibe a imagem de guia da LPN abaixo dos inputs
+        if os.path.exists(IMAGENS["guia05"]):
+            st.image(IMAGENS["guia05"], width=320)
 
         idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
         if idx_sel_atual and idx_sel_atual in mapa_pedidos:
