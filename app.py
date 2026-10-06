@@ -138,7 +138,7 @@ st.markdown(
         color: #f1c40f;
     }
 
-    /* Alinhamento estrito e centralização das colunas */
+    /* Alinhamento e centralização perfeita da coluna do meio puxada para cima */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -895,4 +895,64 @@ else:
     idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
     if idx_sel_atual and idx_sel_atual in mapa_pedidos:
       p_info = mapa_pedidos[idx_sel_atual]
-      l
+      lidas_atualmente = st.session_state.lpns_validadas_por_pedido.get(
+          p_info["num_pedido"], []
+      )
+      tot_esperado_pedido = p_info["total_esperado"]
+      qtd_lidas = len(lidas_atualmente)
+      porcentagem_calc = min(int((qtd_lidas / tot_esperado_pedido) * 100), 100)
+      st.markdown(
+          f"**Progresso:** {qtd_lidas} de {tot_esperado_pedido} LPNs"
+          f" ({porcentagem_calc}%)"
+      )
+      st.progress(porcentagem_calc / 100.0)
+
+  with col_meio:
+    st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
+
+    idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
+    if not idx_sel_atual or idx_sel_atual not in mapa_pedidos:
+      st.markdown(
+          """
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="background-color: rgba(60, 20, 20, 0.6); border: 2px dashed #ff4b4b; padding: 16px 20px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
+                    <span style="color: #ff4b4b; font-size: 18px; font-weight: bold;">⚠ Para iniciar, por favor selecione um pedido.</span>
+                </div>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+    else:
+      p_sel = mapa_pedidos[idx_sel_atual]
+      mat_s = limpar_texto(
+          p_sel["registro"][7] if len(p_sel["registro"]) > 7 else "N/D"
+      )
+      linha_s = p_sel["registro"][1] if len(p_sel["registro"]) > 1 else "N/D"
+      st.markdown(
+          f"""
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <div style="background-color: #152c1a; border: 1px solid #52b788; padding: 12px 16px; border-radius: 8px; margin-bottom: 15px; text-align: center; width: 100%; box-sizing: border-box;">
+                    <span style="color: #52b788; font-size: 14px; font-weight: bold;">🎯 Pedido Selecionado:</span><br>
+                    <span style="color: #ffffff; font-size: 13px;">Pedido {idx_sel_atual} (Linha: {linha_s} - Mat: {mat_s})</span>
+                </div>
+            </div>
+            """,
+          unsafe_allow_html=True,
+      )
+
+    st.markdown(
+        '<div class="container-botao-centralizado">', unsafe_allow_html=True
+    )
+
+    def executar_validacao():
+      bc1_val = st.session_state.get("val_bc1", "").strip()
+      bc2_val = st.session_state.get("val_bc2", "").strip()
+      bc3_val = st.session_state.get("val_bc3", "").strip()
+
+      if not nome_responsavel.strip():
+        st.warning("⚠ Digite o seu nome.")
+        return
+
+      idx_sel = st.session_state.get("pedido_selecionado_idx")
+      if not idx_sel or idx_sel not in mapa_pedidos:
