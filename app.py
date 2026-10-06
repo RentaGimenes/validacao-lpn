@@ -16,7 +16,7 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Validação de Lpn", page_icon="📦", layout="wide")
 
 # ==========================================
-# MAPEAMENTO DE IMAGENS E ARQUIVOS (EXATO DO REPOSITÓRIO)
+# MAPEAMENTO DE IMAGENS E ARQUIVOS
 # ==========================================
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
@@ -147,24 +147,22 @@ st.markdown(
         text-align: center;
         margin-top: -10px;
     }
-    .container-coluna-meio img {
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-    }
     
+    /* Centraliza perfeitamente o botão na coluna do meio */
     .container-botao-centralizado {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         width: 100%;
-        margin: 0 auto;
+        margin: 20px auto 0 auto;
     }
     .container-botao-centralizado div.stButton {
         width: 100% !important;
+        max-width: 320px !important;
         display: flex !important;
         justify-content: center !important;
+        margin: 0 auto !important;
     }
     
     div.stButton > button {
@@ -182,6 +180,7 @@ st.markdown(
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        margin: 0 auto !important;
     }
     div.stButton > button:hover {
         box-shadow: 0 0 20px rgba(0, 255, 100, 0.9), inset 0 0 12px rgba(0, 255, 100, 0.6) !important;
@@ -195,7 +194,7 @@ st.markdown(
 )
 
 
-# Som de erro rápido
+# Função para tocar som de erro
 def tocar_som_erro():
   sound_html = """
         <audio autoplay>
@@ -205,7 +204,7 @@ def tocar_som_erro():
   st.markdown(sound_html, unsafe_allow_html=True)
 
 
-# Conexão com a planilha
+# Conexão com a planilha do Google Sheets
 def init_connection():
   scope = [
       "https://www.googleapis.com/auth/spreadsheets",
@@ -228,6 +227,7 @@ def carregar_dados_planilha():
   return sheet, registos
 
 
+# Carrega os dados com tratamento de erro
 try:
   with st.spinner("Conectando ao Google Sheets e carregando dados..."):
     sheet, registos = carregar_dados_planilha()
@@ -242,7 +242,7 @@ except Exception as e:
 
 
 # ==========================================
-# FUNÇÕES DE APOIO E TRATAMENTO
+# FUNÇÕES DE APOIO E TRATAMENTO DE TEXTO
 # ==========================================
 def limpar_texto(texto):
   if not texto:
@@ -435,7 +435,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Estados da sessão
+# Inicialização dos estados da sessão
 if "etapa_validacao" not in st.session_state:
   st.session_state.etapa_validacao = False
   st.session_state.dados_conferencia = {}
@@ -716,7 +716,7 @@ else:
               lote = r[10] if len(r) > 10 else ""
               lpn_inteira = r[4] if len(r) > 4 else "0"
 
-              # Tratamento e verificação de quebra condicional
+              # Exibição condicional da quantidade de quebra
               lista_quebras_card = obter_lista_quebras(r)
               qtd_quebra_html = ""
               if lista_quebras_card:
