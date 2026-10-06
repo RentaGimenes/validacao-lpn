@@ -138,7 +138,7 @@ st.markdown(
         color: #f1c40f;
     }
 
-    /* Alinhamento e centralização perfeita da coluna do meio puxada para cima */
+    /* Alinhamento estrito e centralização das colunas */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -189,7 +189,7 @@ st.markdown(
         color: #ffffff !important;
     }
 
-    /* Centralização da imagem de exemplo na coluna da direita */
+    /* Centralização estrita da coluna da direita (Imagem de LPN e subtítulos) */
     .container-coluna-direita {
         display: flex;
         flex-direction: column;
@@ -708,4 +708,191 @@ else:
           cols = st.columns(num_colunas)
           for i, r in enumerate(bloco):
             idx_p = dados_validos.index(r) + 1
-            linha_real = registos.index
+            linha_real = registos.index(r) + 1
+            try:
+              linha_pedido = r[1] if len(r) > 1 else ""
+              cod_material = limpar_texto(r[7] if len(r) > 7 else "")
+              dun_material = r[8] if len(r) > 8 else ""
+
+              desc_completa = r[2] if len(r) > 2 else ""
+              tres_primeiras = obter_tres_primeiras_palavras(desc_completa)
+
+              data_palete = r[3] if len(r) > 3 else ""
+
+              vencimento_bruto = r[9] if len(r) > 9 else ""
+              data_vencimento = formatar_para_aammdd(vencimento_bruto)
+
+              lote = r[10] if len(r) > 10 else ""
+              lpn_inteira = r[4] if len(r) > 4 else "0"
+
+              # Exibição condicional da quantidade de quebra
+              lista_quebras_card = obter_lista_quebras(r)
+              qtd_quebra_html = ""
+              if lista_quebras_card:
+                valores_quebras_str = ", ".join(map(str, lista_quebras_card))
+                qtd_quebra_html = f"<b>QTD QUEBRA:</b> {valores_quebras_str}<br>"
+
+              total_esperado = obter_quantidade_total_lpns(r)
+              e_prioridade = len(pedidos_pendentes) > 5
+              lpns_ja_lidas = st.session_state.lpns_validadas_por_pedido.get(
+                  idx_p, []
+              )
+              qtd_lidas = len(lpns_ja_lidas)
+              porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
+
+              hora_solicitacao_bruta = r[0] if len(r) > 0 else ""
+              hora_solicitacao = extrair_hora_da_string(hora_solicitacao_bruta)
+
+              mapa_pedidos[idx_p] = {
+                  "num_pedido": idx_p,
+                  "linha": linha_real,
+                  "registro": r,
+                  "total_esperado": total_esperado,
+              }
+
+              with cols[i]:
+                is_selecionado = (
+                    st.session_state.pedido_selecionado_idx == idx_p
+                )
+                classe_card = (
+                    "card-pedido"
+                    if (is_selecionado or not e_prioridade)
+                    else "card-pedido-prioridade"
+                )
+                destaque_sel = (
+                    "border: 2px solid #00bfff; background-color: #16222b;"
+                    if is_selecionado
+                    else ""
+                )
+                tag_prioridade_html = (
+                    '<span style="color: #ff4b4b; font-weight: bold;">🔴'
+                    " URGENTE / PRIORIDADE</span><br>"
+                    if e_prioridade
+                    else ""
+                )
+
+                st.markdown(
+                    f"""<div class="{classe_card}" style="{destaque_sel}">
+{tag_prioridade_html}
+<b>LINHA:</b> {linha_pedido}<br>
+<b>MATERIAL:</b> {cod_material}<br>
+<b>DESC:</b> {tres_primeiras}<br>
+<b>DUN:</b> {dun_material}<br>
+<b>DATA:</b> {data_palete}<br>
+<b>VENC:</b> {data_vencimento}<br>
+<b>LOTE:</b> {lote}<br>
+<b>LPN INTEIRA:</b> {lpn_inteira}<br>
+{qtd_quebra_html}
+<b>Solicitado as:</b> {hora_solicitacao}<br>
+<hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
+<span style="color: #00bfff;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
+</div>""",
+                    unsafe_allow_html=True,
+                )
+
+                label_botao_card = (
+                    "✔ Selecionado"
+                    if is_selecionado
+                    else f"Selecionar Pedido {idx_p}"
+                )
+                if st.button(
+                    label_botao_card,
+                    key=f"btn_sel_{idx_p}",
+                    use_container_width=True,
+                ):
+                  st.session_state.pedido_selecionado_idx = idx_p
+                  st.rerun()
+            except Exception:
+              continue
+      else:
+        st.success("Todas os LPNs pendentes já foram validadas e concluídas")
+
+    with aba_concluidos:
+      if pedidos_concluidos_24h:
+        num_colunas_conc = 6
+        linhas_cards_conc = [
+            pedidos_concluidos_24h[i : i + num_colunas_conc]
+            for i in range(0, len(pedidos_concluidos_24h), num_colunas_conc)
+        ]
+        for bloco_conc in linhas_cards_conc:
+          cols_conc = st.columns(num_colunas_conc)
+          for j, rc in enumerate(bloco_conc):
+            try:
+              linha_pedido_c = rc[1] if len(rc) > 1 else ""
+              cod_material_c = limpar_texto(rc[7] if len(rc) > 7 else "")
+              desc_completa_c = rc[2] if len(rc) > 2 else ""
+              tres_primeiras_c = obter_tres_primeiras_palavras(desc_completa_c)
+
+              lpn_inteira_c = rc[4] if len(rc) > 4 else "0"
+              lista_quebras_c = obter_lista_quebras(rc)
+              qtd_quebra_conc_html = ""
+              if lista_quebras_c:
+                valores_quebras_str_c = ", ".join(map(str, lista_quebras_c))
+                qtd_quebra_conc_html = (
+                    f"<b>QTD QUEBRA:</b> {valores_quebras_str_c}<br>"
+                )
+
+              responsavel_c = rc[11] if len(rc) > 11 else ""
+              data_conclusao_c = rc[13] if len(rc) > 13 else ""
+
+              with cols_conc[j]:
+                st.markdown(
+                    f"""<div class="card-pedido-concluido">
+<span style="color: #2ecc71; font-weight: bold;">✔ CONCLUÍDO</span><br>
+<b>LINHA:</b> {linha_pedido_c}<br>
+<b>MATERIAL:</b> {cod_material_c}<br>
+<b>DESC:</b> {tres_primeiras_c}<br>
+<b>LPN INTEIRA:</b> {lpn_inteira_c}<br>
+{qtd_quebra_conc_html}
+<b>Responsável:</b> {responsavel_c}<br>
+<b>Data:</b> {data_conclusao_c}
+</div>""",
+                    unsafe_allow_html=True,
+                )
+            except Exception:
+              continue
+      else:
+        st.info("Nenhum pedido concluído nas últimas 24 horas.")
+  else:
+    st.info("Nenhuma solicitação encontrada na planilha.")
+
+  st.markdown("---")
+
+  # ==========================================
+  # FORMULÁRIO DE LEITURA E VALIDAÇÃO RIGOROSA
+  # ==========================================
+  col_esq, col_meio, col_dir = st.columns([1.2, 1.2, 1.4], gap="large")
+
+  with col_esq:
+    st.subheader("📝 Validar e Dar Baixa na LPN")
+    nome_responsavel = st.text_input(
+        "Nome",
+        value=st.session_state.val_nome,
+        placeholder="Digite seu nome...",
+        key="input_nome_field",
+    )
+    st.session_state.val_nome = nome_responsavel
+
+    bc1 = st.text_input(
+        "1º Código de Barras (LPN)",
+        value=st.session_state.val_bc1,
+        key="input_bc1_field",
+    )
+    st.session_state.val_bc1 = bc1
+    bc2 = st.text_input(
+        "2º Código de Barras",
+        value=st.session_state.val_bc2,
+        key="input_bc2_field",
+    )
+    st.session_state.val_bc2 = bc2
+    bc3 = st.text_input(
+        "3º Código de Barras",
+        value=st.session_state.val_bc3,
+        key="input_bc3_field",
+    )
+    st.session_state.val_bc3 = bc3
+
+    idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
+    if idx_sel_atual and idx_sel_atual in mapa_pedidos:
+      p_info = mapa_pedidos[idx_sel_atual]
+      l
