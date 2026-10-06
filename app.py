@@ -408,4 +408,23 @@ if st.session_state.etapa_validacao:
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown(f'📦 **LPN Atual:** <
+    # Linha corrigida sem erro de f-string
+    st.markdown(f'📦 **LPN Atual:** <span class="texto-destaque-lpn">{d["lpn"]}</span>', unsafe_allow_html=True)
+    st.markdown(f'🏷 **Material:** <span class="texto-destaque-mat">{d["descricao"]}</span>', unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col_conf1, col_centro, col_conf2 = st.columns([2, 1.5, 2], gap="medium")
+    
+    with col_conf1:
+        st.markdown("📌 **A descrição está correta?**")
+        resp_desc = st.radio("A descrição está correta?", ["Sim", "Não"], key="resp_desc_val", horizontal=True, label_visibility="collapsed", index=None)
+        st.markdown("<br>", unsafe_allow_html=True)
+        if os.path.exists(IMAGENS["conf_desc"]): 
+            st.image(IMAGENS["conf_desc"], width=420)
+        
+    with col_conf2:
+        st.markdown("📌 **Você verificou a ordem?**")
+        resp_ordem = st.radio("Você verificou a ordem?", ["Sim", "Não"], key="resp_ordem_val", horizontal=True, label_visibility="collapsed", index=None)
+        st.markdown("<br>", unsafe_allow_html=True)
+        if os.path.exists(IMAGENS["conf_ordem"]): 
+            st.image(IMAGENS["conf_ordem"], width=420)
