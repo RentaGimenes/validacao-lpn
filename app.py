@@ -98,6 +98,7 @@ st.markdown("""
         line-height: 1.25;
         cursor: pointer;
         transition: 0.2s;
+        max-width: 220px;
     }
     .card-pedido:hover {
         border-color: #00bfff;
@@ -112,6 +113,7 @@ st.markdown("""
         margin-bottom: 6px;
         text-align: left;
         line-height: 1.25;
+        max-width: 220px;
     }
     
     .card-pedido-concluido {
@@ -124,6 +126,7 @@ st.markdown("""
         margin-bottom: 6px;
         text-align: left;
         line-height: 1.25;
+        max-width: 220px;
     }
     
     .texto-destaque-lpn {
@@ -447,4 +450,120 @@ if st.session_state.etapa_validacao:
                         sheet.update_cell(linha, 14, hora_atual)
                         
                         if num_ped in st.session_state.lpns_validadas_por_pedido: del st.session_state.lpns_validadas_por_pedido[num_ped]
-                        if st.session_state.pedido_selecionado_idx == num_ped: st
+                        if st.session_state.pedido_selecionado_idx == num_ped: st.session_state.pedido_selecionado_idx = None
+                        
+                        st.session_state.val_bc1 = ""
+                        st.session_state.val_bc2 = ""
+                        st.session_state.val_bc3 = ""
+                        
+                        st.session_state.etapa_validacao = False
+                        st.session_state.erro_ativo = None
+                        st.session_state.dados_conferencia = {}
+                        st.cache_data.clear()
+                        st.balloons()
+                        st.success("🎉 Última LPN confirmada! Pedido concluído com sucesso!")
+                        st.rerun()
+                    else:
+                        st.session_state.val_bc1 = ""
+                        st.session_state.val_bc2 = ""
+                        st.session_state.val_bc3 = ""
+                        
+                        st.success(f"✅ LPN `{lpn_atual}` aceita! Restam {total_necessario - len(lpns_lidas_pedido)} LPN(s).")
+                        st.session_state.etapa_validacao = False
+                        st.session_state.erro_ativo = None
+                        st.session_state.dados_conferencia = {}
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"Erro: {e}")
+            else:
+                st.error("⚠ Você precisa selecionar 'Sim' em ambas as confirmações para prosseguir!")
+
+    st.markdown("---")
+
+else:
+    # ==========================================
+    # TELA 2: PAINEL DE PEDIDOS E VALIDAÇÃO
+    # ==========================================
+    st.subheader("📋 PAINEL DE PEDIDOS")
+
+    col_tit_painel, col_btn_att = st.columns([5, 1.5])
+    with col_tit_painel:
+        st.markdown("### Selecione o pedido nas abas abaixo:")
+    
+    with col_btn_att:
+        gif_base64 = ""
+        if os.path.exists(IMAGENS["att_gif"]):
+            with open(IMAGENS["att_gif"], "rb") as f:
+                gif_base64 = base64.b64encode(f.read()).decode()
+
+        st.markdown(f"""
+        <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 5px;">
+            <form action="" method="get">
+                <button type="submit" name="atualizar_pedidos" value="true" style="
+                    background-color: #000000;
+                    border: 1.5px solid #00bfff;
+                    border-radius: 8px;
+                    color: #00bfff;
+                    font-size: 11px;
+                    font-weight: bold;
+                    padding: 6px 12px;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <img src="data:image/gif;base64,{gif_base64}" width="14px" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                    ATUALIZAR PEDIDOS
+                </button>
+            </form>
+        </div>
+        """, unsafe_allow_html=True)
+
+        query_params = st.query_params
+        if "atualizar_pedidos" in query_params:
+            st.query_params.clear()
+            st.cache_data.clear()
+            st.rerun()
+
+    mapa_pedidos = {}
+    if dados_validos:
+        pedidos_pendentes = [r for r in dados_validos if not (len(r) > 13 and str(r[13]).strip())]
+        
+        fuso_horario_BR = pytz.timezone("America/Sao_Paulo")
+        agora_br = datetime.now(fuso_horario_BR)
+        pedidos_concluidos_24h = []
+        for r in dados_validos:
+            if len(r) > 13 and str(r[13]).strip():
+                data_conc_str = str(r[13]).strip()
+                data_conc_obj = None
+                for fmt in ("%d/%m/%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S", "%d/%m/%Y", "%Y-%m-%d"):
+                    try:
+                        data_conc_obj = datetime.strptime(data_conc_str, fmt)
+                        break
+                    except Exception:
+                        continue
+                if data_conc_obj:
+                    if data_conc_obj.tzinfo is None:
+                        data_conc_obj = fuso_horario_BR.localize(data_conc_obj)
+                    if (agora_br - data_conc_obj) <= timedelta(hours=24):
+                        pedidos_concluidos_24h.append(r)
+                else:
+                    pedidos_concluidos_24h.append(r)
+
+        aba_pendentes, aba_concluidos = st.tabs(["⏳ Pedidos Pendentes", "✅ Pedidos Concluídos"])
+
+        with aba_pendentes:
+            if pedidos_pendentes:
+                num_colunas = 6
+                linhas_cards = [pedidos_pendentes[i:i + num_colunas] for i in range(0, len(pedidos_pendentes), num_colunas)]
+                for bloco in linhas_cards:
+                    cols = st.columns(num_colunas)
+                    for i, r in enumerate(bloco):
+                        idx_p = dados_validos.index(r) + 1
+                        linha_real = registos.index(r) + 1
+                        try:
+                            linha_pedido = r[1] if len(r) > 1 else ""
+                            cod_material = r[7] if len(r) > 7 else ""
+                            dun_material = r[8] if len(r) > 8 else ""
+                            desc_completa = r[2] if len(r) > 2 else ""
+                            desc_resumida = (desc_completa[:22] + "...") if len(desc
