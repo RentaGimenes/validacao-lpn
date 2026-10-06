@@ -1,5 +1,5 @@
 # ==========================================
-# IMPORTAÇÕES DE BIBLIOTECAS
+# IMPORTAÇÃO DAS BIBLIOTECAS NECESSÁRIAS
 # ==========================================
 from datetime import datetime, timedelta
 import os
@@ -12,11 +12,11 @@ import pytz
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-# Configura a página do Streamlit para usar layout largo
+# Configurando a página para usar o layout largo
 st.set_page_config(page_title="Validação de Lpn", page_icon="📦", layout="wide")
 
 # ==========================================
-# MAPEAMENTO DE IMAGENS E ARQUIVOS (EXATO DO REPOSITÓRIO)
+# MAPEAMENTO DOS ARQUIVOS E IMAGENS
 # ==========================================
 IMAGENS = {
     "guia05": "GUIA DE CODIGO DE LPN.JPG",
@@ -34,11 +34,11 @@ IMAGENS = {
     "validar_btn": "validar.png",
 }
 
-# Atualiza a página automaticamente a cada 3 minutos
+# Atualiza a tela a cada 3 minutos automaticamente
 count = st_autorefresh(interval=180000, key="datarefresh")
 
 # ==========================================
-# ESTILOS VISUAIS (CSS CUSTOMIZADO)
+# ESTILOS E CUSTOMIZAÇÃO (CSS)
 # ==========================================
 st.markdown("""
     <style>
@@ -86,16 +86,17 @@ st.markdown("""
         box-sizing: border-box;
     }
     
+    /* Cartões compactos e quadradinhos */
     .card-pedido {
         background-color: #262211;
         border: 1px solid #d4ac0d;
-        padding: 10px;
+        padding: 6px 8px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 11px;
         color: #ffffff;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         text-align: left;
-        line-height: 1.4;
+        line-height: 1.25;
         cursor: pointer;
         transition: 0.2s;
     }
@@ -105,25 +106,25 @@ st.markdown("""
     .card-pedido-prioridade {
         background-color: #2b1616;
         border: 1px solid #ff4b4b;
-        padding: 10px;
+        padding: 6px 8px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 11px;
         color: #ffffff;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         text-align: left;
-        line-height: 1.4;
+        line-height: 1.25;
     }
     
     .card-pedido-concluido {
         background-color: #112615;
         border: 1px solid #2ecc71;
-        padding: 10px;
+        padding: 6px 8px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 11px;
         color: #ffffff;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         text-align: left;
-        line-height: 1.4;
+        line-height: 1.25;
     }
     
     .texto-destaque-lpn {
@@ -191,7 +192,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Som de erro rápido
+# Toca o som de alerta quando dá erro
 def tocar_som_erro():
     sound_html = """
         <audio autoplay>
@@ -200,7 +201,7 @@ def tocar_som_erro():
     """
     st.markdown(sound_html, unsafe_allow_html=True)
 
-# Conexão com a planilha
+# Conecta com a planilha do Google
 def init_connection():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds_dict = dict(st.secrets["gcp_service_account"])
@@ -230,7 +231,7 @@ except Exception as e:
     st.stop()
 
 # ==========================================
-# FUNÇÕES DE APOIO E TRATAMENTO
+# FUNÇÕES AUXILIARES PARA TRATAR OS DADOS
 # ==========================================
 def limpar_texto(texto):
     if not texto: return ""
@@ -239,12 +240,9 @@ def limpar_texto(texto):
 def extrair_hora_da_string(texto_coluna):
     if not texto_coluna: return ""
     texto_str = str(texto_coluna).strip()
-    # Tenta encontrar padrão de hora (HH:MM:SS ou HH:MM)
     match_hora = re.search(r'(\d{2}:\d{2}(?::\d{2})?)', texto_str)
     if match_hora:
-        hora_encontrada = match_hora.group(1)
-        # Se veio com segundos (HH:MM:SS), corta para HH:MM se preferir, ou mantém. Vamos manter limpo.
-        return hora_encontrada
+        return match_hora.group(1)
     return texto_str
 
 def formatar_lote_rigoroso(lote_str):
@@ -326,7 +324,7 @@ def processar_codigo_3(barcode):
     try:
         limpo = barcode.replace("(", "").replace(")", "")
         match_dun = re.search(r'(?:^|\D)02(\d{14})', limpo)
-        dun = match_dun.group(1) if match_dun else (re.search(r'02(\d+?)(?=17|11|$)', limpo).group(1) if re.search(r'02(\d+?)(?=17|11|$)', limpo) else limpo[2:16])
+        dun = match_dun.group(1) if match_dun else (re.search(r'02(\d+?)(?=17|11|$)', limpo).group(1) if re.search(r'02(\d+?)(?=17\vert{}11\vert{}$)', limpo) else limpo[2:16])
         match_venc = re.search(r'17(\d{6})', limpo)
         vencimento = match_venc.group(1) if match_venc else ""
         matches_fab = re.findall(r'11(\d{6})', limpo)
@@ -358,7 +356,7 @@ def obter_quantidade_total_lpns(r):
 # ==========================================
 st.markdown("<h2 style='margin-top: 0px; padding-top: 0px;'>📦 Validação das informações das Lpn</h2>", unsafe_allow_html=True)
 
-# Estados da sessão
+# Inicializando estados da sessão
 if "etapa_validacao" not in st.session_state:
     st.session_state.etapa_validacao = False
     st.session_state.dados_conferencia = {}
@@ -376,7 +374,7 @@ if "val_bc2" not in st.session_state: st.session_state.val_bc2 = ""
 if "val_bc3" not in st.session_state: st.session_state.val_bc3 = ""
 
 # ==========================================
-# TELA 1: CONFIRMAÇÃO VISUAL
+# TELA DE CONFIRMAÇÃO VISUAL
 # ==========================================
 if st.session_state.etapa_validacao:
     st.subheader("🔍 Confirmação Visual Obrigatória")
@@ -445,6 +443,7 @@ if st.session_state.etapa_validacao:
                         hora_atual = datetime.now(fuso_horario).strftime("%d/%m/%Y %H:%M:%S")
                         todas_lpns_str = ", ".join(lpns_lidas_pedido)
                         
+                        # Salvando os dados direto na planilha do Google
                         sheet.update_cell(linha, 12, responsavel_acao)
                         sheet.update_cell(linha, 13, todas_lpns_str)
                         sheet.update_cell(linha, 14, hora_atual)
@@ -482,7 +481,7 @@ if st.session_state.etapa_validacao:
 
 else:
     # ==========================================
-    # TELA 2: PAINEL DE PEDIDOS E VALIDAÇÃO
+    # PAINEL PRINCIPAL DE PEDIDOS
     # ==========================================
     st.subheader("📋 PAINEL DE PEDIDOS")
 
@@ -554,7 +553,8 @@ else:
 
         with aba_pendentes:
             if pedidos_pendentes:
-                num_colunas = 6
+                # Usando 7 colunas para deixar os cartões bem encaixados e quadradinhos
+                num_colunas = 7
                 linhas_cards = [pedidos_pendentes[i:i + num_colunas] for i in range(0, len(pedidos_pendentes), num_colunas)]
                 for bloco in linhas_cards:
                     cols = st.columns(num_colunas)
@@ -581,7 +581,6 @@ else:
                             qtd_lidas = len(lpns_ja_lidas)
                             porcentagem = min(int((qtd_lidas / total_esperado) * 100), 100)
                             
-                            # Extração da hora da solicitação da primeira coluna (índice 0)
                             hora_solicitacao_bruta = r[0] if len(r) > 0 else ""
                             hora_solicitacao = extrair_hora_da_string(hora_solicitacao_bruta)
                             
@@ -605,7 +604,7 @@ else:
 <b>LPN Inteira:</b> {lpn_inteira}<br>
 <b>Quebra:</b> {quebra_txt}<br>
 <b>Hora Solicitação:</b> {hora_solicitacao}<br>
-<hr style="margin: 6px 0; border-color: #444; border-width: 1px 0 0 0;">
+<hr style="margin: 4px 0; border-color: #444; border-width: 1px 0 0 0;">
 <span style="color: #00bfff;"><b>Progresso: {qtd_lidas}/{total_esperado} ({porcentagem}%)</b></span>
 </div>""", unsafe_allow_html=True)
                                 
@@ -620,7 +619,7 @@ else:
 
         with aba_concluidos:
             if pedidos_concluidos_24h:
-                num_colunas_conc = 6
+                num_colunas_conc = 7
                 linhas_cards_conc = [pedidos_concluidos_24h[i:i + num_colunas_conc] for i in range(0, len(pedidos_concluidos_24h), num_colunas_conc)]
                 for bloco_conc in linhas_cards_conc:
                     cols_conc = st.columns(num_colunas_conc)
@@ -631,14 +630,9 @@ else:
                             desc_completa_c = rc[2] if len(rc) > 2 else ""
                             desc_resumida_c = (desc_completa_c[:22] + "...") if len(desc_completa_c) > 22 else desc_completa_c
                             
-                            # Quantidade de LPNs Inteiras
                             lpn_inteira_c = rc[4] if len(rc) > 4 else "0"
-                            
-                            # Lista de quebras e contagem da quantidade de LPNs de quebra
                             lista_quebras_c = obter_lista_quebras(rc)
                             qtd_lpns_quebra_c = len(lista_quebras_c)
-                            
-                            # Valores das quebras formatados separados por vírgula (ex: 36, 18)
                             valores_quebras_str_c = ", ".join(map(str, lista_quebras_c)) if lista_quebras_c else "0"
                             
                             responsavel_c = rc[11] if len(rc) > 11 else ""
@@ -666,7 +660,7 @@ else:
     st.markdown("---")
 
     # ==========================================
-    # FORMULÁRIO DE LEITURA E VALIDAÇÃO RIGOROSA
+    # FORMULÁRIO DE LEITURA E VALIDAÇÃO DOS CÓDIGOS
     # ==========================================
     st.subheader("📝 Validar e Dar Baixa na LPN")
     
@@ -744,6 +738,7 @@ else:
         erro = st.session_state.get("erro_ativo")
         det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
         
+        # Tratamento visual dos erros encontrados na leitura
         if erro == "lote06":
             st.markdown('<div class="alerta-piscar">🚫 Erro de Lote</div>', unsafe_allow_html=True)
             st.markdown('<div class="alerta-sub">Lote lido não confere com o padrão exigido.</div>', unsafe_allow_html=True)
@@ -780,6 +775,7 @@ else:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # Regra de validação dos códigos lidos
         def executar_validacao_logica():
             bc1_val = st.session_state.get("val_bc1", "").strip()
             bc2_val = st.session_state.get("val_bc2", "").strip()
