@@ -1,124 +1,61 @@
-import tkinter as tk
-from tkinter import ttk
+import streamlit as st
 
-class AppPainelPedidos(tk.Tk):
-    def __init__(self):
-        super().__init__()
+# Configuração da página
+st.set_page_config(page_title="Validação LPN", page_icon="📦", layout="centered")
+
+# Estilo visual personalizado (tema escuro idêntico ao seu print)
+st.markdown("""
+    <style>
+    .main { background-color: #111827; }
+    .stApp { background-color: #111827; color: white; }
+    h1, h2, h3 { color: white !important; }
+    </style>
+""", unsafe_allow_html=True)
+
+# Título Principal
+st.markdown("<h2 style='text-align: center;'>Validação das Informações das Lpn</h2>", unsafe_allow_html=True)
+st.markdown("---")
+
+st.markdown("### 📋 PAINEL DE PEDIDOS")
+st.markdown("Selecione o pedido nas abas abaixo:")
+
+# Abas do Streamlit
+aba_pendentes, aba_concluidos = st.tabs(["⏳ Pedidos Pendentes", "✅ Pedidos Concluídos"])
+
+# ==========================================
+# ABA 1: PEDIDOS PENDENTES (Com Validação)
+# ==========================================
+with aba_pendentes:
+    if st.button("🔄 ATUALIZAR PEDIDOS", key="atualizar_pend"):
+        st.toast("Pedidos atualizados!")
+
+    st.info("Nenhum pedido pendente no momento.")
+    
+    st.markdown("---")
+    st.markdown("### 📝 Validar e Dar Baixa na LPN")
+    
+    # Formulário de Validação (Aparece apenas na aba de Pendentes)
+    with st.form("form_validacao"):
+        nome = st.text_input("Nome", placeholder="Digite seu nome...")
+        lpn1 = st.text_input("1º Código de Barras (LPN)", placeholder="")
+        lpn2 = st.text_input("2º Código de Barras (LPN)", placeholder="")
+        lpn3 = st.text_input("3º Código de Barras (LPN)", placeholder="")
         
-        self.title("Painel de Pedidos - LPN")
-        self.geometry("450<span class="math-inline">750")
-        self.configure(bg="#111827")  # Fundo escuro estilo o app da foto
+        submitted = st.form_submit_button("INICIAR VALIDAÇÃO")
+        if submitted:
+            if not nome or not lpn1:
+                st.warning("⚠️ Para iniciar, por favor preencha o nome e pelo menos a primeira LPN.")
+            else:
+                st.success("Validação iniciada com sucesso!")
 
-        # Estilo geral
-        style = ttk.Style()
-        style.theme_use("clam")
-        
-        # --- TÍTULO PRINCIPAL ---
-        lbl_titulo = tk.Label(
-            self, text="Validação das\nInformações das Lpn", 
-            font=("Arial", 18, "bold"), fg="white", bg="#111827", justify="center"
-        )
-        lbl_titulo.pack(pady=15)
+# ==========================================
+# ABA 2: PEDIDOS CONCLUÍDOS (Apenas os Cards/Histórico, sem validação)
+# ==========================================
+with aba_concluidos:
+    if st.button("🔄 ATUALIZAR PEDIDOS", key="atualizar_conc"):
+        st.toast("Histórico atualizado!")
 
-        # --- CONTAINER DE ABAS (Botões) ---
-        frame_abas = tk.Frame(self, bg="#111827")
-        frame_abas.pack(fill="x", padx=20, pady=5)
-
-        self.btn_pendentes = tk.Button(
-            frame_abas, text="⏳ Pedidos Pendentes", font=("Arial", 10, "bold"),
-            fg="white", bg="#1f2937", bd=0, relief="flat",
-            command=self.mostrar_pendentes
-        )
-        self.btn_pendentes.pack(side="left", expand=True, fill="x", padx=2)
-
-        self.btn_concluidos = tk.Button(
-            frame_abas, text="✅ Pedidos Concluídos", font=("Arial", 10, "bold"),
-            fg="white", bg="#1f2937", bd=0, relief="flat",
-            command=self.mostrar_concluidos
-        )
-        self.btn_concluidos.pack(side="left", expand=True, fill="x", padx=2)
-
-        # Linha indicadora da aba ativa (barra vermelha embaixo)
-        self.linha_aba = tk.Frame(self, bg="#ef4444", height=3)
-        self.linha_aba.pack(fill="x", padx=20)
-
-        # --- ÁREA DE CONTEÚDO DINÂMICO (Onde alternam os cards) ---
-        self.frame_conteudo = tk.Frame(self, bg="#111827")
-        self.frame_conteudo.pack(fill="both", expand=True, padx=20, pady=10)
-
-        # --- SEÇÃO DE VALIDAÇÃO (A parte de baixo que some nos concluídos) ---
-        self.frame_validacao = tk.Frame(self, bg="#111827")
-        self.construir_secao_validacao()
-        
-        # Inicia na aba de Pendentes
-        self.mostrar_pendentes()
-
-    def construir_secao_validacao(self):
-        # Título da seção de validação
-        lbl_val = tk.Label(
-            self.frame_validacao, text="📝 Validar e Dar Baixa na LPN", 
-            font=("Arial", 14, "bold"), fg="white", bg="#111827", anchor="w"
-        )
-        lbl_val.pack(fill="x", pady=(10, 5))
-
-        # Campo Nome
-        tk.Label(self.frame_validacao, text="Nome", font=("Arial", 10), fg="white", bg="#111827", anchor="w").pack(fill="x")
-        self.entry_nome = tk.Entry(self.frame_validacao, font=("Arial", 11), bg="#1f2937", fg="white", insertbackground="white", relief="flat")
-        self.entry_nome.pack(fill="x", pady=(2, 10), ipady=5)
-
-        # Campo 1º Código de Barras
-        tk.Label(self.frame_validacao, text="1º Código de Barras (LPN)", font=("Arial", 10), fg="white", bg="#111827", anchor="w").pack(fill="x")
-        self.entry_lpn1 = tk.Entry(self.frame_validacao, font=("Arial", 11), bg="#1f2937", fg="white", insertbackground="white", relief="flat")
-        self.entry_lpn1.pack(fill="x", pady=(2, 10), ipady=5)
-
-        # Botão Iniciar Validação
-        btn_iniciar = tk.Button(
-            self.frame_validacao, text="INICIAR VALIDAÇÃO", font=("Arial", 11, "bold"),
-            fg="#10b981", bg="#111827", bd=2, relief="solid", highlightcolor="#10b981"
-        )
-        btn_iniciar.pack(fill="x", pady=10, ipady=8)
-
-    def limpar_conteudo(self):
-        for widget in self.frame_conteudo.winfo_children():
-            widget.destroy()
-
-    def mostrar_pendentes(self):
-        # Atualiza estilo visual dos botões das abas
-        self.btn_pendentes.config(fg="#ef4444")
-        self.btn_concluidos.config(fg="white")
-        
-        # Posiciona a linha vermelha à esquerda (Pendentes)
-        self.linha_aba.pack_configure(anchor="w")
-
-        # Limpa e popula o conteúdo de Pendentes
-        self.limpar_conteudo()
-        
-        lbl_info = tk.Label(
-            self.frame_conteudo, text="Nenhum pedido pendente no momento.", 
-            font=("Arial", 11), fg="#9ca3af", bg="#1f2937", padx=15, pady=20
-        )
-        lbl_info.pack(fill="x", pady=5)
-
-        # **MOSTRA** a seção de validação embaixo quando estiver em Pendentes
-        self.frame_validacao.pack(fill="x", padx=20, pady=10)
-
-    def mostrar_concluidos(self):
-        # Atualiza estilo visual dos botões das abas
-        self.btn_pendentes.config(fg="white")
-        self.btn_concluidos.config(fg="#ef4444")
-        
-        # Limpa e popula o conteúdo de Concluídos
-        self.limpar_conteudo()
-        
-        lbl_info = tk.Label(
-            self.frame_conteudo, text="Nenhum pedido concluído nas últimas 24 horas.", 
-            font=("Arial", 11), fg="#9ca3af", bg="#1f2937", padx=15, pady=20
-        )
-        lbl_info.pack(fill="x", pady=5)
-
-        # **ESCONDE** completamente a seção de validação embaixo quando estiver em Concluídos
-        self.frame_validacao.pack_forget()
-
-if __name__ == "__main__":
-    app = AppPainelPedidos()
-    app.mainloop()
+    # Apenas o aviso ou os cards concluídos, SEM NENHUMA parte de validação embaixo
+    st.info("Nenhum pedido concluído nas últimas 24 horas.")
+    
+    # Aqui você pode futuramente renderizar os cards dos pedidos concluídos quando houverem registros.
