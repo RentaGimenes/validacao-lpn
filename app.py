@@ -138,7 +138,7 @@ st.markdown(
         color: #f1c40f;
     }
 
-    /* Alinhamento e centralização perfeita da coluna do meio puxada para cima */
+    /* Alinhamento e centralização perfeita da coluna do meio */
     .container-coluna-meio {
         display: flex;
         flex-direction: column;
@@ -189,7 +189,7 @@ st.markdown(
         color: #ffffff !important;
     }
 
-    /* Centralização estrita da coluna da direita (Imagem de LPN e subtítulos) */
+    /* Centralização estrita da coluna da direita */
     .container-coluna-direita {
         display: flex;
         flex-direction: column;
@@ -908,7 +908,6 @@ else:
       st.progress(porcentagem_calc / 100.0)
 
   with col_meio:
-    st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
     st.markdown('<div class="container-coluna-meio">', unsafe_allow_html=True)
 
     idx_sel_atual = st.session_state.get("pedido_selecionado_idx")
@@ -1037,173 +1036,4 @@ else:
       if lote_planilha and lote_lido:
         lote_planilha_rigoroso = formatar_lote_rigoroso(lote_planilha)
         lote_lido_rigoroso = formatar_lote_lido_rigoroso(lote_lido)
-        if lote_lido_rigoroso != lote_planilha_rigoroso:
-          st.session_state.erro_ativo = "lote06"
-          st.session_state.detalhes_erro = {
-              "solicitado": lote_planilha,
-              "lido": lote_lido,
-          }
-          tocar_som_erro()
-          return
-
-      if data_vencimento_planilha_raw and venc_lido:
-        data_obj_planilha = converter_para_data_obj(data_vencimento_planilha_raw)
-        data_obj_lida = converter_para_data_obj(venc_lido)
-        if data_obj_planilha and data_obj_lida:
-          if data_obj_lida != data_obj_planilha:
-            st.session_state.erro_ativo = "datav02"
-            st.session_state.detalhes_erro = {
-                "solicitado": str(data_vencimento_planilha_raw),
-                "lido": formatar_para_aammdd(venc_lido),
-            }
-            tocar_som_erro()
-            return
-
-      if data_fabricacao_planilha_raw and fab_lido:
-        data_fab_obj_planilha = converter_para_data_obj(
-            data_fabricacao_planilha_raw
-        )
-        data_fab_obj_lida = converter_para_data_obj(fab_lido)
-        if data_fab_obj_planilha and data_fab_obj_lida:
-          if data_fab_obj_lida != data_fab_obj_planilha:
-            st.session_state.erro_ativo = "datafab03"
-            st.session_state.detalhes_erro = {
-                "solicitado": str(data_fabricacao_planilha_raw),
-                "lido": formatar_para_aammdd(fab_lido),
-            }
-            tocar_som_erro()
-            return
-
-      st.session_state.erro_ativo = None
-      st.session_state.detalhes_erro = {"solicitado": "", "lido": ""}
-      st.session_state.dados_conferencia = {
-          "linha": linha_encontrada,
-          "num_pedido": num_pedido_escolhido,
-          "responsavel": nome_responsavel.strip(),
-          "lpn": lpn_lida,
-          "quantidade_extraida": qtd_lida,
-          "descricao": r_escolhido[2] if len(r_escolhido) > 2 else "",
-          "total_esperado": total_necessario,
-      }
-      st.session_state.etapa_validacao = True
-      st.rerun()
-
-    if st.button("Validar LPN", key="btn_executar_validacao"):
-      executar_validacao()
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
-  with col_dir:
-    st.markdown("<div style='height: 40px;'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="container-coluna-direita">', unsafe_allow_html=True)
-    erro = st.session_state.get("erro_ativo")
-    det = st.session_state.get("detalhes_erro", {"solicitado": "", "lido": ""})
-
-    if erro == "material04":
-      st.markdown(
-          '<div class="alerta-piscar">🚫 Erro no Material</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          '<div class="alerta-sub">Incompatível com o solicitado.</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""",
-          unsafe_allow_html=True,
-      )
-      if os.path.exists(IMAGENS["material04"]):
-        st.image(IMAGENS["material04"], width=420)
-    elif erro == "lote06":
-      st.markdown(
-          '<div class="alerta-piscar">🚫 Erro de Lote</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          '<div class="alerta-sub">Incompatível com o solicitado.</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""",
-          unsafe_allow_html=True,
-      )
-      if os.path.exists(IMAGENS["lote06"]):
-        st.image(IMAGENS["lote06"], width=420)
-    elif erro == "datav02":
-      st.markdown(
-          '<div class="alerta-piscar">🚫 Erro de Data de Validade</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          '<div class="alerta-sub">Data de vencimento não está compatível.</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""",
-          unsafe_allow_html=True,
-      )
-      if os.path.exists(IMAGENS["datav02"]):
-        st.image(IMAGENS["datav02"], width=420)
-    elif erro == "datafab03":
-      st.markdown(
-          '<div class="alerta-piscar">🚫 Erro de Data de Fabricação</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          '<div class="alerta-sub">Data de fabricação não está de acordo.</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""",
-          unsafe_allow_html=True,
-      )
-      if os.path.exists(IMAGENS["datafab03"]):
-        st.image(IMAGENS["datafab03"], width=420)
-    elif erro == "dun03":
-      st.markdown(
-          '<div class="alerta-piscar">🚫 Erro de DUN</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          '<div class="alerta-sub">DUN não corresponde ao solicitado.</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}<br><b>Gerado na LPN:</b> {det['lido']}</div>""",
-          unsafe_allow_html=True,
-      )
-      if os.path.exists(IMAGENS["dun03"]):
-        st.image(IMAGENS["dun03"], width=420)
-    elif erro == "lpn_duplicada":
-      st.markdown(
-          '<div class="alerta-piscar">🚫 LPN Duplicada</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          f"""<div class="alerta-comparacao"><b>{det['lido']}</b></div>""",
-          unsafe_allow_html=True,
-      )
-      if os.path.exists(IMAGENS["lpn_duplicada"]):
-        st.image(IMAGENS["lpn_duplicada"], width=420)
-    elif erro in ["validacao_qtd", "limite"]:
-      st.markdown(
-          '<div class="alerta-piscar">🚫 Validação de Quantidade / LPN</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          '<div class="alerta-sub">Quantidade excedida ou incorreta.</div>',
-          unsafe_allow_html=True,
-      )
-      st.markdown(
-          f"""<div class="alerta-comparacao"><b>SOLICITADO:</b> {det['solicitado']}</div>""",
-          unsafe_allow_html=True,
-      )
-      if os.path.exists(IMAGENS["validacao_qtd"]):
-        st.image(IMAGENS["validacao_qtd"], width=420)
-    else:
-      st.subheader("💡 Exemplo de LPN")
-      if os.path.exists(IMAGENS["guia05"]):
-        st.image(IMAGENS["guia05"], width=420)
-      else:
-        st.warning(f"⚠ Imagem `{IMAGENS['guia05']}` não encontrada.")
-    st.markdown("</div>", unsafe_allow_html=True)
+        if lote_lido_rigoroso != lote_
